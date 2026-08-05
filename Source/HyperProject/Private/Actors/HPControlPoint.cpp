@@ -1,0 +1,202 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Actors/HPControlPoint.h"
+
+#include "GenericTeamAgentInterface.h"
+#include "Characters/Player/HPPlayerCharacter.h"
+#include "Components/BoxComponent.h"
+#include "Controller/HPPlayerController.h"
+#include "Net/UnrealNetwork.h"
+
+
+AHPControlPoint::AHPControlPoint()
+{
+	PrimaryActorTick.bCanEverTick = true;
+
+	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
+	SetRootComponent(BoxComponent);
+	BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &AHPControlPoint::OnBoxBeginOverlap);
+	BoxComponent->OnComponentEndOverlap.AddDynamic(this, &AHPControlPoint::OnBoxEndOverlap);
+	BoxComponent->SetBoxExtent(BoxExtent);
+
+	bReplicates = true;
+}
+
+void AHPControlPoint::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(OtherActor))
+	{
+		if (TeamAgentInterface->GetGenericTeamId().GetId()==0 && !OverlappedTeamOne.Contains(OtherActor))
+		{
+			OverlappedTeamOne.Add(OtherActor);
+			
+		}
+		else if (TeamAgentInterface->GetGenericTeamId().GetId()==1 && !OverlappedTeamTwo.Contains(OtherActor))
+		{
+			OverlappedTeamTwo.Add(OtherActor);	
+		}
+	}
+}
+
+
+void AHPControlPoint::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(OtherActor))
+	{
+		if (TeamAgentInterface->GetGenericTeamId().GetId()==0 && OverlappedTeamOne.Contains(OtherActor))
+		{
+			OverlappedTeamOne.Remove(OtherActor);
+		}
+		else if (TeamAgentInterface->GetGenericTeamId().GetId()==1 && OverlappedTeamTwo.Contains(OtherActor))
+		{
+			OverlappedTeamTwo.Remove(OtherActor);	
+		}
+	}
+}
+
+void AHPControlPoint::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION_NOTIFY(AHPControlPoint, ControlPointData, COND_None, REPNOTIFY_Always);
+}
+
+void AHPControlPoint::OnRep_ControlPointUpdate()
+{
+	
+	ControlPointUpdateDelegate.ExecuteIfBound(ControlPointData);
+}
+
+void AHPControlPoint::BindPlayerControllerToControlPoint(AHPPlayerController* PlayerController)
+{
+	ControlPointUpdateDelegate.BindDynamic(PlayerController, &AHPPlayerController::UpdateControlPointState);
+}
+
+void AHPControlPoint::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
+
+void AHPControlPoint::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!HasAuthority())
+	{
+		return;
+	}
+	if (!IsActivating)
+	{
+		return;
+	}
+	DrawDebugBox(GetWorld(), GetActorLocation(), BoxExtent/2, FColor::Green, false);
+
+	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentState != Team1Captured) //팀1 점령중
+	{
+		if (CurrentState == EControlPointState::BeforeCapturing || //아무도 거점 점령하지 않았을 때
+			CurrentState == EControlPointState::FightingAtPoint || //한타 끝났을 때
+			CurrentState == EControlPointState::Team2Captured)	   //다른 팀이 점령 했으면
+			CurrentState = EControlPointState::Team1Capturing;
+		if (CurrentTeam2FightingGauge >0.f) //남은 팀2게이지 다 버릴 때까지 
+		{
+			CurrentTeam2FightingGauge = FMath::Clamp(CurrentTeam2FightingGauge-DeltaTime * FightingStateFillingSpeed, 0, 100);
+		}
+		else //팀2 게이지 다 버리고 팀1 게이지 채우기
+		{
+			CurrentTeam1FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge+DeltaTime * FightingStateFillingSpeed, 0, 100);
+		}
+		
+		if (CurrentTeam1FightingGauge >= 100.f)
+		{
+			CurrentState = EControlPointState::Team1Captured;
+			CurrentTeam1FightingGauge = 0.f;
+		}
+		
+	}
+
+	else if (OverlappedTeamOne.Num() == 0 && OverlappedTeamTwo.Num() >= 1 && CurrentState != Team2Captured) //팀2 점령중
+	{
+	
+		if (CurrentState == EControlPointState::BeforeCapturing ||
+			CurrentState == EControlPointState::FightingAtPoint ||
+			CurrentState == EControlPointState::Team1Captured)
+			CurrentState = EControlPointState::Team2Capturing;
+
+		if (CurrentTeam1FightingGauge >0.f) //남은 팀1게이지 다 버릴 때까지 
+		{
+			CurrentTeam1FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge-DeltaTime * FightingStateFillingSpeed, 0, 100);
+		}
+		else //팀1 게이지 다 버리고 팀2 게이지 채우기
+		{
+			CurrentTeam2FightingGauge = FMath::Clamp(CurrentTeam2FightingGauge+DeltaTime * FightingStateFillingSpeed, 0, 100);
+		}
+
+		if (CurrentTeam2FightingGauge >= 100.f)
+		{
+			CurrentState = EControlPointState::Team2Captured;
+			CurrentTeam2FightingGauge=0.f;
+		}
+	}
+
+	else if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() >= 1) //한타 중
+	{
+		CurrentState = EControlPointState::FightingAtPoint;
+	}
+
+	else	//아무도 없을 때
+	{
+		if (CurrentTeam1CaptureGauge == 0.f && CurrentTeam2CaptureGauge == 0.f) //아무 팀도 거점 못 먹었으면
+		{
+			CurrentState = EControlPointState::BeforeCapturing;
+		}
+		CurrentTeam1FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
+		CurrentTeam2FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
+	}
+	
+	if (CurrentState == EControlPointState::Team1Captured) //팀1이 거점 먹은 경우
+	{
+		CurrentTeam1CaptureGauge+=DeltaTime * ControlledStateFillingSpeed;
+		if (CurrentTeam1CaptureGauge>=100.f)
+		{
+			//NEXTTHINGTODO: 팀1 승리
+			BroadcastWhatTeamCompleteControlPoint(ControlPointType, 0);
+		}
+	}
+	else if (CurrentState == EControlPointState::Team2Captured) //팀2가 거점 먹은 경우
+	{
+		CurrentTeam2CaptureGauge+=DeltaTime * ControlledStateFillingSpeed;
+
+		if (CurrentTeam2CaptureGauge>=100.f)
+		{
+			//NEXTTHINGTODO: 팀2 승리
+			BroadcastWhatTeamCompleteControlPoint(ControlPointType, 1);
+		}
+	}
+
+	FHPControlPointData CurrentControlPointData;
+
+	CurrentControlPointData.TeamOneCount = OverlappedTeamOne.Num();
+	CurrentControlPointData.TeamTwoCount = OverlappedTeamTwo.Num();
+	CurrentControlPointData.TeamOneCapturingPercent = CurrentTeam1CaptureGauge;
+	CurrentControlPointData.TeamTwoCapturingPercent = CurrentTeam2CaptureGauge;
+	CurrentControlPointData.TeamOneFightingPercent = CurrentTeam1FightingGauge;
+	CurrentControlPointData.TeamTwoFightingPercent = CurrentTeam2FightingGauge;
+
+	ControlPointData = CurrentControlPointData;
+}
+
+void AHPControlPoint::ActivateControlPoint(bool TurnOn)
+{
+	BoxComponent->SetCollisionEnabled(TurnOn?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
+	IsActivating = TurnOn;
+}
+
+void AHPControlPoint::BroadcastWhatTeamCompleteControlPoint(EControlPointType InControlPointType, int32 CompleteTeamID)
+{
+	ControlPointCompletedDelegate.ExecuteIfBound(InControlPointType, CompleteTeamID);
+}
+
