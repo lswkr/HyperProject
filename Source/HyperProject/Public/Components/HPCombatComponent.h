@@ -114,10 +114,12 @@ private:
 
 	/* Server Side Rewind Begin*/
 public:
+	UFUNCTION()
 	void ShouldUseServerSideRewind(bool TooHighPing);
+	
 	FORCEINLINE bool IsUsingServerSideRewind() const { return bUseServerSideRewind; };
 private:
 	UPROPERTY(Replicated)
-	bool bUseServerSideRewind = false;
+	bool bUseServerSideRewind = true;
 	/* Server Side Rewind End*/
 };

@@ -75,8 +75,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
 
-	UFUNCTION(Server, Reliable)
-	FServerSideRewindResult ServerCheckValidHit(AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
+	// UFUNCTION(Server, Reliable)
+	// FServerSideRewindResult ServerCheckValidHit(AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 	/** 
 	* Hitscan
 	*/

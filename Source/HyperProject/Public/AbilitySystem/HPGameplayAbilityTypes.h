@@ -102,59 +102,36 @@ public:
 };
 
 USTRUCT()
-struct FGamePlayTargetData_HPCustom : public FGameplayAbilityTargetData_SingleTargetHit
+struct FGameplayAbilityTargetData_HPCustom : public FGameplayAbilityTargetData_SingleTargetHit
 {
 	GENERATED_BODY()
-
-	UPROPERTY()
-	bool bHeadShot = false;
-
-	UPROPERTY()
-	bool bAiming = false;
-
+	
+	FGameplayAbilityTargetData_HPCustom(){};
+	FGameplayAbilityTargetData_HPCustom(FHitResult InHitResult, FVector InStartPoint, float InHitTime)
+		:FGameplayAbilityTargetData_SingleTargetHit(InHitResult), StartPoint(InStartPoint), HitTime(InHitTime){};
 	
 	virtual UScriptStruct* GetScriptStruct() const override
 	{
 		return StaticStruct();
 	}
 
-	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
-	{
-		bool bParentOutSuccess = false;
+	bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess);
 
-		FGameplayAbilityTargetData_SingleTargetHit::NetSerialize(Ar, Map, bParentOutSuccess);
-
-		uint8 RepBits = 0;
-		if (Ar.IsSaving())
-		{
-			if (bHeadShot)
-			{
-				RepBits |= 1 << 0;
-			}
-			if (bAiming)
-			{
-				RepBits |= 1 << 1;
-			}
-		}
-		Ar.SerializeBits(&RepBits, 2);
-
-		if (RepBits & (1 << 0))
-		{
-			Ar << bHeadShot;
-		}
-		if (RepBits & (1 << 1))
-		{
-			Ar << bAiming;
-		}
+	FORCEINLINE FVector GetStartPoint() const { return StartPoint; }
+	FORCEINLINE float GetHitTime() const { return HitTime; }
 	
-		bOutSuccess = bParentOutSuccess;
-		return true;
-	}
+private:
+	UPROPERTY()
+	FVector StartPoint = FVector::ZeroVector;
+
+	UPROPERTY()
+	float HitTime = 0.f;
+
 };
 
 template<>
-struct TStructOpsTypeTraits<FGamePlayTargetData_HPCustom>
-	: public TStructOpsTypeTraitsBase2<FGamePlayTargetData_HPCustom>
+struct TStructOpsTypeTraits<FGameplayAbilityTargetData_HPCustom>
+	: public TStructOpsTypeTraitsBase2<FGameplayAbilityTargetData_HPCustom>
 {
 	enum
 	{

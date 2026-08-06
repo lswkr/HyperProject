@@ -96,7 +96,7 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 	FVector MuzzleLocation;
 	FVector EndLocation;
 	bool bUseServerSideRewind = false;
-	if (AActor* PlayerActor = GetAvatarActorFromActorInfo() )
+	if (AActor* PlayerActor = GetAvatarActorFromActorInfo())
 	{
 		if (PlayerActor->Implements<UCombatInterface>())
 		{
@@ -106,11 +106,8 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 		}
 	}
 
-	
-	
 	FVector End = MuzzleLocation + (EndLocation - MuzzleLocation)*1.25f;
 
-	
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(
 		HitResult,
@@ -124,21 +121,27 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 		UE_LOG(LogTemp, Warning,TEXT("Blocking Failed"));
 		HitResult.ImpactPoint = End;
 	}
-	AHPPlayerCharacter* HPHitCharacter = Cast<AHPPlayerCharacter>(HitResult.GetActor());
-
+	
+	float HitTime = 0.f;
+	UE_LOG(LogTemp, Warning, TEXT("bUseServerSideRewind = %d"), bUseServerSideRewind);
+	
 	if (bUseServerSideRewind)
 	{
 		AHPPlayerCharacter* HPOwnerCharacter = Cast<AHPPlayerCharacter> (GetAvatarActorFromActorInfo());
 		AHPPlayerController* HPOwnerController = Cast<AHPPlayerController>(GetCurrentActorInfo()->PlayerController.Get());
+		if (HPOwnerCharacter)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("HPOwnerCharacter: %s"), *HPOwnerCharacter->GetName());
+		}
+
+		if (HPOwnerController)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("HPOwnerController: %s"), *HPOwnerController->GetName());
+		}
 
 		if (HPOwnerCharacter && HPOwnerController)
 		{
-			HPOwnerCharacter->GetLagCompensationComponent()->ServerCheckValidHit(
-						HPHitCharacter,
-						MuzzleLocation,
-						End,
-						HPOwnerController->GetServerTime() - HPOwnerController->SingleTripTime
-			);
+			HitTime = HPOwnerController->GetServerTime() - HPOwnerController->SingleTripTime;
 		}
 	}
 	
@@ -162,7 +165,7 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 	}
 
 	DrawDebugSphere(GetWorld(),HitResult.ImpactPoint, 10,10, FColor::Yellow, false, 10);
-	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_SingleTargetHit(HitResult));
+	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_HPCustom(HitResult,MuzzleLocation,HitTime));
 	return true;
 }
 
@@ -301,13 +304,7 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 
-	AHPCharacterBase* HPCharacter = Cast<AHPCharacterBase>(GetAvatarActorFromActorInfo());
-
-
-	if (HPCharacter)
-	{
-		
-	}
+	AHPPlayerCharacter* HPCharacter = Cast<AHPPlayerCharacter>(GetAvatarActorFromActorInfo());
 
 	float AimingDuration = 0.f;
 	
@@ -320,34 +317,56 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 		CombatComponent->CaptureAimStartTime();
 	}
 
+	
 	float FinalDamage = Damage.GetValueAtLevel(1);
 
 	if (SourceASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("State.Combat.Aiming"))) && AimingDuration>0.f )
 	{
 		FinalDamage*=FMath::Clamp<float>(1+AimingDuration, 1.f, 3.f);	
 	}
+
+	const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
+	const FGameplayAbilityTargetData_HPCustom* TargetData = nullptr ;
 	
-	const FHitResult* HitResult = TargetDataHandle.Get(0)->GetHitResult();
-	if (HitResult)
+	if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_HPCustom::StaticStruct())
 	{
-		if (!HitResult->bBlockingHit)
-			return;
-		
-		if (HitResult->BoneName.ToString()==FString("head"))
-		{
-			//NEXTTHINGTODO: 헤드샷 위젯 표시
-			UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
-			FinalDamage*=2;
-		}
-		FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass,1,Context);
-		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, FinalDamage);
+		TargetData = static_cast<const FGameplayAbilityTargetData_HPCustom*>(BaseData);
+	}
 	
-		if (!EffectSpecHandle.IsValid())
+	if (TargetData)
+	{
+		const FHitResult* HitResult = TargetData->GetHitResult();
+		UE_LOG(LogTemp, Warning, TEXT("GetHitTime: %f"), TargetData->GetHitTime());
+		bool bIsHeadShot = false;
+		bool bIsBodyShot = false;
+		if (AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor()))
 		{
-			return;
+			FServerSideRewindResult SSRResult = HPCharacter->GetLagCompensationComponent()->ServerSideRewind(HitCharacter,TargetData->GetStartPoint(),HitResult->ImpactPoint, TargetData->GetHitTime());
+
+			bIsHeadShot = SSRResult.bHeadShot;
+			bIsBodyShot = SSRResult.bHitConfirmed;
 		}
-		EffectSpecHandle.Data->GetContext().AddHitResult(*HitResult, true);
-		DrawDebugSphere(GetWorld(),HitResult->ImpactPoint, 20,10, FColor::Red, false, 10);
+	
+		if (HitResult)
+		{
+			if (!HitResult->bBlockingHit)
+				return;
+		
+			if (bIsHeadShot)
+			{
+				//NEXTTHINGTODO: 헤드샷 위젯 표시
+				UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
+				FinalDamage*=2;
+			}
+			FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass,1,Context);
+			UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, FinalDamage);
+	
+			if (!EffectSpecHandle.IsValid())
+			{
+				return;
+			}
+			EffectSpecHandle.Data->GetContext().AddHitResult(*HitResult, true);
+			DrawDebugSphere(GetWorld(),HitResult->ImpactPoint, 20,10, FColor::Red, false, 10);
 
 			//
 			// if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
@@ -355,12 +374,12 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 			// 	ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitResult->GetActor());
 			// 	if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
 			// 	{
-					ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
+			ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
 			// 	}
 			// }
 		
+		}
 	}
-	
 }
 
 

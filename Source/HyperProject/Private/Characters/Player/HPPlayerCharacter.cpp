@@ -128,6 +128,7 @@ AHPPlayerCharacter::AHPPlayerCharacter()
 
 	for (auto Box : HitCollisionBoxes)
 	{
+		UE_LOG(LogTemp, Warning,TEXT("Box: %s"), *Box.Key.ToString());
 		if (Box.Value)
 		{
 			//NEXTTHINGTODO
@@ -181,11 +182,12 @@ void AHPPlayerCharacter::ServerSideInit()
 {
 	Super::ServerSideInit();
 	DamageContributionComponent->BindAbilitySystemComponent(HPAbilitySystemComponent);
+	
 	//BroadcastInitialValues();
 }
 
 
-void AHPPlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+void AHPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 

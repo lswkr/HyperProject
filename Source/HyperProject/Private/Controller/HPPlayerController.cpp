@@ -5,6 +5,7 @@
 
 #include "Actors/HPControlPoint.h"
 #include "Characters/Player/HPPlayerCharacter.h"
+#include "Components/HPCombatComponent.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/HUD/HPControlPointHUD.h"
@@ -28,6 +29,8 @@ void AHPPlayerController::OnPossess(APawn* InPawn)
 	{
 		HPPlayerCharacter->ServerSideInit();
 		HPPlayerCharacter->SetGenericTeamId(TeamID);
+		
+		HighPingDelegate.AddDynamic(HPPlayerCharacter->GetCombatComponent(), &UHPCombatComponent::ShouldUseServerSideRewind);
 	}
 }
 
@@ -89,6 +92,7 @@ void AHPPlayerController::UpdateControlPointState(const FHPControlPointData& Con
 
 void AHPPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
 {
+	UE_LOG(LogTemp, Warning, TEXT("bHighPing = %d"), bHighPing);
 	HighPingDelegate.Broadcast(bHighPing);
 }
 

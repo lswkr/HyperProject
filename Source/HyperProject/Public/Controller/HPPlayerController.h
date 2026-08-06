@@ -89,10 +89,11 @@ private:
 	float CheckPingFrequency = 20.f; //이 시간 마다 핑 체크
 
 	UPROPERTY(EditAnywhere)
-	float HighPingThreshold = 50.f;
+	float HighPingThreshold = 150.f;
 
 	UFUNCTION(Server, Reliable)
 	void ServerReportPingStatus(bool bHighPing);
+	
 protected:
 	void HighPingWarning();
 	void StopHighPingWarning();

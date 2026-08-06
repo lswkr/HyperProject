@@ -159,11 +159,24 @@ void ULagCompensationComponent::MoveBoxes(AHPPlayerCharacter* HitCharacter, cons
 	if (HitCharacter == nullptr) return;
 	for (auto& HitBoxPair : HitCharacter->HitCollisionBoxes)
 	{
-		if (HitBoxPair.Value != nullptr)
+		if (Package.HitBoxInfo.Num()>0)
 		{
-			HitBoxPair.Value->SetWorldLocation(Package.HitBoxInfo[HitBoxPair.Key].Location);
-			HitBoxPair.Value->SetWorldRotation(Package.HitBoxInfo[HitBoxPair.Key].Rotation);
-			HitBoxPair.Value->SetBoxExtent(Package.HitBoxInfo[HitBoxPair.Key].BoxExtent);
+			UE_LOG(LogTemp, Warning, TEXT("FIND!"));
+			if (HitBoxPair.Value != nullptr)
+			{
+				HitBoxPair.Value->SetWorldLocation(Package.HitBoxInfo[HitBoxPair.Key].Location);
+				HitBoxPair.Value->SetWorldRotation(Package.HitBoxInfo[HitBoxPair.Key].Rotation);
+				HitBoxPair.Value->SetBoxExtent(Package.HitBoxInfo[HitBoxPair.Key].BoxExtent);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Can't FIND Current Package HitBoxInfo!"));
+			for (auto& hitboxInfo:Package.HitBoxInfo)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("hitboxInfo.Value: %s, %s, %s"), *hitboxInfo.Value.BoxExtent.ToString(), *hitboxInfo.Value.Location.ToString(), *hitboxInfo.Value.Rotation.ToString());
+			}
+			break;
 		}
 	}
 }
@@ -309,14 +322,14 @@ void ULagCompensationComponent::ShowFramePackage(const FFramePackage& Package, c
 	}
 }
 
-FServerSideRewindResult ULagCompensationComponent::ServerCheckValidHit_Implementation(AHPPlayerCharacter* HitCharacter,
-	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
-{
-	return ServerSideRewind(HitCharacter, TraceStart, HitLocation, HitTime);
-}
+// FServerSideRewindResult ULagCompensationComponent::ServerCheckValidHit_Implementation(AHPPlayerCharacter* HitCharacter,
+// 	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
+// {
+// 	return ServerSideRewind(HitCharacter, TraceStart, HitLocation, HitTime);
+// }
+//
 
-
-FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(class AHPPlayerCharacter* HitCharacter,
+FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AHPPlayerCharacter* HitCharacter,
                                                                     const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
 	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);

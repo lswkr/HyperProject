@@ -6,6 +6,7 @@
 #include "AbilitySystem/HPAbilitySystemComponent.h"
 #include "AbilitySystem/HPAttributeSet.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/HPCombatComponent.h"
 #include "Controller/HPPlayerController.h"
 
 // Sets default values
@@ -61,11 +62,6 @@ void AHPCharacterBase::PossessedBy(AController* NewController)
 	if (NewController && !NewController->IsPlayerController())
 	{
 		ServerSideInit();
-
-		if (AHPPlayerController* HPPC = Cast<AHPPlayerController>(NewController))
-		{
-			HPPC->HighPingDelegate
-		}
 	}
 }
 
