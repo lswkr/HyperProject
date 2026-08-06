@@ -12,6 +12,7 @@
 #include "Components/HPCombatComponent.h"
 #include "Interfaces/CombatInterface.h"
 #include "Weapons/HPProjectileBase.h"
+#include "Weapons/HPVisualProjectile.h"
 
 UHPGA_Fire_Projectile::UHPGA_Fire_Projectile()
 {
@@ -87,30 +88,31 @@ void UHPGA_Fire_Projectile::OnInputReleased(float TimeHeld)
 
 bool UHPGA_Fire_Projectile::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle)
 {
-	FVector MuzzleLocation = FVector::ZeroVector;
+	FVector ProjectileSpawnPoint = FVector::ZeroVector;
 	FVector EndLocation = FVector::ZeroVector;
-	bool bUseServerSideRewind = false;
 	
 	if (AActor* PlayerActor = GetAvatarActorFromActorInfo())
 	{
 		if (PlayerActor->Implements<UCombatInterface>())
 		{
-			MuzzleLocation = ICombatInterface::Execute_GetWeaponSocketLocation(PlayerActor);
+			ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
 			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
-			bUseServerSideRewind=ICombatInterface::Execute_IsUsingServerRewind(PlayerActor);
 		}
 		else
 		{
 			return false;
 		}
 	}
-	FVector HitImpactPoint = ICombatInterface::Execute_GetHitImpactPoint(GetAvatarActorFromActorInfo());
 	
+
 	FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
 
-	LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+	LocationData->SourceLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+	LocationData->SourceLocation.LiteralTransform = FTransform(FRotator::ZeroRotator, ProjectileSpawnPoint);
 
-	LocationData->TargetLocation.LiteralTransform = FTransform(FQuat::Identity, HitImpactPoint);
+	LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+	LocationData->TargetLocation.LiteralTransform = FTransform(FRotator::ZeroRotator, EndLocation);
+
 
 	OutTargetDataHandle.Add(LocationData);
 	return true;
@@ -216,6 +218,34 @@ void UHPGA_Fire_Projectile::FireOneShot()
 			ServerSideRewindProjectile->SetProjectileEffectParams(MakeProjectileParams());
 			ServerSideRewindProjectile->FinishSpawning(SpawnTransform);
 		}
+		FGameplayAbilityTargetDataHandle TargetDataHandle;
+
+		if (!MakeTargetData(TargetDataHandle))
+		{
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+			return;
+		}
+		
+		{
+			FScopedPredictionWindow PredictionWindow(ASC,true);//현 Prediction Key에 묶기
+
+
+			if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+			{
+				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+				return;
+			}
+		
+			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
+		
+			
+
+			if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
+			{
+				SendTargetDataToServer(TargetDataHandle);
+			}
+	
+		}
 	}
 
 	else
@@ -227,8 +257,6 @@ void UHPGA_Fire_Projectile::FireOneShot()
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
-	
-		UE_LOG(LogTemp,Warning,TEXT("AfterMakeTargetData"));
 		
 		{
 			FScopedPredictionWindow PredictionWindow(ASC,true);//현 Prediction Key에 묶기
@@ -280,32 +308,40 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 	{
 		return;
 	}
-
-	FVector TargetPoint = Data->GetEndPoint();
-	FVector ProjectileSpawnPoint;
-	if (GetAvatarActorFromActorInfo()->Implements<UCombatInterface>())
+	if (Data && Data->GetScriptStruct() == FGameplayAbilityTargetData_LocationInfo::StaticStruct())
 	{
-		ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
-	}
-	FRotator SpawnRotation = (TargetPoint - ProjectileSpawnPoint).Rotation();
-	
-	FTransform SpawnTransform;
-	SpawnTransform.SetLocation(ProjectileSpawnPoint);
-	SpawnTransform.SetRotation(SpawnRotation.Quaternion());
+		const FGameplayAbilityTargetData_LocationInfo* LocationData =
+			static_cast<const FGameplayAbilityTargetData_LocationInfo*>(Data);
 
-	AHPProjectileBase* Projectile = GetWorld()->SpawnActorDeferred<AHPProjectileBase>(
-		ProjectileClass,
-		SpawnTransform,
-		GetOwningActorFromActorInfo(),
-		Cast<APawn>(GetOwningActorFromActorInfo()),
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		FVector SourceLocation = LocationData->SourceLocation.GetTargetingTransform().GetLocation();
+		FVector TargetLocation = LocationData->TargetLocation.GetTargetingTransform().GetLocation();
 
-	if (Projectile->IsMine())
-	{
-		//NEXTTHINGTODO: 바인딩
+		FRotator SpawnRotation = (TargetLocation - SourceLocation).Rotation();
+
+		FTransform SpawnTransform;
+		SpawnTransform.SetLocation(SourceLocation);
+		SpawnTransform.SetRotation(SpawnRotation.Quaternion());
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = GetAvatarActorFromActorInfo();
+		SpawnParams.Instigator = Cast<APawn>(GetAvatarActorFromActorInfo());
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		AHPVisualProjectile* VisualProjectile = GetWorld()->SpawnActor<AHPVisualProjectile>(
+		VisualProjectileClass,
+		SourceLocation,
+		SpawnRotation,
+		SpawnParams);
+		//NEXTTHINGTODO: 비주얼 용 액터 생성
+
 	}
-	Projectile->SetProjectileEffectParams(MakeProjectileParams());
 	
-	Projectile->FinishSpawning(SpawnTransform);
+	
+	
+	
+	
+
+	
+	
 }
 

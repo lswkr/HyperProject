@@ -39,10 +39,4 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 		// }
 		SpawnedActor->FinishSpawning(SpawnTransform);
 	}
-
-
-
-
-	
-
 }
