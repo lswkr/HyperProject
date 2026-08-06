@@ -5,14 +5,16 @@
 
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/BoxComponent.h"
+#include "Components/LagCompensationComponent.h"
+#include "Controller/HPPlayerController.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
 AHPProjectileBase::AHPProjectileBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
-	bReplicates = true;
+
+	//bReplicates는 ServerSideRewind용과 일반용이 다르므로 BP에서 따로 설정->생성자에서 제외함 
 
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>("BoxComponent");
 	SetRootComponent(BoxComponent);

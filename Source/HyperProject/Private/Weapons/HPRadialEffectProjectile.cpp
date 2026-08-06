@@ -8,8 +8,9 @@
 #include "GenericTeamAgentInterface.h"
 #include "HPGameplayTags.h"
 #include "Engine/OverlapResult.h"
-#include "Kismet/GameplayStatics.h"
 #include "Characters/Player/HPPlayerCharacter.h"
+#include "Components/LagCompensationComponent.h"
+#include "Controller/HPPlayerController.h"
 
 AHPRadialEffectProjectile::AHPRadialEffectProjectile()
 {
@@ -20,6 +21,7 @@ AHPRadialEffectProjectile::AHPRadialEffectProjectile()
 void AHPRadialEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                                   UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	
 	if (bIsMine) //지뢰일 경우 팀이 다르면 폭발
 	{
 		//NEXTTHINGTODO: 폭발할 때 브로드캐스트하는 델리게이트 걸기
@@ -105,7 +107,19 @@ void AHPRadialEffectProjectile::ExplodeProjectile()
 						FGameplayEffectSpecHandle AdditionalEffectSpecHandle = SourceASC->MakeOutgoingSpec(AdditionalEffectClass,1,Context);
 						OverlappedCharacterASC->ApplyGameplayEffectSpecToSelf(*AdditionalEffectSpecHandle.Data);
 					}
-		
+					if (bPushEnemy)
+					{
+						FVector HitCharacterLocation = Pair.Key->GetActorLocation();
+						FVector Origin = GetActorLocation();
+
+						FVector PushDirection = (HitCharacterLocation - Origin).GetSafeNormal();
+
+						if (ACharacter* HitCharacter = Cast<ACharacter>(Pair.Key))
+						{
+							HitCharacter->LaunchCharacter(PushDirection * PushPower, true,true);	
+						}
+						
+					}
 					// 	}
 					// }
 					

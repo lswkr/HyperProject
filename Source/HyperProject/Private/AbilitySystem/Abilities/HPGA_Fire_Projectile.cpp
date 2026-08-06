@@ -25,7 +25,6 @@ void UHPGA_Fire_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Han
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-	UE_LOG(LogTemp,Warning,TEXT("Throwing Activated"));
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 
 	if (!ASC)
@@ -34,7 +33,6 @@ void UHPGA_Fire_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Han
 		return;
 	}
 
-	
 	if (IsForRemoteClient()) //서버에 있는 OwningClient 
 	{
 		//데이터가 먼저 도착했을 경우를 대비해 한 번 call
@@ -89,22 +87,28 @@ void UHPGA_Fire_Projectile::OnInputReleased(float TimeHeld)
 
 bool UHPGA_Fire_Projectile::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle)
 {
-
-	if (!GetAvatarActorFromActorInfo()->Implements<UCombatInterface>())
-		return false;
-
-	UE_LOG(LogTemp,Warning,TEXT("MakeTargetData"));
+	FVector MuzzleLocation = FVector::ZeroVector;
+	FVector EndLocation = FVector::ZeroVector;
+	bool bUseServerSideRewind = false;
+	
+	if (AActor* PlayerActor = GetAvatarActorFromActorInfo())
+	{
+		if (PlayerActor->Implements<UCombatInterface>())
+		{
+			MuzzleLocation = ICombatInterface::Execute_GetWeaponSocketLocation(PlayerActor);
+			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
+			bUseServerSideRewind=ICombatInterface::Execute_IsUsingServerRewind(PlayerActor);
+		}
+		else
+		{
+			return false;
+		}
+	}
 	FVector HitImpactPoint = ICombatInterface::Execute_GetHitImpactPoint(GetAvatarActorFromActorInfo());
-	
-	FGameplayEffectContextHandle ContextHandle =  GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
-	
-
-	//GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(BeamGameplayCueTag, CueParams);
 	
 	FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
 
-	LocationData->TargetLocation.LocationType =
-		EGameplayAbilityTargetingLocationType::LiteralTransform;
+	LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
 
 	LocationData->TargetLocation.LiteralTransform = FTransform(FQuat::Identity, HitImpactPoint);
 
@@ -155,41 +159,101 @@ void UHPGA_Fire_Projectile::FireOneShot()
 
 	if (!ASC)
 		return;
-	UE_LOG(LogTemp,Warning,TEXT("FireOneShot"));
 	
-	FGameplayAbilityTargetDataHandle TargetDataHandle;
-
-	if (!MakeTargetData(TargetDataHandle))
+	FVector ProjectileSpawnPoint = FVector::ZeroVector;
+	FVector EndLocation = FVector::ZeroVector;
+	bool bUseServerSideRewind = false;
+	
+	if (AActor* PlayerActor = GetAvatarActorFromActorInfo())
 	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
-		return;
-	}
-	UE_LOG(LogTemp,Warning,TEXT("AfterMakeTargetData"));
-	bool bShouldReload = false; //윈도우 내부의 값을 저장하기 위한 변수
-
-	{
-		FScopedPredictionWindow PredictionWindow(ASC,true);//현 Prediction Key에 묶기
-
-
-		if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+		if (PlayerActor->Implements<UCombatInterface>())
 		{
-			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+			ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
+			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
+			bUseServerSideRewind=ICombatInterface::Execute_IsUsingServerRewind(PlayerActor);
+		}
+	}
+
+	if (bUseServerSideRewind)
+	{
+		APawn* InstigatorPawn = Cast<APawn>(GetAvatarActorFromActorInfo());
+		UWorld* World = GetWorld();
+
+		if (World && InstigatorPawn && !ProjectileSpawnPoint.IsZero())
+		{
+			
+			FVector ToTarget = (EndLocation - ProjectileSpawnPoint);
+			FRotator TargetRotation = ToTarget.Rotation();
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = GetAvatarActorFromActorInfo();
+			SpawnParams.Instigator = InstigatorPawn;
+
+			AHPProjectileBase* SpawnedProjectile = nullptr;
+
+			SpawnedProjectile = World->SpawnActor<AHPProjectileBase>(SpawnParams);
+			SpawnedProjectile->ShouldUseServerSideRewind(true);
+			SpawnedProjectile->SetTraceStart(ProjectileSpawnPoint);
+			SpawnedProjectile->SetInitialVelocity(SpawnedProjectile->GetInitialSpeed()*SpawnedProjectile->GetActorForwardVector());
+
+			//NEXTTHINGTODO: TargetData보내서 시각화 전용, replicates=true인 시각화전용 투사체 만드는 코드
+
+			FTransform SpawnTransform;
+			SpawnTransform.SetLocation(ProjectileSpawnPoint);
+			SpawnTransform.SetRotation(TargetRotation.Quaternion());
+
+			AHPProjectileBase* ServerSideRewindProjectile = GetWorld()->SpawnActorDeferred<AHPProjectileBase>(
+			ServerSideRewindProjectileClass,
+			SpawnTransform,
+		GetOwningActorFromActorInfo(),
+			InstigatorPawn,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+			if (ServerSideRewindProjectile->IsMine())
+			{
+				//NEXTTHINGTODO: 바인딩
+			}
+			ServerSideRewindProjectile->SetProjectileEffectParams(MakeProjectileParams());
+			ServerSideRewindProjectile->FinishSpawning(SpawnTransform);
+		}
+	}
+
+	else
+	{
+		FGameplayAbilityTargetDataHandle TargetDataHandle;
+
+		if (!MakeTargetData(TargetDataHandle))
+		{
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
-		
-		ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
-		
-		const float CurrentBullet = ASC->GetNumericAttribute(UHPAttributeSet::GetBulletAttribute());
-		bShouldReload = CurrentBullet<=0.f;
-
-		if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
-		{
-			UE_LOG(LogTemp,Warning,TEXT("Call SendTargetDataToServer"));
-			SendTargetDataToServer(TargetDataHandle);
-		}
 	
-	}
+		UE_LOG(LogTemp,Warning,TEXT("AfterMakeTargetData"));
+		
+		{
+			FScopedPredictionWindow PredictionWindow(ASC,true);//현 Prediction Key에 묶기
 
+
+			if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+			{
+				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+				return;
+			}
+		
+			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
+		
+			
+
+			if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
+			{
+				SendTargetDataToServer(TargetDataHandle);
+			}
+	
+		}
+	}
+	const float CurrentBullet = ASC->GetNumericAttribute(UHPAttributeSet::GetBulletAttribute());
+	bool bShouldReload = CurrentBullet<=0.f;
+		
 	if (bShouldReload)
 	{
 		//리로드 어빌리티
@@ -211,7 +275,7 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 	const FGameplayAbilityTargetDataHandle& GameplayAbilityTargetDataHandle, FGameplayTag GameplayTag)
 {
 	const FGameplayAbilityTargetData* Data = GameplayAbilityTargetDataHandle.Get(0);
-	UE_LOG(LogTemp, Warning, TEXT("OnServerReceiveTargetData"));
+
 	if (!Data)
 	{
 		return;
@@ -223,7 +287,6 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 	{
 		ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
 	}
-	UE_LOG(LogTemp, Warning, TEXT("OnServerReceiveTargetData Rotation"));
 	FRotator SpawnRotation = (TargetPoint - ProjectileSpawnPoint).Rotation();
 	
 	FTransform SpawnTransform;

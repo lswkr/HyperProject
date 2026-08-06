@@ -37,6 +37,7 @@ public:
 	
 	FORCEINLINE bool IsMine() const { return bIsMine;}
 	void BindExplosionCallbackFunction(AActor* PlayerCharacter);
+
 	
 protected:
 	//Projectile종류마다 Mesh의 사용여부나 ProjectileMovementComponent사용설정이 달라 Subobject는 각 Projectile의 종류에 따라 붙이기
@@ -110,5 +111,14 @@ private:
 
 	/* IGenericTeam Interface End*/
 
+public:
+	FORCEINLINE void ShouldUseServerSideRewind (bool ShouldUse) {	bServerSideRewind = ShouldUse;	}
+	FORCEINLINE void SetTraceStart(FVector InTraceStart) { TraceStart=InTraceStart; }
+	FORCEINLINE void SetInitialVelocity(FVector InInitialVelocity) { InitialVelocity = InInitialVelocity;}
+	FORCEINLINE float  GetInitialSpeed() const {return InitialSpeed;}
 	
+protected:
+	bool bServerSideRewind = true;
+	FVector TraceStart;
+	FVector InitialVelocity;
 };

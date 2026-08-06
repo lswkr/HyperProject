@@ -140,5 +140,32 @@ struct TStructOpsTypeTraits<FGameplayAbilityTargetData_HPCustom>
 	};
 };
 
+USTRUCT(BlueprintType)
+struct FProjectileApplyEffectParams
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UAbilitySystemComponent* SourceASC = nullptr;
+	
+	UPROPERTY()
+	UAbilitySystemComponent* TargetASC = nullptr;
+
+	UPROPERTY()
+	TSubclassOf<UGameplayEffect> DamageEffectClass = nullptr;
+
+	UPROPERTY()
+	TSubclassOf<UGameplayEffect> AdditionalEffectClass = nullptr;
+
+	UPROPERTY()
+	float Damage = 0.f;
+
+	UPROPERTY()
+	float AdditionalEffectValue = 0.f;
+
+	UPROPERTY()
+	bool bCanHeadShot = false;
+};
+
 /* STRUCT End */
 

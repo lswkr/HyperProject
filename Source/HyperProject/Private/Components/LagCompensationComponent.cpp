@@ -3,8 +3,14 @@
 
 #include "Components/LagCompensationComponent.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayEffect.h"
+#include "HPGameplayTags.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/GameplayStaticsTypes.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -136,6 +142,65 @@ FServerSideRewindResult ULagCompensationComponent::ConfirmHit(const FFramePackag
 	return FServerSideRewindResult{ false, false };
 }
 
+FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FFramePackage& Package,
+	AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart,
+	const FVector_NetQuantize100& InitialVelocity, float HitTime)
+{
+	FFramePackage CurrentFrame;
+	CacheBoxPositions(HitCharacter, CurrentFrame);
+	MoveBoxes(HitCharacter, Package);
+	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::NoCollision);
+
+	// Enable collision for the head first
+	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
+	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//NEXTTHINGTODO: ECC_HitBox만들기
+	HeadBox->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
+
+	FPredictProjectilePathParams PathParams;
+	PathParams.bTraceWithCollision = true;
+	PathParams.MaxSimTime = MaxRecordTime;
+	PathParams.LaunchVelocity = InitialVelocity;
+	PathParams.StartLocation = TraceStart;
+	PathParams.SimFrequency = 15.f;
+	PathParams.ProjectileRadius = 5.f;
+	PathParams.TraceChannel = ECC_Visibility;
+	PathParams.ActorsToIgnore.Add(GetOwner());
+
+	FPredictProjectilePathResult PathResult;
+	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
+
+	if (PathResult.HitResult.bBlockingHit) // we hit the head, return early
+	{
+		ResetHitBoxes(HitCharacter, CurrentFrame);
+		EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+		return FServerSideRewindResult{ true, true };
+	}
+	else // we didn't hit the head; check the rest of the boxes
+	{
+		for (auto& HitBoxPair : HitCharacter->HitCollisionBoxes)
+		{
+			if (HitBoxPair.Value != nullptr)
+			{
+				HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+				HitBoxPair.Value->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
+			}
+		}
+
+		UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
+		if (PathResult.HitResult.bBlockingHit)
+		{
+			ResetHitBoxes(HitCharacter, CurrentFrame);
+			EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+			return FServerSideRewindResult{ true, false };
+		}
+	}
+
+	ResetHitBoxes(HitCharacter, CurrentFrame);
+	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+	return FServerSideRewindResult{ false, false };
+}
+
 void ULagCompensationComponent::CacheBoxPositions(AHPPlayerCharacter* HitCharacter, FFramePackage& OutFramePackage)
 {
 	if (HitCharacter == nullptr) return;
@@ -229,7 +294,7 @@ void ULagCompensationComponent::SaveFramePackage()
 		CaptureFramePackage(ThisFrame);
 		FrameHistory.AddHead(ThisFrame);
 
-		ShowFramePackage(ThisFrame, FColor::Red);
+		//ShowFramePackage(ThisFrame, FColor::Red);
 	}
 }
 
@@ -339,6 +404,65 @@ FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AHPPlayerCha
 FServerSideRewindResult ULagCompensationComponent::ProjectileServerSideRewind(AHPPlayerCharacter* HitCharacter,
 	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
 {
-	return FServerSideRewindResult();
+	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
+	return ProjectileConfirmHit(FrameToCheck, HitCharacter, TraceStart, InitialVelocity, HitTime);
+}
+
+void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHPPlayerCharacter* HitCharacter,
+	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime,
+	const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
+{
+	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity, HitTime);
+
+	bool bHeadShot = Confirm.bHeadShot;
+	bool bHitConfirmed = Confirm.bHitConfirmed;
+	
+	if (HPCharacter && HitCharacter && Confirm.bHitConfirmed)
+	{
+		UAbilitySystemComponent* SourceASC = ProjectileApplyEffectParams.SourceASC;
+		UAbilitySystemComponent* TargetASC = ProjectileApplyEffectParams.TargetASC;
+
+		if (SourceASC && TargetASC)
+		{
+			
+			float Damage = ProjectileApplyEffectParams.Damage;
+			float AdditionalEffectValue  = ProjectileApplyEffectParams.AdditionalEffectValue;
+			bHeadShot &= ProjectileApplyEffectParams.bCanHeadShot;
+			
+			if (ProjectileApplyEffectParams.DamageEffectClass)
+			{
+				float FinalDamage = Damage;
+				FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+				
+				FGameplayEffectSpecHandle DamageSpecHandle = SourceASC->MakeOutgoingSpec(
+					ProjectileApplyEffectParams.DamageEffectClass,
+					1,
+					Context
+					);
+				if (bHeadShot)
+				{
+					FinalDamage*=2;
+				}
+				UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalDamage);
+				TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
+			}
+			if (ProjectileApplyEffectParams.AdditionalEffectClass)
+			{
+				float FinalValue = AdditionalEffectValue;
+				FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+				
+				FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(
+					ProjectileApplyEffectParams.AdditionalEffectClass,
+					1,
+					Context
+					);
+
+				//NEXTHINGTODO: Additional일 경우 SetByCaller태그도 같이 가져오는 방안 일단 생각 해보기
+				UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalValue);
+				TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
+			}
+			
+		}
+	}
 }
 

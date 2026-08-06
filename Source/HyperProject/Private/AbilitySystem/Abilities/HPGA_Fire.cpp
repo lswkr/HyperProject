@@ -104,6 +104,10 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
 			bUseServerSideRewind=ICombatInterface::Execute_IsUsingServerRewind(PlayerActor);
 		}
+		else
+		{
+			return false;
+		}
 	}
 
 	FVector End = MuzzleLocation + (EndLocation - MuzzleLocation)*1.25f;
@@ -118,30 +122,20 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 	
 	if (!HitResult.bBlockingHit)
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Blocking Failed"));
 		HitResult.ImpactPoint = End;
 	}
 	
 	float HitTime = 0.f;
-	UE_LOG(LogTemp, Warning, TEXT("bUseServerSideRewind = %d"), bUseServerSideRewind);
 	
 	if (bUseServerSideRewind)
 	{
-		AHPPlayerCharacter* HPOwnerCharacter = Cast<AHPPlayerCharacter> (GetAvatarActorFromActorInfo());
-		AHPPlayerController* HPOwnerController = Cast<AHPPlayerController>(GetCurrentActorInfo()->PlayerController.Get());
-		if (HPOwnerCharacter)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("HPOwnerCharacter: %s"), *HPOwnerCharacter->GetName());
-		}
-
-		if (HPOwnerController)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("HPOwnerController: %s"), *HPOwnerController->GetName());
-		}
-
-		if (HPOwnerCharacter && HPOwnerController)
+		if (AHPPlayerController* HPOwnerController = Cast<AHPPlayerController>(GetCurrentActorInfo()->PlayerController.Get()))
 		{
 			HitTime = HPOwnerController->GetServerTime() - HPOwnerController->SingleTripTime;
+		}
+		else
+		{
+			return false;
 		}
 	}
 	

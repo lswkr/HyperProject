@@ -36,5 +36,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float ExplosionOuterRadius = 500.f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	bool bPushEnemy = false;
 
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	float PushPower = 300.f;
 };

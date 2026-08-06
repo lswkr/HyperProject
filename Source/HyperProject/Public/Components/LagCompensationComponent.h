@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystem/HPGameplayAbilityTypes.h"
 #include "Components/ActorComponent.h"
 #include "LagCompensationComponent.generated.h"
 
@@ -109,13 +110,15 @@ public:
 	// 	float HitTime
 	// );
 	//
-	// UFUNCTION(Server, Reliable)
-	// void ProjectileServerScoreRequest(
-	// 	AHPPlayerCharacter* HitCharacter,
-	// 	const FVector_NetQuantize& TraceStart,
-	// 	const FVector_NetQuantize100& InitialVelocity,
-	// 	float HitTime
-	// );
+	UFUNCTION(Server, Reliable)
+	void ProjectileServerApplyValidHit(
+		AHPPlayerCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime,
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams
+	);
+	
 	//
 	// UFUNCTION(Server, Reliable)
 	// void ShotgunServerScoreRequest(

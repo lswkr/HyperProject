@@ -41,6 +41,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 	TSubclassOf<AHPProjectileBase> ProjectileClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	TSubclassOf<AHPProjectileBase> ServerSideRewindProjectileClass;
 	// UFUNCTION(BlueprintCallable, Category = "Projectile")
 	// void SpawnProjectile();
 
