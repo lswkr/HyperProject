@@ -76,8 +76,6 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
 
-	// UFUNCTION(Server, Reliable)
-	// FServerSideRewindResult ServerCheckValidHit(AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 	/** 
 	* Hitscan
 	*/
@@ -92,24 +90,10 @@ public:
 		const FVector_NetQuantize100& InitialVelocity,
 		float HitTime
 	);
-
-	// /** 
-	// * Shotgun
-	// */
-	// FShotgunServerSideRewindResult ShotgunServerSideRewind(
-	// 	const TArray<AHPPlayerCharacter*>& HitCharacters,
-	// 	const FVector_NetQuantize& TraceStart,
-	// 	const TArray<FVector_NetQuantize>& HitLocations,
-	// 	float HitTime);
-	//
-	// UFUNCTION(Server, Reliable)
-	// void ServerScoreRequest(
-	// 	AHPPlayerCharacter* HitCharacter,
-	// 	const FVector_NetQuantize& TraceStart,
-	// 	const FVector_NetQuantize& HitLocation,
-	// 	float HitTime
-	// );
-	//
+	FServerSideRewindResult ExplosionServerSideRewind(AHPPlayerCharacter* HitCharacter,
+	                                                  const FVector_NetQuantize& OriginLocation, float InnerRadius,
+	                                                  float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation);
+	
 	UFUNCTION(Server, Reliable)
 	void ProjectileServerApplyValidHit(
 		AHPPlayerCharacter* HitCharacter,
@@ -118,15 +102,15 @@ public:
 		float HitTime,
 		const FProjectileApplyEffectParams& ProjectileApplyEffectParams
 	);
-	
-	//
-	// UFUNCTION(Server, Reliable)
-	// void ShotgunServerScoreRequest(
-	// 	const TArray<AHPPlayerCharacter*>& HitCharacters,
-	// 	const FVector_NetQuantize& TraceStart,
-	// 	const TArray<FVector_NetQuantize>& HitLocations,
-	// 	float HitTime
-	// );
+
+	UFUNCTION(Server, Reliable)
+	void ExplosionServerApplyValidHit(
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime,
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
+		const TArray<AHPPlayerCharacter*>& OverlappedCharacters
+	);
 
 protected:
 	virtual void BeginPlay() override;
@@ -159,15 +143,8 @@ protected:
 		float HitTime
 	);
 
-	/** 
-	* Shotgun
-	*/
-
-	FShotgunServerSideRewindResult ShotgunConfirmHit(
-		const TArray<FFramePackage>& FramePackages,
-		const FVector_NetQuantize& TraceStart,
-		const TArray<FVector_NetQuantize>& HitLocations
-	);
+	FServerSideRewindResult ExplosionConfirmHit(const FFramePackage& Package,
+	AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& OriginLocation, float InnerRadius, float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation);
 
 private:
 

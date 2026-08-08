@@ -31,7 +31,7 @@ void AHPPointEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompone
 				ProjectileApplyEffectParams.AdditionalEffectClass = AdditionalEffectClass;
 				ProjectileApplyEffectParams.Damage = Damage.GetValueAtLevel(1);
 				ProjectileApplyEffectParams.AdditionalEffectValue = AdditionalValue.GetValueAtLevel(1);
-
+				ProjectileApplyEffectParams.bAdditionalEffectForTeam = bIsForMyTeam;
 				OwnerCharacter->GetLagCompensationComponent()->ProjectileServerApplyValidHit(
 					HitCharacter,
 					TraceStart,

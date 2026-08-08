@@ -22,21 +22,158 @@ void AHPRadialEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompon
                                                   UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	
-	if (bIsMine) //지뢰일 경우 팀이 다르면 폭발
+	// if (bIsMine) //지뢰일 경우 팀이 다르면 폭발
+	// {
+	// 	//NEXTTHINGTODO: 폭발할 때 브로드캐스트하는 델리게이트 걸기
+	// 	if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(OtherActor))
+	// 	{
+	// 		if (TeamAgentInterface->GetTeamAttitudeTowards(*this) == ETeamAttitude::Hostile)
+	// 		{
+	// 			Destroyed();
+	// 		}
+	// 	}
+	// }
+	// else
+	// {
+	// 	Destroyed();
+	// }
+
+	APawn* FiringPawn = GetInstigator();
+
+	if (FiringPawn)
 	{
-		//NEXTTHINGTODO: 폭발할 때 브로드캐스트하는 델리게이트 걸기
-		if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(OtherActor))
+		FHPGameplayTags GameplayTags = FHPGameplayTags::Get();
+		UAbilitySystemComponent* SourceASC = ProjectileParams.SourceASC;
+		FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+
+		TArray<AActor*> IgnoreActors;
+		IgnoreActors.Add(this);
+		IgnoreActors.Add(FiringPawn);
+		
+		FCollisionQueryParams SphereParams(SCENE_QUERY_STAT(ApplyRadialDamage),  false, this);
+
+		TArray<FOverlapResult> Overlaps;
+		DrawDebugSphere(GetWorld(),GetActorLocation(), ExplosionOuterRadius, 16, FColor::Green,false, 5, 0,1 );
+		if (UWorld* World = GEngine->GetWorldFromContextObject(this, EGetWorldErrorMode::LogAndReturnNull))
 		{
-			if (TeamAgentInterface->GetTeamAttitudeTowards(*this) == ETeamAttitude::Hostile)
+			World->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity, FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects), FCollisionShape::MakeSphere(ExplosionOuterRadius), SphereParams);
+		}
+
+		TMap<AActor*, float> OverlappedActorsDistanceMap;
+		TSet<AHPPlayerCharacter*> HPCharacterSet; //LagCompensation위해 HPPlayerCharacter로 캐스트 필요
+		
+		for (const FOverlapResult& Overlap : Overlaps)
+		{
+			// AActor* OverlappedActor = Overlap.GetActor();
+			//
+			// if (OverlappedActor && OverlappedActor != this)
+			// {
+			// 	if (UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OverlappedActor))
+			// 	{
+			// 		//float DistFromOrigin = FVector::Dist(GetActorLocation(), OverlappedActor->GetActorLocation());
+			// 		
+			// 		//OverlappedActorsDistanceMap.Add(OverlappedActor,DistFromOrigin - ExplosionInnerRadius);
+			// 	}
+			// }
+			if (AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(Overlap.GetActor()))
 			{
-				Destroyed();
+				HPCharacterSet.Add(HPPlayerCharacter);
 			}
 		}
+	
+		if (HPCharacterSet.Num() > 0)
+		{
+
+			// for (TPair<AActor*, float> Pair : OverlappedActorsDistanceMap)
+			// {
+			// 	//float RangeRate = Pair.Value/(ExplosionOuterRadius-ExplosionInnerRadius);
+			//
+			// 	UAbilitySystemComponent* OverlappedCharacterASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Pair.Key);
+			//
+			// 	if (OverlappedCharacterASC)
+			// 	{
+			// 		// float FinalDamage = Damage.GetValueAtLevel(1);
+			// 		// FinalDamage*= (1-RangeRate); //Damage는 MaxDamage로 해서
+			// 		// FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass,1,Context);
+			// 		// UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, FinalDamage);
+			//
+			// 		//NEXTTHINGTODO: 모두 다 Overlap시킨 뒤 Team인지 아닌지 구별해서 Team인 경우 Additional Effect적용하도록
+			//
+			// 		
+			// 		// if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
+			// 		// {
+			// 		// 	ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitResult->GetActor());
+			// 		// 	if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
+			// 		// 	{
+			// 		//OverlappedCharacterASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
+			// 		
+			// 		// if (AdditionalEffectClass)
+			// 		// {
+			// 		// 	FGameplayEffectSpecHandle AdditionalEffectSpecHandle = SourceASC->MakeOutgoingSpec(AdditionalEffectClass,1,Context);
+			// 		// 	OverlappedCharacterASC->ApplyGameplayEffectSpecToSelf(*AdditionalEffectSpecHandle.Data);
+			// 		// }
+			// 		// if (bPushEnemy)
+			// 		// {
+			// 		// 	FVector HitCharacterLocation = Pair.Key->GetActorLocation();
+			// 		// 	FVector Origin = GetActorLocation();
+			// 		//
+			// 		// 	FVector PushDirection = (HitCharacterLocation - Origin).GetSafeNormal();
+			// 		//
+			// 		// 	if (ACharacter* HitCharacter = Cast<ACharacter>(Pair.Key))
+			// 		// 	{
+			// 		// 		HitCharacter->LaunchCharacter(PushDirection * PushPower, true,true);	
+			// 		// 	}
+			// 		// 	
+			// 		// }
+			// 		// 	}
+			// 		// }
+			// 		
+			// 	}
+			// }
+			if (bServerSideRewind)
+			{
+				AHPPlayerCharacter* OwnerCharacter = Cast<AHPPlayerCharacter>(GetOwner());
+				AHPPlayerController* OwnerController = Cast<AHPPlayerController>(OwnerCharacter->Controller);
+			
+				if (OwnerCharacter && OwnerController)
+				{
+					AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(OtherActor); //처음 맞은 캐릭터
+				
+					if (OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled())
+					{
+				
+						FProjectileApplyEffectParams ProjectileApplyEffectParams;
+				
+						ProjectileApplyEffectParams.SourceASC=SourceASC;
+						ProjectileApplyEffectParams.DamageEffectClass = DamageEffectClass;
+						ProjectileApplyEffectParams.AdditionalEffectClass = AdditionalEffectClass;
+						ProjectileApplyEffectParams.Damage = Damage.GetValueAtLevel(1);
+						ProjectileApplyEffectParams.AdditionalEffectValue = AdditionalValue.GetValueAtLevel(1);
+						ProjectileApplyEffectParams.GenericTeamId = TeamID;
+						ProjectileApplyEffectParams.OuterRadius = ExplosionOuterRadius;
+						ProjectileApplyEffectParams.InnerRadius = ExplosionInnerRadius;
+						ProjectileApplyEffectParams.OriginLocation = GetActorLocation();
+						ProjectileApplyEffectParams.bDistanceFalloff = bDistanceFalloff;
+						ProjectileApplyEffectParams.bCanPush = bCanPush;
+						ProjectileApplyEffectParams.PushPower = PushPower;
+						ProjectileApplyEffectParams.bAdditionalEffectForTeam = bIsForMyTeam;
+						OwnerCharacter->GetLagCompensationComponent()->ExplosionServerApplyValidHit(
+							TraceStart,
+							InitialVelocity,
+							OwnerController->GetServerTime() - OwnerController->SingleTripTime,
+							ProjectileApplyEffectParams,
+							HPCharacterSet.Array()
+						);
+			
+					}
+				}
+		
+			}
+		}
+		
 	}
-	else
-	{
-		Destroyed();
-	}
+	Destroy();
+		
 }
 
 void AHPRadialEffectProjectile::ExplodeProjectile()
@@ -107,7 +244,7 @@ void AHPRadialEffectProjectile::ExplodeProjectile()
 						FGameplayEffectSpecHandle AdditionalEffectSpecHandle = SourceASC->MakeOutgoingSpec(AdditionalEffectClass,1,Context);
 						OverlappedCharacterASC->ApplyGameplayEffectSpecToSelf(*AdditionalEffectSpecHandle.Data);
 					}
-					if (bPushEnemy)
+					if (bCanPush)
 					{
 						FVector HitCharacterLocation = Pair.Key->GetActorLocation();
 						FVector Origin = GetActorLocation();
@@ -132,7 +269,7 @@ void AHPRadialEffectProjectile::ExplodeProjectile()
 
 void AHPRadialEffectProjectile::Destroyed()
 {
-	ExplodeProjectile();
+	//ExplodeProjectile();
 	Super::Destroyed();
 }
 

@@ -78,6 +78,8 @@ protected:
 
 	FProjectileParams ProjectileParams;
 
+	EProjectileEffectType EffectType = EProjectileEffectType::EnemyOnly;
+
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	bool bCanHeadShot = false;
 
@@ -105,7 +107,7 @@ public:
 	
 	virtual FGenericTeamId GetGenericTeamId() const override { return TeamID; }
 	
-private:
+protected:
 	UPROPERTY(Replicated)
 	FGenericTeamId TeamID;
 

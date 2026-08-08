@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "HPGameplayAbilityTypes.generated.h"
 
+class AHPPlayerCharacter;
 class UAbilitySystemComponent;
 
 /* ENUM Begin */
@@ -33,6 +35,17 @@ enum class EProjectileSpawnSocketType : uint8
 	Weapon	UMETA(DisplayName = "Weapon"),
 	Hand	UMETA(DisplayName = "Hand"),
 };
+
+UENUM(BlueprintType)
+enum class EProjectileEffectType : uint8
+{
+	None		UMETA(DisplayName = "None"),
+	EnemyOnly	UMETA(DisplayName = "Enemy Only"),
+	TeamOnly	UMETA(DisplayName = "Team Only"),
+	TeamAndEnemy UMETA(DisplayName = "Team And Enemy")
+};
+
+
 /* ENUM End */
 
 
@@ -146,6 +159,12 @@ struct FProjectileApplyEffectParams
 	GENERATED_BODY()
 
 	UPROPERTY()
+	AHPPlayerCharacter* SourceCharacter = nullptr;
+
+	UPROPERTY()
+	AHPPlayerCharacter* TargetCharacter = nullptr;
+	
+	UPROPERTY()
 	UAbilitySystemComponent* SourceASC = nullptr;
 	
 	UPROPERTY()
@@ -158,6 +177,9 @@ struct FProjectileApplyEffectParams
 	TSubclassOf<UGameplayEffect> AdditionalEffectClass = nullptr;
 
 	UPROPERTY()
+	FVector OriginLocation = FVector::ZeroVector;
+	
+	UPROPERTY()
 	float Damage = 0.f;
 
 	UPROPERTY()
@@ -165,6 +187,30 @@ struct FProjectileApplyEffectParams
 
 	UPROPERTY()
 	bool bCanHeadShot = false;
+
+	UPROPERTY()
+	bool bCanPush = false;
+
+	UPROPERTY()
+	bool bDistanceFalloff = false;
+
+	UPROPERTY()
+	bool bAdditionalEffectForTeam = false;
+
+	UPROPERTY()
+	float PushPower = 0.0f;
+	
+	UPROPERTY()
+	float InnerRadius = 0.0f;
+
+	UPROPERTY()
+	float OuterRadius = 0.0f;
+
+	UPROPERTY()
+	EProjectileEffectType EffectType = EProjectileEffectType::None;
+
+	UPROPERTY()
+	FGenericTeamId GenericTeamId;
 };
 
 /* STRUCT End */

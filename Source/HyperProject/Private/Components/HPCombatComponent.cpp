@@ -107,7 +107,8 @@ void UHPCombatComponent::ReturnHitTargetFromMuzzleSocket(FVector& StartLocation,
 	FVector TraceDirection = (HitTargetImpactPoint-StartLocation).GetSafeNormal();
 	FVector End = HitTargetImpactPoint + TraceDirection*100.f;
 //	FVector End = TraceStart.GetLocation() + (HitTargetImpactPoint - TraceStart.GetLocation());
-	
+
+	//NEXTTHINGTODO: ECC_Visibility 다른 판정으로 조정하기
 	World->LineTraceSingleByChannel(
 		OutHitTarget,
 		TraceStart.GetLocation(),

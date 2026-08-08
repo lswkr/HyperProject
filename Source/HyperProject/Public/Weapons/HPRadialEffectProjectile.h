@@ -21,8 +21,6 @@ class HYPERPROJECT_API AHPRadialEffectProjectile : public AHPProjectileBase
 public:
 	AHPRadialEffectProjectile();
 
-
-
 protected:
 	virtual void OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 	void ExplodeProjectile();
@@ -37,8 +35,13 @@ private:
 	float ExplosionOuterRadius = 500.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	bool bPushEnemy = false;
+	bool bCanPush = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	bool bDistanceFalloff = true;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float PushPower = 300.f;
+
+	
 };

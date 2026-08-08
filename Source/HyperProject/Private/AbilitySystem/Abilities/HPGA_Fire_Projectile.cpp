@@ -8,8 +8,6 @@
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
 #include "AbilitySystem/HPAttributeSet.h"
-#include "Characters/HPCharacterBase.h"
-#include "Components/HPCombatComponent.h"
 #include "Interfaces/CombatInterface.h"
 #include "Weapons/HPProjectileBase.h"
 #include "Weapons/HPVisualProjectile.h"
@@ -55,6 +53,7 @@ void UHPGA_Fire_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Han
 			return;
 		}
 	}
+	
 	UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this,true);
 	ReleaseTask->OnRelease.AddDynamic(this, &UHPGA_Fire_Projectile::OnInputReleased);
 
@@ -70,7 +69,6 @@ void UHPGA_Fire_Projectile::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	bool bReplicateEndAbility, bool bWasCancelled)
 {
-
 	UAbilitySystemComponent* ASC = ActorInfo? ActorInfo->AbilitySystemComponent.Get():nullptr;
 
 	if (ASC && TargetDataDelegateHandle.IsValid())
@@ -104,7 +102,6 @@ bool UHPGA_Fire_Projectile::MakeTargetData(FGameplayAbilityTargetDataHandle& Out
 		}
 	}
 	
-
 	FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
 
 	LocationData->SourceLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
@@ -126,7 +123,7 @@ void UHPGA_Fire_Projectile::SendTargetDataToServer(const FGameplayAbilityTargetD
 	{
 		return;
 	}
-	UE_LOG(LogTemp,Warning,TEXT("SendTargetDataToServer"));
+	
 	ASC->CallServerSetReplicatedTargetData
 	(
 		CurrentSpecHandle,
@@ -191,13 +188,17 @@ void UHPGA_Fire_Projectile::FireOneShot()
 			SpawnParams.Owner = GetAvatarActorFromActorInfo();
 			SpawnParams.Instigator = InstigatorPawn;
 
-			AHPProjectileBase* SpawnedProjectile = nullptr;
+			/*AHPProjectileBase* SpawnedProjectile = nullptr;
 
-			SpawnedProjectile = World->SpawnActor<AHPProjectileBase>(SpawnParams);
-			SpawnedProjectile->ShouldUseServerSideRewind(true);
-			SpawnedProjectile->SetTraceStart(ProjectileSpawnPoint);
-			SpawnedProjectile->SetInitialVelocity(SpawnedProjectile->GetInitialSpeed()*SpawnedProjectile->GetActorForwardVector());
-
+			if (IGenericTeamAgentInterface* TeamAgentInterface= Cast<IGenericTeamAgentInterface>(InstigatorPawn))
+			{
+				SpawnedProjectile = World->SpawnActor<AHPProjectileBase>(SpawnParams);
+				SpawnedProjectile->ShouldUseServerSideRewind(true);
+				SpawnedProjectile->SetTraceStart(ProjectileSpawnPoint);
+				SpawnedProjectile->SetInitialVelocity(SpawnedProjectile->GetInitialSpeed()*SpawnedProjectile->GetActorForwardVector());
+				SpawnedProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());
+			}*/
+			
 			//NEXTTHINGTODO: TargetData보내서 시각화 전용, replicates=true인 시각화전용 투사체 만드는 코드
 
 			FTransform SpawnTransform;
@@ -216,6 +217,14 @@ void UHPGA_Fire_Projectile::FireOneShot()
 				//NEXTTHINGTODO: 바인딩
 			}
 			ServerSideRewindProjectile->SetProjectileEffectParams(MakeProjectileParams());
+			if (IGenericTeamAgentInterface* TeamAgentInterface= Cast<IGenericTeamAgentInterface>(InstigatorPawn))
+			{
+				ServerSideRewindProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());
+				
+			}
+			ServerSideRewindProjectile->SetTraceStart(ProjectileSpawnPoint);
+			ServerSideRewindProjectile->SetInitialVelocity(ServerSideRewindProjectile->GetInitialSpeed()*ServerSideRewindProjectile->GetActorForwardVector());
+				
 			ServerSideRewindProjectile->FinishSpawning(SpawnTransform);
 		}
 		FGameplayAbilityTargetDataHandle TargetDataHandle;
