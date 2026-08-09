@@ -128,7 +128,6 @@ AHPPlayerCharacter::AHPPlayerCharacter()
 
 	for (auto Box : HitCollisionBoxes)
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Box: %s"), *Box.Key.ToString());
 		if (Box.Value)
 		{
 			//NEXTTHINGTODO
@@ -151,6 +150,7 @@ void AHPPlayerCharacter::PawnClientRestart()
 {
 	Super::PawnClientRestart();
 
+	UE_LOG(LogTemp, Warning,TEXT("PawnClientRestart"));
 	APlayerController* OwningPlayerController = GetController<APlayerController>();
 
 	if (OwningPlayerController)
@@ -192,7 +192,6 @@ void AHPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-
 	if (EnhancedInputComponent)
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AHPPlayerCharacter::HandleMove);
@@ -242,6 +241,7 @@ void AHPPlayerCharacter::BombExplosionCallbackFunc()
 {
 	if (bCanSetMine)
 	{
+		//NEXTTHINGTODO 뭔지 확인하기
 		UE_LOG(LogTemp, Warning, TEXT("폭탄 스킬 위젯 바꾸기"));
 	}
 }
@@ -287,7 +287,6 @@ void AHPPlayerCharacter::ClearMeleeHitSet_Implementation()
 {
 	if (!OverlappedActors.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Empty the Set"));
 		OverlappedActors.Empty();
 	}
 }
@@ -389,7 +388,6 @@ void AHPPlayerCharacter::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedCompon
 			EventData.Target = OtherActor;
 			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this,FHPGameplayTags::Get().Event_MeleeHit, EventData);
 			OverlappedActors.Add(OtherActor);
-			UE_LOG(LogTemp, Warning, TEXT("BoxOverlapped! OverlappedCharacter: %s"),*OtherActor->GetName());
 		}
 	}
 	else

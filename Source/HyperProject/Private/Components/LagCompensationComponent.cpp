@@ -77,15 +77,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_Implementation(/*AH
 				{
 					float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
 					FinalDamage *= (1-DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
-					UE_LOG(LogTemp,Warning, TEXT("OriginPushPower: %f"), PushPower);
 					PushPower/=(ProjectileApplyEffectParams.OuterRadius/1000);
-
-					UE_LOG(LogTemp, Warning, TEXT("Distance Ratio: %f/%f"),DistSquared, (ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
-					
-					UE_LOG(LogTemp,Warning, TEXT("FinalDamage: %f"), FinalDamage);
-
-					UE_LOG(LogTemp,Warning, TEXT("PushPower: %f"), PushPower);
-					
 				}
 
 				if (ProjectileApplyEffectParams.DamageEffectClass)
