@@ -13,17 +13,17 @@
 
 void UHPGA_Fire_Aiming::OnInputReleased(float TimeHeld)
 {
-	if (HasAuthority(&CurrentActivationInfo))
+	//if (HasAuthority(&CurrentActivationInfo))
+	//{
+	AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
+	if (HPPlayerCharacter)
 	{
-		AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(GetAvatarActorFromActorInfo());
-		if (HPPlayerCharacter)
+		if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
 		{
-			if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
-			{
-				CombatComponent->ClearAimTimes();
-			}
+			CombatComponent->ClearAimTimes();
 		}
 	}
+	//}
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
@@ -79,7 +79,6 @@ void UHPGA_Fire_Aiming::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		AimStartPlayMontageAndWait->ReadyForActivation();
 	}
 	
-	//NEXTTHINGTODO: 위젯
 	UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this,true);
 	ReleaseTask->OnRelease.AddDynamic(this, &UHPGA_Fire_Aiming::OnInputReleased);
 	ReleaseTask->ReadyForActivation();
@@ -91,7 +90,7 @@ void UHPGA_Fire_Aiming::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 
 	if (HasAuthority(&CurrentActivationInfo))
 	{
-		AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(GetAvatarActorFromActorInfo());
+		AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
 		if (HPPlayerCharacter)
 		{
 			if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
@@ -102,7 +101,7 @@ void UHPGA_Fire_Aiming::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 	}
 	if (IsLocallyControlled())
 	{
-		AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(GetAvatarActorFromActorInfo());
+		AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
 		if (HPPlayerCharacter)
 		{
 			if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
@@ -120,7 +119,7 @@ void UHPGA_Fire_Aiming::CaptureAimStartTime()
 {
 	if (HasAuthority(&CurrentActivationInfo))
 	{
-		AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(GetAvatarActorFromActorInfo());
+		AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
 		if (HPPlayerCharacter)
 		{
 			if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())

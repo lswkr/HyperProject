@@ -22,8 +22,9 @@ public:
 	UDetectComponent();
 
 	UFUNCTION(BlueprintCallable, Category = "Detect Component")
-	void InitComponent(UAbilitySystemComponent* InASC, AHPPlayerController* InPC);
+	void InitComponent(UAbilitySystemComponent* InASC, AHPPlayerController* InPC, AHPPlayerCharacter* InPlayerCharacter);
 
+	UFUNCTION(BlueprintCallable)
 	AActor* GetConfirmedActor() const;
 		
 protected:
@@ -38,7 +39,9 @@ private:
 
 	UPROPERTY()
 	AHPPlayerController* PlayerController;
-	
+
+	UPROPERTY()
+	AHPPlayerCharacter* PlayerCharacter;
 	bool bInitialized = false;
 
 	bool bHasTargets = false;

@@ -211,11 +211,7 @@ void UHPGA_Fire_Projectile::FireOneShot()
 		GetOwningActorFromActorInfo(),
 			InstigatorPawn,
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-
-			if (ServerSideRewindProjectile->IsMine())
-			{
-				//NEXTTHINGTODO: 바인딩
-			}
+			
 			ServerSideRewindProjectile->SetProjectileEffectParams(MakeProjectileParams());
 			if (IGenericTeamAgentInterface* TeamAgentInterface= Cast<IGenericTeamAgentInterface>(InstigatorPawn))
 			{
@@ -341,16 +337,7 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 		SourceLocation,
 		SpawnRotation,
 		SpawnParams);
-		//NEXTTHINGTODO: 비주얼 용 액터 생성
-
+		//NEXTTHINGTODO: 비주얼용 투사체 꾸미기
 	}
-	
-	
-	
-	
-	
-
-	
-	
 }
 

@@ -10,12 +10,28 @@
 /**
  * 
  */
+class AHPPlayerCharacter;
+class AHPPlayerController;
+
 
 UCLASS()
 class HYPERPROJECT_API UHPGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
 
+public:
+	UFUNCTION(BlueprintPure)
+	AHPPlayerCharacter* GetHPPlayerCharacterFromActorInfo();
+
+	UFUNCTION(BlueprintPure)
+	AHPPlayerController* GetHPPlayerControllerFromActorInfo();
+
+
+private:
+	TWeakObjectPtr<AHPPlayerCharacter> CachedPlayerCharacter;
+	TWeakObjectPtr<AHPPlayerController> CachedPlayerController;
+	
 protected:
 	FProjectileParams MakeProjectileParams();
+	
 };

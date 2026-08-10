@@ -84,15 +84,8 @@ void UHPGA_Fire::OnInputReleased(float TimeHeld)
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
-bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const
+bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) 
 {
-	// AHPCharacterBase* HPCharacter = Cast<AHPCharacterBase>(GetAvatarActorFromActorInfo());
-	//
-	// if (!HPCharacter)
-	// {
-	// 	return false;
-	// }
-
 	FVector MuzzleLocation;
 	FVector EndLocation;
 	bool bUseServerSideRewind = false;
@@ -138,11 +131,26 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 			return false;
 		}
 	}
+
+	AHPPlayerCharacter* HPPlayerCharacter= GetHPPlayerCharacterFromActorInfo();
 	
-	//FHitResult HitResult;
+	if (!HPPlayerCharacter)
+	{
+		return false;
+	}
+	
+	UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent();
+	
+		
+	float AimingDuration = 1.f;
 
-	//CombatComponent->ReturnHitTargetFromMuzzleSocket(MuzzleLocation, HitResult);
-
+	if (CombatComponent)
+	{
+		CombatComponent->CaptureAimEndTime();
+		AimingDuration = CombatComponent->GetDurationBetweenAim();
+		CombatComponent->CaptureAimStartTime();
+	}
+	
 	FGameplayCueParameters CueParams;
 	CueParams.Location = MuzzleLocation;
 	HitResult.Location  = MuzzleLocation;
@@ -157,9 +165,12 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 	{
 		return false;
 	}
+	FHPGameplayTags GameplayTags = FHPGameplayTags::Get();
+	bool bIsAiming = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(GameplayTags.State_Combat_Aiming);
+	bool bIsNanoBoosted = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(GameplayTags.State_Combat_NanoBoosted);
 
 	DrawDebugSphere(GetWorld(),HitResult.ImpactPoint, 10,10, FColor::Yellow, false, 10);
-	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_HPCustom(HitResult,MuzzleLocation,HitTime));
+	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_HPCustom(HitResult,MuzzleLocation,HitTime, AimingDuration, bIsNanoBoosted, bIsAiming));
 	return true;
 }
 
@@ -183,8 +194,7 @@ void UHPGA_Fire::FireOneShot()
 		return;
 	}
 
-	bool bShouldReload = false; //윈도우 내부의 값을 저장하기 위한 변수
-
+	bool bShouldReload = false; 
 	{
 		FScopedPredictionWindow PredictionWindow(ASC,true);//현 Prediction Key에 묶기
 
@@ -195,9 +205,6 @@ void UHPGA_Fire::FireOneShot()
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 			return;
 		}
-		
-		const float CurrentBullet = ASC->GetNumericAttribute(UHPAttributeSet::GetBulletAttribute());
-		bShouldReload = CurrentBullet<=0.f;
 
 		if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
 		{
@@ -205,7 +212,9 @@ void UHPGA_Fire::FireOneShot()
 		}
 	
 	}
-
+	const float CurrentBullet = ASC->GetNumericAttribute(UHPAttributeSet::GetBulletAttribute());
+	bShouldReload = CurrentBullet<=0.f;
+	
 	if (bShouldReload)
 	{
 		//리로드 어빌리티
@@ -298,27 +307,11 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 
-	AHPPlayerCharacter* HPCharacter = Cast<AHPPlayerCharacter>(GetAvatarActorFromActorInfo());
-
+	AHPPlayerCharacter* HPCharacter = GetHPPlayerCharacterFromActorInfo();
 	float AimingDuration = 0.f;
 	
-	UHPCombatComponent* CombatComponent = HPCharacter->GetCombatComponent();
-
-	if (CombatComponent)
-	{
-		CombatComponent->CaptureAimEndTime();
-		AimingDuration = CombatComponent->GetDurationBetweenAim();
-		CombatComponent->CaptureAimStartTime();
-	}
-
-	
 	float FinalDamage = Damage.GetValueAtLevel(1);
-
-	if (SourceASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("State.Combat.Aiming"))) && AimingDuration>0.f )
-	{
-		FinalDamage*=FMath::Clamp<float>(1+AimingDuration, 1.f, 3.f);	
-	}
-
+	
 	const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
 	const FGameplayAbilityTargetData_HPCustom* TargetData = nullptr ;
 	
@@ -330,31 +323,46 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 	if (TargetData)
 	{
 		const FHitResult* HitResult = TargetData->GetHitResult();
-		UE_LOG(LogTemp, Warning, TEXT("GetHitTime: %f"), TargetData->GetHitTime());
 		bool bIsHeadShot = false;
-		bool bIsBodyShot = false;
+		bool bIsShotConfirmed = false;
+		bool bIsNanoBoosted = TargetData->GetNanoBoosted();
+		bool bIsAiming = TargetData->IsAiming();
+		
+		
 		if (AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor()))
 		{
 			FServerSideRewindResult SSRResult = HPCharacter->GetLagCompensationComponent()->ServerSideRewind(HitCharacter,TargetData->GetStartPoint(),HitResult->ImpactPoint, TargetData->GetHitTime());
 
 			bIsHeadShot = SSRResult.bHeadShot;
-			bIsBodyShot = SSRResult.bHitConfirmed;
+			bIsShotConfirmed = SSRResult.bHitConfirmed;
 		}
 	
-		if (HitResult)
+		if (bIsShotConfirmed)
 		{
 			if (!HitResult->bBlockingHit)
 				return;
-		
+
+			
 			if (bIsHeadShot)
 			{
 				//NEXTTHINGTODO: 헤드샷 위젯 표시
 				UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
 				FinalDamage*=2;
 			}
+
+			if (bIsAiming)
+			{
+				FinalDamage*=FMath::Clamp<float>(1+AimingDuration, 1.f, 3.f);	
+			}
+
+			if (bIsNanoBoosted)
+			{
+				FinalDamage*=1.5;
+			}
+			
 			FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass,1,Context);
 			UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, FinalDamage);
-	
+			
 			if (!EffectSpecHandle.IsValid())
 			{
 				return;

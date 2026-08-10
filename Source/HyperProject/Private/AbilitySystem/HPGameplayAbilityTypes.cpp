@@ -19,12 +19,24 @@ bool FGameplayAbilityTargetData_HPCustom::NetSerialize(FArchive& Ar, UPackageMap
 		{
 			RepBits |= 1 << 0;
 		}
-		if (HitTime>=0.f)
+		if (HitTime>0.f)
 		{
 			RepBits |= 1 << 1;
 		}
+		if (AimingDuration>0.f)
+		{
+			RepBits |= 1 << 2;
+		}
+		if (bIsNanoBoosted)
+		{
+			RepBits |= 1 << 3;
+		}
+		if (bIsAiming)
+		{
+			RepBits |= 1 << 4;
+		}
 	}
-	Ar.SerializeBits(&RepBits, 2);
+	Ar.SerializeBits(&RepBits, 5);
 
 	if (RepBits & (1 << 0))
 	{
@@ -33,6 +45,18 @@ bool FGameplayAbilityTargetData_HPCustom::NetSerialize(FArchive& Ar, UPackageMap
 	if (RepBits & (1 << 1))
 	{
 		Ar << HitTime;
+	}
+	if (RepBits & (1 << 2))
+	{
+		Ar << AimingDuration;
+	}
+	if (RepBits & (1 << 3))
+	{
+		Ar << bIsNanoBoosted;
+	}
+	if (RepBits & (1 << 4))
+	{
+		Ar << bIsAiming;
 	}
 	
 	bOutSuccess = bParentOutSuccess;

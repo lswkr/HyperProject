@@ -20,10 +20,11 @@ UDetectComponent::UDetectComponent()
 
 }
 
-void UDetectComponent::InitComponent(UAbilitySystemComponent* InASC, AHPPlayerController* InPC)
+void UDetectComponent::InitComponent(UAbilitySystemComponent* InASC, AHPPlayerController* InPC, AHPPlayerCharacter* InPlayerCharacter)
 {
 	AbilitySystemComponent = InASC;
 	PlayerController = InPC;
+	PlayerCharacter= InPlayerCharacter;
 	
 	bInitialized=true;
 }
@@ -53,7 +54,7 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	if (!PlayerController)
 		return;
 	//로컬이어야 한다.
-	if (!PlayerController->IsLocalPlayerController())
+	if (!PlayerCharacter|| !PlayerCharacter->IsLocallyControlled())
 		return;
 
 	if (!DetectAbilityTag.IsValid() || !AbilitySystemComponent->HasMatchingGameplayTag(DetectAbilityTag)) //궁극기 충전이 되면
@@ -64,11 +65,9 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	FVector ViewLocation;
 	FRotator ViewRotation;
 	
-	
 	PlayerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
 	FVector BoxCenter = ViewLocation + ViewRotation.Vector() * (DetectingBoxExtent.X * 0.5f);
-	UE_LOG(LogTemp, Warning, TEXT("ViewLocation : %s "), *ViewLocation.ToString());
 	TArray<FOverlapResult> OverlapResults;
 
 	FCollisionQueryParams BoxParams(SCENE_QUERY_STAT(ApplyRadialDamage),  false, GetOwner());
@@ -91,13 +90,19 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	{
 		ConfirmedActor = nullptr;
 		EraseTargetLockWidget();
-		AbilitySystemComponent->CancelAbilityHandle(AbilitySpecHandle);
+	
+		if (FGameplayAbilitySpec* AbilitySpec =  AbilitySystemComponent->FindAbilitySpecFromHandle(AbilitySpecHandle))
+		{
+			if (!AbilitySpec->IsActive())
+				AbilitySystemComponent->CancelAbilityHandle(AbilitySpecHandle);
+		}
+		
 		return;
 	}
 
 	float MaxLengthSquared = 0.0f;
 	AActor* TargetActor = nullptr;
-
+	UE_LOG(LogTemp, Warning,TEXT("OVERLAPPED"));
 	for (AActor* TargetCandidate:TargetCandidates)
 	{
 		float DistSquared = FVector::DistSquared(ViewLocation, TargetCandidate->GetActorLocation());
@@ -122,7 +127,7 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			ConfirmedActor = TargetActor;
 		}
 	}
-
+	UE_LOG(LogTemp, Warning,TEXT("ACTOR CONFIRMED"));
 	DrawTargetLockWidget();
 	SetTargetLockWidgetPosition();
 	
@@ -132,16 +137,18 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	}
 	else
 	{
-		AbilitySystemComponent->TryActivateAbility(AbilitySpecHandle);
+		if (FGameplayAbilitySpec* AbilitySpec =  AbilitySystemComponent->FindAbilitySpecFromHandle(AbilitySpecHandle))
+		{
+			if (!AbilitySpec->IsActive())
+				AbilitySystemComponent->TryActivateAbility(AbilitySpecHandle);
+		}
 	}
 }
 
 void UDetectComponent::ShowDebugBox(const FVector& InBoxCenter)
 {
-	UE_LOG(LogTemp, Warning,TEXT("ShowDebugBox"));
 	if (!bTurnOnDebugBox)
 		return;
-	UE_LOG(LogTemp, Warning,TEXT("ShowDebugBox Through"));
 	DrawDebugBox(GetWorld(),InBoxCenter, DetectingBoxExtent, FColor::Red, false, 3);
 }
 
@@ -196,5 +203,6 @@ void UDetectComponent::EraseTargetLockWidget()
 	{
 		DrawnTargetLockWidget->RemoveFromParent();
 		TargetLockWidgetSize = FVector2D::ZeroVector;
+		DrawnTargetLockWidget = nullptr;
 	}
 }

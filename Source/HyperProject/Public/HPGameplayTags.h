@@ -18,8 +18,10 @@ public:
 	FGameplayTag Ability_Attack_Murdock_BasicAttack;
 	FGameplayTag Ability_Attack_Murdock_Mine;
 	FGameplayTag Ability_Attack_Belica_BasicAttack;
+	FGameplayTag Ability_Ult_Belica_NanoBoost;
 	FGameplayTag Ability_Attack_MeleeHit;
 	FGameplayTag Ability_HitReact;
+	
 	/*AbilityTag End*/
 
 	/*State Begin*/
@@ -40,6 +42,8 @@ public:
 	FGameplayTag State_Combat_Reloading;
 	FGameplayTag State_Combat_SwappingWeapons;
 
+	FGameplayTag State_Combat_NanoBoosted;
+	
 	FGameplayTag State_Combat_Aiming;
 	
 	FGameplayTag State_Using_Ult;
@@ -61,6 +65,7 @@ public:
 	FGameplayTag Event_ZoomOut;
 	FGameplayTag Event_SpawnProjectile;
 	FGameplayTag Event_ListenFor_Ult_Full;
+	FGameplayTag Event_Belica_NanoBoost;
 	/*Events End*/
 
 	/* ApplicationTag Begin*/

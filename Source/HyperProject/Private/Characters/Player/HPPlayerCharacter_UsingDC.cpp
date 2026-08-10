@@ -19,7 +19,7 @@ void AHPPlayerCharacter_UsingDC::ClientSideInit()
 
 	if (AHPPlayerController* HPPlayerController = Cast<AHPPlayerController>(GetController()))
 	{
-		DetectComponent->InitComponent(HPAbilitySystemComponent, HPPlayerController);
+		DetectComponent->InitComponent(HPAbilitySystemComponent, HPPlayerController, this);
 	}
 	
 }

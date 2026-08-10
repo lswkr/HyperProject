@@ -3,20 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "HPDamageAbility.h"
 #include "AbilitySystem/Abilities/HPGameplayAbility.h"
-#include "HPGA_Fire.generated.h"
+#include "HPGA_SendEventToDetectedActor.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class HYPERPROJECT_API UHPGA_Fire : public UHPDamageAbility
+class HYPERPROJECT_API UHPGA_SendEventToDetectedActor : public UHPGameplayAbility
 {
 	GENERATED_BODY()
 
 public:
-	UHPGA_Fire();
+	UHPGA_SendEventToDetectedActor();
 
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -24,23 +23,13 @@ protected:
 
 private:
 	UFUNCTION()
-	void OnInputReleased(float TimeHeld);
+	void OnInputPressed(float TimeHeld);
 
-	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
-	void FireOneShot();
+	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle, AActor* ConfirmedActor) const;
 	
-	// UPROPERTY()
-	// UGameplayEffect* ApplyEffect; //힐, 딜 등 적용시킬 이펙트 달라 ApplyEffect로 이름 지음
-
 	UPROPERTY(EditDefaultsOnly)
 	UAnimMontage* FireMontage;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* ReloadMontage;
-
-	UPROPERTY(EditDefaultsOnly)
-	float FireInterval = 0.3f;
-
+	
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTag BeamGameplayCueTag;
 	
@@ -48,9 +37,7 @@ private:
 
 	void OnServerReceiveTargetData (const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
 	void SendTargetDataToServer(const FGameplayAbilityTargetDataHandle& TargetDataHandle) const;
-	void ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& TargetDataHandle);
 
-	UFUNCTION()
-	void OnFireDelayFinished();
-	void StartFireDelay();
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag EventTag;
 };

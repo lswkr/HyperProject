@@ -12,7 +12,7 @@
 
 
 class AHPProjectileBase;
-
+class AHPVisualProjectile;
 /*
  * 투사체에 데미지나 힐 같은 이펙트를 넣을 것이기에 DamageGameAbility를 상속하지 않고
  * 기본 어빌리티 클래스 상속
@@ -45,7 +45,7 @@ private:
 	TSubclassOf<AHPProjectileBase> ServerSideRewindProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	TSubclassOf<AActor> VisualProjectileClass;
+	TSubclassOf<AHPVisualProjectile> VisualProjectileClass;
 
 	// UFUNCTION(BlueprintCallable, Category = "Projectile")
 	// void SpawnProjectile();

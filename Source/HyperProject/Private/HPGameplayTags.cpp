@@ -39,6 +39,11 @@ void FHPGameplayTags::InitializeNativeGameplayTags()
 	FString("Tag for Belica's BasicAttack")
 	);
 
+	GameplayTags.Ability_Ult_Belica_NanoBoost = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Ability.Ult.Belica.NanoBoost"),
+	FString("Tag for Belica's NanoBoost")
+	);
+
 	GameplayTags.Ability_Attack_MeleeHit = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Ability.Attack.MeleeHit"),
 	FString("Tag for melee hit ability")
@@ -109,6 +114,11 @@ void FHPGameplayTags::InitializeNativeGameplayTags()
 	FString("State while Aiming")
 	);
 
+	GameplayTags.State_Combat_NanoBoosted = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("State.Combat.NanoBoosted"),
+	FString("NanoBoosted State")
+	);
+	
 	GameplayTags.State_Using_Ult = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("State.Using.Ult"),
 	FString("State while using ult. It is used to blocks ult point.")
@@ -172,6 +182,11 @@ void FHPGameplayTags::InitializeNativeGameplayTags()
     	FName("Event.ListenFor.Ult.Full"),
     	FString("Tag sent to owner when ult gauge be full")
     	);
+
+	GameplayTags.Event_Belica_NanoBoost = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Event.Belica.NanoBoost"),
+	FString("Tag sent to owner when target get melee hit")
+	);
 
 	GameplayTags.ApplicationTag_Normal = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("ApplicationTag.Normal"),

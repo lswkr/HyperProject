@@ -120,8 +120,9 @@ struct FGameplayAbilityTargetData_HPCustom : public FGameplayAbilityTargetData_S
 	GENERATED_BODY()
 	
 	FGameplayAbilityTargetData_HPCustom(){};
-	FGameplayAbilityTargetData_HPCustom(FHitResult InHitResult, FVector InStartPoint, float InHitTime)
-		:FGameplayAbilityTargetData_SingleTargetHit(InHitResult), StartPoint(InStartPoint), HitTime(InHitTime){};
+	FGameplayAbilityTargetData_HPCustom(FHitResult InHitResult, FVector InStartPoint, float InHitTime, float InAimingDuration, bool bInNanoBoosted, bool  bInAiming)
+		:FGameplayAbilityTargetData_SingleTargetHit(InHitResult), StartPoint(InStartPoint), HitTime(InHitTime), AimingDuration(InAimingDuration),
+	bIsNanoBoosted(bInNanoBoosted), bIsAiming(bInAiming){};
 	
 	virtual UScriptStruct* GetScriptStruct() const override
 	{
@@ -132,6 +133,9 @@ struct FGameplayAbilityTargetData_HPCustom : public FGameplayAbilityTargetData_S
 
 	FORCEINLINE FVector GetStartPoint() const { return StartPoint; }
 	FORCEINLINE float GetHitTime() const { return HitTime; }
+	FORCEINLINE float GetAimingDuration() const { return AimingDuration; }
+	FORCEINLINE bool GetNanoBoosted() const { return bIsNanoBoosted; }
+	FORCEINLINE bool IsAiming() const { return bIsAiming; }
 	
 private:
 	UPROPERTY()
@@ -139,6 +143,17 @@ private:
 
 	UPROPERTY()
 	float HitTime = 0.f;
+
+	UPROPERTY()
+	float AimingDuration = 0.f;
+	
+	UPROPERTY()
+	bool bIsNanoBoosted = false;
+
+	UPROPERTY()
+	bool bIsAiming = false;
+
+	
 
 };
 

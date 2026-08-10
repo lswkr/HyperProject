@@ -18,6 +18,9 @@ class HYPERPROJECT_API AHPPlayerCharacter_UsingDC : public AHPPlayerCharacter
 public:
 	AHPPlayerCharacter_UsingDC();
 
+	UFUNCTION(BlueprintCallable, Category = "DetectComponent")
+	UDetectComponent* GetDetectComponent() const { return DetectComponent; }
+
 protected:
 	virtual void ClientSideInit() override;
 

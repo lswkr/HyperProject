@@ -7,6 +7,7 @@
 #include "HPGA_HybridFire.generated.h"
 
 class AHPProjectileBase;
+class AHPVisualProjectile;
 enum class EProjectileSpawnSocketType : uint8;
 /**
  * 
@@ -27,7 +28,7 @@ private:
 	UFUNCTION()
 	void OnInputReleased(float TimeHeld);
 
-	bool MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const;
+	bool MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
 	bool MakeTargetData_Projectile(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const;
 	void FireOneShot();
 	
@@ -69,17 +70,27 @@ private:
 	bool IsAiming() const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
-	TSubclassOf<UGameplayEffect> PrimaryEffect;
+	TSubclassOf<UGameplayEffect> PrimaryEffectClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
-	TSubclassOf<UGameplayEffect> SecondaryEffect;
+	TSubclassOf<UGameplayEffect> SecondaryEffectClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
-	FScalableFloat AppliedValue;
+	FScalableFloat PrimaryValue;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	FScalableFloat SecondaryValue;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	TSubclassOf<AHPProjectileBase> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	EProjectileSpawnSocketType SpawnSocketType = EProjectileSpawnSocketType::Weapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	TSubclassOf<AHPProjectileBase> ServerSideRewindProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	TSubclassOf<AHPVisualProjectile> VisualProjectileClass;
+
 };
