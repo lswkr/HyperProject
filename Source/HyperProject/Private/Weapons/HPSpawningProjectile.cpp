@@ -37,6 +37,7 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 		// 		SpawnedProjectile->BindExplosionCallbackFunction(GetOwner());
 		// 	}
 		// }
+		SpawnedActor->SetGenericTeamId(GetGenericTeamId());
 		SpawnedActor->FinishSpawning(SpawnTransform);
 	}
 }

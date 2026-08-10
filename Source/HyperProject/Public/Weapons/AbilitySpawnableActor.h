@@ -17,6 +17,10 @@ class HYPERPROJECT_API AAbilitySpawnableActor : public AActor, public IGenericTe
 public:
 	AAbilitySpawnableActor();
 
+	virtual FGenericTeamId GetGenericTeamId() const override { return TeamID; }
+	virtual void SetGenericTeamId(const FGenericTeamId& InTeamId) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -27,6 +31,9 @@ protected:
 	UPROPERTY()
 	UAbilitySystemComponent* AbilitySystemComponent;
 
+	UPROPERTY(Replicated)
+	FGenericTeamId TeamID;
 
-	
+
+
 };
