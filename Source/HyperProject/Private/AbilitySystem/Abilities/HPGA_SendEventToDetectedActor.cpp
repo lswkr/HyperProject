@@ -72,11 +72,14 @@ void UHPGA_SendEventToDetectedActor::OnInputPressed(float TimeHeld)
 {
 	if (IsLocallyControlled())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("InputPressed"));
 		if (AHPPlayerCharacter_UsingDC* HPPlayerCharacter = Cast<AHPPlayerCharacter_UsingDC>(GetAvatarActorFromActorInfo()))
 		{
 			
 			if (AActor* ConfirmedActor = HPPlayerCharacter->GetDetectComponent()->GetConfirmedActor())
 			{
+				UE_LOG(LogTemp, Warning, TEXT("ConfirmedActor Exist"));
+				
 				FGameplayAbilityTargetDataHandle TargetDataHandle;
 				if (!MakeTargetData(TargetDataHandle,ConfirmedActor))
 				{
@@ -120,37 +123,44 @@ void UHPGA_SendEventToDetectedActor::OnServerReceiveTargetData(const FGameplayAb
 {
 	const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
 	const FGameplayAbilityTargetData_ActorArray* TargetData = nullptr ;
+
+	UE_LOG(LogTemp, Warning, TEXT("OnServerReceiveTargetData"));
 	
 	if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_ActorArray::StaticStruct())
 	{
 		TargetData = static_cast<const FGameplayAbilityTargetData_ActorArray*>(BaseData);
 	}
-	if (!TargetData || TargetData->TargetActorArray.Num() > 0)
+	if (!TargetData || TargetData->TargetActorArray.Num() <= 0)
 	{
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+		return;
 	}
-		AActor* ConfirmedActor = TargetData->TargetActorArray[0].Get();
 
-		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+	
+	AActor* ConfirmedActor = TargetData->TargetActorArray[0].Get();
+	
+	
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+	{
+		ASC->ConsumeClientReplicatedTargetData(CurrentSpecHandle,CurrentActivationInfo.GetActivationPredictionKey());
+	}
+	if (ConfirmedActor)
+	{
+		if (!CommitAbilityCost(CurrentSpecHandle,CurrentActorInfo,CurrentActivationInfo))
 		{
-			ASC->ConsumeClientReplicatedTargetData(CurrentSpecHandle,CurrentActivationInfo.GetActivationPredictionKey());
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+			return;
 		}
-		if (ConfirmedActor)
-		{
-			if (!CommitAbilityCost(CurrentSpecHandle,CurrentActorInfo,CurrentActivationInfo))
-			{
-				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
-				return;
-			}
-			
-			FGameplayEventData Payload;
-			Payload.EventTag = EventTag;
-			Payload.Instigator = GetAvatarActorFromActorInfo();
-			Payload.Target = ConfirmedActor;
-			
-			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(ConfirmedActor, EventTag, Payload);
-			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-		}
+		UE_LOG(LogTemp, Warning, TEXT("Confirmed Actor: %s"),*ConfirmedActor->GetName());
+		FGameplayEventData Payload;
+		Payload.EventTag = EventTag;
+		Payload.Instigator = GetAvatarActorFromActorInfo();
+		Payload.Target = ConfirmedActor;
+		
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(ConfirmedActor, EventTag, Payload);
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
 }
 
 void UHPGA_SendEventToDetectedActor::SendTargetDataToServer(

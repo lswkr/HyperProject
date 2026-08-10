@@ -163,6 +163,10 @@ void UHPAbilitySystemComponent::GiveInitialAbilities()
 		GiveAbility(FGameplayAbilitySpec(AbilityPair.Value, 1, (int32)AbilityPair.Key, nullptr));
 	}
 
+	for (const TSubclassOf<UGameplayAbility>& Ability : BasicAbilitiesWithNoKey)
+	{
+		GiveAbility(FGameplayAbilitySpec(Ability, 1, -1, nullptr));
+	}
 	if (!HPAbilitySystemDataAsset)
 	{
 		return;
@@ -172,6 +176,10 @@ void UHPAbilitySystemComponent::GiveInitialAbilities()
 	{
 		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(Ability, 1, -1, nullptr);
 		GiveAbilityAndActivateOnce(AbilitySpec); //Passive Ability는 버튼이 필요없어 inputID는 1로 설정
+	}
+	for (const TSubclassOf<UGameplayAbility>& Ability :HPAbilitySystemDataAsset->GetPassiveAbilities_EventTriggered())
+	{
+		GiveAbility(FGameplayAbilitySpec(Ability, 1, -1, nullptr));
 	}
 }
 
@@ -295,4 +303,23 @@ FGameplayTag UHPAbilitySystemComponent::GetAbilityTagFromSpec(const FGameplayAbi
 int32 UHPAbilitySystemComponent::GetInputIDFromSpec(const FGameplayAbilitySpec& AbilitySpec) const
 {
 	return AbilitySpec.InputID;
+}
+FGameplayTag UHPAbilitySystemComponent::GetUltTagForCurrentCharacter()
+{
+	FScopedAbilityListLock ActiveScopeLock(*this);
+
+	for (const FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilitySpec.Ability)
+		{
+			for (FGameplayTag Tag : AbilitySpec.Ability.Get()->AbilityTags)
+			{
+				if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(FName("Ability.Ult"))))
+				{
+					return Tag;
+				}
+			}
+		}
+	}
+	return FGameplayTag();
 }

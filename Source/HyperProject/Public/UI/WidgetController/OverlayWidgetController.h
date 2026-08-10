@@ -13,6 +13,7 @@ class UAbilityInfo;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbilityInfoDelegate, const FHPAbilityInfo&, Info);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE (FUltEndDelegate);
 
 UCLASS(BlueprintType, Blueprintable)
 class HYPERPROJECT_API UOverlayWidgetController : public UHPWidgetController
@@ -46,7 +47,13 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityInfo")
 	FAbilityInfoDelegate AbilityInfoDelegate;
-	
+
+	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityInfo")
+	FAbilityInfoDelegate UltInfoDelegate;
+
+	UPROPERTY(BlueprintAssignable, Category = "GAS|AbilityInfo")
+	FUltEndDelegate UltEndDelegate;
+
 	void BroadcastAbilityInfo();
 
 private:

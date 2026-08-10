@@ -44,6 +44,7 @@ public:
 	void ForEachAbility(const FForEachAbilityDelegate& Delegate);
 
 	FGameplayTag GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec) const;
+	FGameplayTag GetUltTagForCurrentCharacter();
 	int32 GetInputIDFromSpec(const FGameplayAbilitySpec& AbilitySpec) const;
 
 private:
@@ -60,6 +61,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	TMap<EHPAbilityInputID, TSubclassOf<UGameplayAbility>> BasicAbilities;
 
+	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	TArray<TSubclassOf<UGameplayAbility>> BasicAbilitiesWithNoKey;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	UHPAbilitySystemDataAsset* HPAbilitySystemDataAsset;
 

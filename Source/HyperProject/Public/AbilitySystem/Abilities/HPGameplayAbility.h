@@ -33,5 +33,8 @@ private:
 	
 protected:
 	FProjectileParams MakeProjectileParams();
+
+	UPROPERTY(EditDefaultsOnly)
+	bool bIsUlt = false;
 	
 };

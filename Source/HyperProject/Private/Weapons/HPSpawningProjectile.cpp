@@ -95,4 +95,5 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 			}
 		}
 	}
+	Destroy();
 }

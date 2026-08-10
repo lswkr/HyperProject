@@ -239,7 +239,8 @@ void UHPGA_Fire_Projectile::FireOneShot()
 				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 				return;
 			}
-		
+
+			UE_LOG(LogTemp, Warning, TEXT("FIREPROJECTILE COST(Client)"));
 			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
 		
 			
@@ -310,10 +311,21 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 
 	if (!Data)
 	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 		return;
 	}
 	if (Data && Data->GetScriptStruct() == FGameplayAbilityTargetData_LocationInfo::StaticStruct())
 	{
+		if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+		{
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+			return;
+		}
+		FGameplayTagContainer Tags;
+		Tags.AddTag(FHPGameplayTags::Get().State_Ult_Full);
+
+		GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithGrantedTags(Tags);
+		
 		const FGameplayAbilityTargetData_LocationInfo* LocationData =
 			static_cast<const FGameplayAbilityTargetData_LocationInfo*>(Data);
 
@@ -338,5 +350,6 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 		SpawnParams);
 		//NEXTTHINGTODO: 비주얼용 투사체 꾸미기
 	}
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 

@@ -44,6 +44,11 @@ void FHPGameplayTags::InitializeNativeGameplayTags()
 	FString("Tag for Belica's NanoBoost")
 	);
 
+	GameplayTags.Ability_Ult_Murdock_GravitonSurge = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Ability.Ult.Murdock.GravitonSurge"),
+	FString("Tag for Murdock's GravitonSurge")
+	);
+
 	GameplayTags.Ability_Attack_MeleeHit = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Ability.Attack.MeleeHit"),
 	FString("Tag for melee hit ability")

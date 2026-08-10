@@ -19,6 +19,7 @@ public:
 	FGameplayTag Ability_Attack_Murdock_Mine;
 	FGameplayTag Ability_Attack_Belica_BasicAttack;
 	FGameplayTag Ability_Ult_Belica_NanoBoost;
+	FGameplayTag Ability_Ult_Murdock_GravitonSurge;
 	FGameplayTag Ability_Attack_MeleeHit;
 	FGameplayTag Ability_HitReact;
 	

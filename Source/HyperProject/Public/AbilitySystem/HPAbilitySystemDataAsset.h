@@ -22,6 +22,8 @@ public:
 	FORCEINLINE TSubclassOf<UGameplayEffect> GetDeathEffect() const {return DeathEffect;}
 	FORCEINLINE TArray<TSubclassOf<UGameplayEffect>>  GetInitialEffects() const {return InitialEffects;}
 	FORCEINLINE TArray<TSubclassOf<UGameplayAbility>> GetPassiveAbilities() const {return PassiveAbilities;}
+	FORCEINLINE TArray<TSubclassOf<UGameplayAbility>> GetPassiveAbilities_EventTriggered() const {return PassiveAbilities_EventTriggered;}
+	
 	FORCEINLINE UDataTable* GetBaseStatDataTable() const {return BaseStatDataTable;}
 	
 
@@ -37,6 +39,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	TArray<TSubclassOf<UGameplayAbility>> PassiveAbilities;
+
+	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	TArray<TSubclassOf<UGameplayAbility>> PassiveAbilities_EventTriggered;
 
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	UDataTable* BaseStatDataTable;

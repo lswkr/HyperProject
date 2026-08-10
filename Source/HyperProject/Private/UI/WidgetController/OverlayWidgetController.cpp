@@ -3,6 +3,7 @@
 
 #include "UI/WidgetController/OverlayWidgetController.h"
 
+#include "HPGameplayTags.h"
 #include "AbilitySystem/AbilityInfo.h"
 #include "AbilitySystem/HPAbilitySystemComponent.h"
 #include "AbilitySystem/HPAttributeSet.h"
@@ -10,6 +11,21 @@
 
 void UOverlayWidgetController::BindCallbacksToDependencies()
 {
+	AbilitySystemComponent->RegisterGameplayTagEvent(FHPGameplayTags::Get().State_Ult_Full, EGameplayTagEventType::NewOrRemoved).
+	AddLambda([this](const FGameplayTag CallbackTag, int32 NewCount)
+	{
+		if (NewCount > 0)
+		{
+			FGameplayTag UltTag = HPAbilitySystemComponent->GetUltTagForCurrentCharacter();
+			FHPAbilityInfo Info = AbilityInfo->FindAbilityInfoByTag(UltTag);
+			UltInfoDelegate.Broadcast(Info);
+		}
+		else if (NewCount == 0)
+		{
+			UltEndDelegate.Broadcast();
+		}
+	});
+
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(GetHPAttributeSet()->GetHealthAttribute()).
 	AddLambda([this](const FOnAttributeChangeData& Data)
 	{
@@ -43,7 +59,7 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 	{
 		
 		OnBulletChangedDelegate.Broadcast(Data.NewValue - GetHPCombatComponent()->GetClientPendingBullets(Data.NewValue));
-		GetHPCombatComponent()->SetServerBullets(Data.NewValue);
+		//GetHPCombatComponent()->SetServerBullets(Data.NewValue);
 	}
 	);
 	
@@ -53,10 +69,6 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 		OnMaxBulletChangedDelegate.Broadcast(Data.NewValue);
 	}
 	);
-
-	UE_LOG(LogTemp, Warning, TEXT("BindCallbacksToDependencies called, HasAuthority=%d, AbilitiesGiven=%d"),
-		GetHPAbilitySystemComponent()->GetOwner()->HasAuthority(),
-		GetHPAbilitySystemComponent()->AbilitiesGiven);
 	
 	//if (GetHPAbilitySystemComponent()->AbilitiesGiven)
 	//{
@@ -93,8 +105,6 @@ void UOverlayWidgetController::BroadcastAbilityInfo()
 	{
 
 		FHPAbilityInfo Info = AbilityInfo->FindAbilityInfoByTag(GetHPAbilitySystemComponent()->GetAbilityTagFromSpec(AbilitySpec));
-		UE_LOG(LogTemp, Warning, TEXT("AbilityInfoDelegate IsBound: %d"),
-			AbilityInfoDelegate.IsBound());
 
 		AbilityInfoDelegate.Broadcast(Info);
 	});
