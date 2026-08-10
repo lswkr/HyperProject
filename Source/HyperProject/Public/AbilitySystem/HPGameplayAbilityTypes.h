@@ -7,6 +7,7 @@
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "HPGameplayAbilityTypes.generated.h"
 
+class AAbilitySpawnableActor;
 class AHPPlayerCharacter;
 class UAbilitySystemComponent;
 
@@ -226,6 +227,9 @@ struct FProjectileApplyEffectParams
 
 	UPROPERTY()
 	FGenericTeamId GenericTeamId;
+
+	UPROPERTY()
+	TSubclassOf<AAbilitySpawnableActor> SpawnableActorClass;
 };
 
 /* STRUCT End */

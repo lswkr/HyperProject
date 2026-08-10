@@ -11,6 +11,7 @@
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/GameplayStaticsTypes.h"
+#include "Weapons/AbilitySpawnableActor.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -260,11 +261,6 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart,
 	const FVector_NetQuantize100& InitialVelocity, float HitTime)
 {
-	FFramePackage CurrentFrame;
-	CacheBoxPositions(HitCharacter, CurrentFrame);
-	MoveBoxes(HitCharacter, Package);
-	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::NoCollision);
-	
 	FPredictProjectilePathParams PathParams;
 	PathParams.bTraceWithCollision = true;
 	PathParams.MaxSimTime = MaxRecordTime;
@@ -272,19 +268,34 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	PathParams.StartLocation = TraceStart;
 	PathParams.SimFrequency = 15.f;
 	PathParams.ProjectileRadius = 5.f;
-	PathParams.TraceChannel = ECC_Visibility;
+	PathParams.TraceChannel = ECC_Visibility; //땅, 플레이어 모두의 경우를 확인하기 위해
 	PathParams.ActorsToIgnore.Add(GetOwner());
 
 	FPredictProjectilePathResult PathResult;
 	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
 
+	if (!HitCharacter)//캐릭터가 아닌 것에 맞았을 경우
+	{
+		if (PathResult.HitResult.bBlockingHit) 
+		{
+			return FServerSideRewindResult(true,false);
+		}
+		return FServerSideRewindResult(false,false);
+	}
+	
+
+	FFramePackage CurrentFrame;
+	CacheBoxPositions(HitCharacter, CurrentFrame);
+	MoveBoxes(HitCharacter, Package);
+	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::NoCollision);
+	
 	// Enable collision for the head first
 	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	//NEXTTHINGTODO: ECC_HitBox만들기
 	HeadBox->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
 	
-	if (PathResult.HitResult.bBlockingHit) // we hit the head, return early
+	if (PathResult.HitResult.bBlockingHit)
 	{
 		ResetHitBoxes(HitCharacter, CurrentFrame);
 		EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
@@ -315,8 +326,31 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	return FServerSideRewindResult{ false, false };
 }
 
+FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit_ForEveryVisibleThing(
+	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity)
+{
+	FPredictProjectilePathParams PathParams;
+	PathParams.bTraceWithCollision = true;
+	PathParams.MaxSimTime = MaxRecordTime;
+	PathParams.LaunchVelocity = InitialVelocity;
+	PathParams.StartLocation = TraceStart;
+	PathParams.SimFrequency = 15.f;
+	PathParams.ProjectileRadius = 5.f;
+	PathParams.TraceChannel = ECC_Visibility; //땅, 플레이어 모두의 경우를 확인하기 위해
+	PathParams.ActorsToIgnore.Add(GetOwner());
+
+	FPredictProjectilePathResult PathResult;
+	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
+
+	if (PathResult.HitResult.bBlockingHit) 
+	{
+		return FServerSideRewindResult(true,false);
+	}
+	return FServerSideRewindResult(false,false);
+}
+
 FServerSideRewindResult ULagCompensationComponent::ExplosionConfirmHit(const FFramePackage& Package,
-	AHPPlayerCharacter* HitCharacter,const FVector_NetQuantize& OriginLocation, float InnerRadius, float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation)
+                                                                       AHPPlayerCharacter* HitCharacter,const FVector_NetQuantize& OriginLocation, float InnerRadius, float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation)
 {
 	FFramePackage CurrentFrame;
 	CacheBoxPositions(HitCharacter, CurrentFrame);
@@ -601,11 +635,53 @@ FServerSideRewindResult ULagCompensationComponent::ExplosionServerSideRewind(AHP
 	return ExplosionConfirmHit(FrameToCheck, HitCharacter, OriginLocation, InnerRadius,OuterRadius, HitTime, HitLocation);
 }
 
-
-void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHPPlayerCharacter* HitCharacter,
-	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime,
+void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_Implementation(
+	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity,
 	const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
 {
+	FServerSideRewindResult SSRResult = ProjectileConfirmHit_ForEveryVisibleThing(TraceStart,InitialVelocity);
+
+	if (!SSRResult.bHitConfirmed)
+		return;
+
+	if (ProjectileApplyEffectParams.SourceCharacter && ProjectileApplyEffectParams.SpawnableActorClass)
+	{
+		
+		FTransform SpawnTransform;
+		SpawnTransform.SetLocation(ProjectileApplyEffectParams.OriginLocation);
+		SpawnTransform.SetRotation(FRotator::ZeroRotator.Quaternion());
+		
+		AAbilitySpawnableActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AAbilitySpawnableActor>(
+			ProjectileApplyEffectParams.SpawnableActorClass,
+			SpawnTransform,
+			ProjectileApplyEffectParams.SourceCharacter,
+			ProjectileApplyEffectParams.SourceCharacter,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+			);
+		
+		SpawnedActor->SetAbilitySystem(ProjectileApplyEffectParams.SourceASC);
+		// if (AHPProjectileBase* SpawnedProjectile = Cast<AHPProjectileBase>(SpawnedActor))
+		// {
+		// 	
+		// 	SpawnedProjectile->SetProjectileEffectParams(ProjectileParams);
+		// 	if (SpawnedProjectile->IsMine())
+		// 	{
+		// 		SpawnedProjectile->BindExplosionCallbackFunction(GetOwner());
+		// 	}
+		// }
+		SpawnedActor->SetGenericTeamId(ProjectileApplyEffectParams.GenericTeamId);
+		SpawnedActor->FinishSpawning(SpawnTransform);
+	}
+}
+
+
+void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHPPlayerCharacter* HitCharacter,
+                                                                             const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime,
+                                                                             const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
+{
+	if (!HitCharacter)
+		return;
+	
 	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity, HitTime);
 
 	bool bHeadShot = Confirm.bHeadShot;

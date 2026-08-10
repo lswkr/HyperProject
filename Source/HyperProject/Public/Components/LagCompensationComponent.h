@@ -104,6 +104,13 @@ public:
 	);
 
 	UFUNCTION(Server, Reliable)
+	void SpawningProjectileServerApplyValidHit(
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams
+	);
+
+	UFUNCTION(Server, Reliable)
 	void ExplosionServerApplyValidHit(
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity,
@@ -141,6 +148,11 @@ protected:
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity,
 		float HitTime
+	);
+
+	FServerSideRewindResult ProjectileConfirmHit_ForEveryVisibleThing(
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity
 	);
 
 	FServerSideRewindResult ExplosionConfirmHit(const FFramePackage& Package,

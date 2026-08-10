@@ -234,7 +234,6 @@ void UHPGA_Fire_Projectile::FireOneShot()
 		{
 			FScopedPredictionWindow PredictionWindow(ASC,true);//현 Prediction Key에 묶기
 
-
 			if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
 			{
 				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
