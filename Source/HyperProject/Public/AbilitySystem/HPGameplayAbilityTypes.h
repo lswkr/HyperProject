@@ -60,19 +60,19 @@ public:
 	FHPHeroBaseStats();
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> Class;
+	TSubclassOf<AActor> Class = nullptr;
 	
 	UPROPERTY(EditAnywhere)
-	float BaseMaxHealth;
+	float BaseMaxHealth = 0.0f;
 
 	UPROPERTY(EditAnywhere)
-	float BaseMaxUlt;
+	float BaseMaxUlt = 0.0f;
 	
 	UPROPERTY(EditAnywhere)
-	float BaseMoveSpeed;
+	float BaseMoveSpeed = 0.0f;
 
 	UPROPERTY(EditAnywhere)
-	float BaseAttackDamage;
+	float BaseAttackDamage = 0.0f;
 	
 };
 
