@@ -9,6 +9,8 @@
 /**
  * 
  */
+class UPDA_CharacterDefinition;
+
 UCLASS()
 class HYPERPROJECT_API UHPAssetManager : public UAssetManager
 {
@@ -16,7 +18,8 @@ class HYPERPROJECT_API UHPAssetManager : public UAssetManager
 
 public:
 	static UHPAssetManager& Get();
-
+	void  LoadCharacterDefinitions(const FStreamableDelegate& LoadFinishedCallback);
+	bool GetLoadedCharacterDefinitions(TArray<UPDA_CharacterDefinition*>& LoadedCharacterDefinitions) const;
 protected:
 	virtual void StartInitialLoading() override;
 };

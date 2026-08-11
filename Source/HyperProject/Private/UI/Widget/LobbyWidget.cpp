@@ -2,21 +2,51 @@
 
 
 #include "UI/Widget/LobbyWidget.h"
+
+#include "Components/Button.h"
+#include "Components/WidgetSwitcher.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "UI/Widget/TeamSelectionWidget.h"
 #include "Network/HPNetStatics.h"
 #include "Controller/LobbyPlayerController.h"
+#include "HPAssetManager.h"
+#include "Characters/PDA_CharacterDefinition.h"
+#include "Components/TileView.h"
+#include "GameFramework/PlayerStart.h"
 #include "GameMode/HPGameState.h"
+#include "Kismet/GameplayStatics.h"
+#include "PlayerState/HPPlayerState.h"
+#include "UI/Widget/CharacterEntryWidget.h"
+#include "UI/Widget/Character_Display.h"
+#include "UI/Widget/PlayerTeamLayoutWidget.h"
+
 
 void ULobbyWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	ClearAndPopulateTeamSelectionSlots();
-
-	LobbyPlayerController=GetOwningPlayer<ALobbyPlayerController>();
 	ConfigureGameState();
+	LobbyPlayerController=GetOwningPlayer<ALobbyPlayerController>();
+
+	if (LobbyPlayerController)
+	{
+		LobbyPlayerController -> OnSwitchToHeroSelectionDelegate.BindUObject(this, &ULobbyWidget::SwitchToHeroSelection);
+	}
+	
+	StartHeroSelectionButton->SetIsEnabled(false);
+	StartHeroSelectionButton->OnClicked.AddDynamic(this, &ULobbyWidget::StartHeroSelectionButtonClicked);
+
+	StartMatchButton->SetIsEnabled(false);
+	StartMatchButton->OnClicked.AddDynamic(this, &ULobbyWidget::StartMatchButtonClicked);
+	UHPAssetManager::Get().LoadCharacterDefinitions(FStreamableDelegate::CreateUObject(this, &ULobbyWidget::CharacterDefinitionLoaded));
+
+	if (CharacterSelectionTileView)
+	{
+		CharacterSelectionTileView->OnItemSelectionChanged().AddUObject(this,&ULobbyWidget::CharacterSelected);
+	}
+	SpawnCharacterDisplay();
 }
 
 void ULobbyWidget::ClearAndPopulateTeamSelectionSlots()
@@ -80,18 +110,126 @@ void ULobbyWidget::ConfigureGameState()
 
 void ULobbyWidget::UpdatePlayerSelectionDisplay(const TArray<FPlayerSelection>& PlayerSelections)
 {
-	for (UTeamSelectionWidget* SelectionSlot:TeamSelectionSlots)
+	for (UTeamSelectionWidget* SelectionSlot : TeamSelectionSlots)
 	{
-		SelectionSlot -> UpdateSlotInfo("Empty");
+		SelectionSlot -> UpdateSlotInfo("EmptySlot");
 	}
 
+	for (UUserWidget* CharacterEntryAsWidget : CharacterSelectionTileView->GetDisplayedEntryWidgets())
+	{
+		if (UCharacterEntryWidget* CharacterEntryWidget = Cast<UCharacterEntryWidget>(CharacterEntryAsWidget))
+		{
+			CharacterEntryWidget->SetSelected(false);
+		}
+	}
+	
 	for (const FPlayerSelection& PlayerSelection:PlayerSelections)
 	{
 		if (!PlayerSelection.IsValid())
 			continue;
-		
 		TeamSelectionSlots[PlayerSelection.GetPlayerSlot()]->UpdateSlotInfo(PlayerSelection.GetPlayerNickName());
+
+		UCharacterEntryWidget* SelectedEntry = CharacterSelectionTileView->GetEntryWidgetFromItem<UCharacterEntryWidget>(PlayerSelection.GetCharacterDefinition());
+
+		if (SelectedEntry)
+		{
+			SelectedEntry->SetSelected(true);
+		}
+		if (PlayerSelection.IsForPlayer(GetOwningPlayerState()))
+		{
+			UpdateCharacterDisplay(PlayerSelection);
+		}
+	}
+
+	if (HPGameState)
+	{
+		StartHeroSelectionButton->SetIsEnabled(HPGameState->CanStartHeroSelection());
+		StartMatchButton->SetIsEnabled(HPGameState->CanStartMatch());
+	}
+
+	if (PlayerTeamLayoutWidget)
+	{
+		PlayerTeamLayoutWidget->UpdatePlayerSelection(PlayerSelections);
 	}
 }
 
+void ULobbyWidget::StartHeroSelectionButtonClicked()
+{
+	if (LobbyPlayerController)
+	{
+		LobbyPlayerController->Server_StartHeroSelection();
+	}
+}
 
+void ULobbyWidget::SwitchToHeroSelection()
+{
+	MainSwitcher->SetActiveWidget(HeroSelectionRoot);
+}
+
+void ULobbyWidget::CharacterDefinitionLoaded()
+{
+	TArray<UPDA_CharacterDefinition*> LoadedCharacterDefinitions;
+
+	if (UHPAssetManager::Get().GetLoadedCharacterDefinitions(LoadedCharacterDefinitions))
+	{
+		CharacterSelectionTileView->SetListItems(LoadedCharacterDefinitions);
+	}
+}
+
+void ULobbyWidget::CharacterSelected(UObject* SelectedUObject)
+{
+	if (!HPPlayerState)
+	{
+		HPPlayerState = GetOwningPlayerState<AHPPlayerState>();
+	}
+
+	if (!HPPlayerState)
+	{
+		return;
+	}
+
+	if (const UPDA_CharacterDefinition* CharacterDefinition = Cast<UPDA_CharacterDefinition>(SelectedUObject))
+	{
+		HPPlayerState->Server_SetSelectedCharacterDefinition(CharacterDefinition);
+	}
+}
+
+void ULobbyWidget::SpawnCharacterDisplay()
+{
+	if (CharacterDisplay)
+		return;
+	
+	if (!CharacterDisplayClass)
+		return;
+	
+	FTransform CharacterDisplayTransform = FTransform::Identity;
+
+	AActor* PlayerStart = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());
+
+	if (PlayerStart)
+	{
+		CharacterDisplayTransform = PlayerStart->GetActorTransform();
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
+	CharacterDisplay = GetWorld()->SpawnActor<ACharacter_Display>(CharacterDisplayClass, CharacterDisplayTransform, SpawnParams);
+	GetOwningPlayer()->SetViewTarget(CharacterDisplay);
+}
+
+void ULobbyWidget::UpdateCharacterDisplay(const FPlayerSelection& PlayerSelection)
+{
+	if (!PlayerSelection.GetCharacterDefinition())
+		return;
+
+	CharacterDisplay->ConfigureWithCharacterDefinition(PlayerSelection.GetCharacterDefinition());
+}
+
+void ULobbyWidget::StartMatchButtonClicked()
+{
+	if (LobbyPlayerController)
+	{
+		LobbyPlayerController->Server_RequestStartMatch();
+	}
+}

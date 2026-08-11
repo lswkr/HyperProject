@@ -15,8 +15,13 @@ class UWidget;
 class UButton;
 class UUniformGridPanel;
 class UTeamSelectionWidget;
+class UTileView;
 class ALobbyPlayerController;
 class AHPGameState;
+class AHPPlayerState;
+class ACharacter_Display;
+class UPlayerTeamLayoutWidget;
+
 UCLASS()
 class HYPERPROJECT_API ULobbyWidget : public UUserWidget
 {
@@ -46,14 +51,51 @@ private:
 	void ClearAndPopulateTeamSelectionSlots();
 	void SlotSelected(uint8 NewSlotID);
 
+	UPROPERTY(meta = (BindWidget))
+	UWidget* HeroSelectionRoot;
+
+	UPROPERTY(meta = (BindWidget))
+	UTileView* CharacterSelectionTileView;
+
+	UPROPERTY(meta = (BindWidget))
+	UPlayerTeamLayoutWidget* PlayerTeamLayoutWidget;
+
+	UPROPERTY(meta=(BindWidget))
+	UButton* StartMatchButton;
+	
 	UPROPERTY()
 	ALobbyPlayerController* LobbyPlayerController;
 
+	UPROPERTY()
+	AHPPlayerState* HPPlayerState;
+	
 	void ConfigureGameState();
 	FTimerHandle ConfigureGameStateTimerHandle;
 	
 	UPROPERTY()
 	AHPGameState* HPGameState;
 
-	void  UpdatePlayerSelectionDisplay(const TArray<FPlayerSelection>& PlayerSelections);
+	void UpdatePlayerSelectionDisplay(const TArray<FPlayerSelection>& PlayerSelections);
+
+	UFUNCTION()
+	void StartHeroSelectionButtonClicked();
+
+	void SwitchToHeroSelection();
+	void CharacterDefinitionLoaded();
+	
+	void CharacterSelected(UObject* SelectedUObject);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Character Display")
+	TSubclassOf<ACharacter_Display> CharacterDisplayClass;
+
+	UPROPERTY()
+	ACharacter_Display* CharacterDisplay;
+
+	void SpawnCharacterDisplay();
+	void UpdateCharacterDisplay(const FPlayerSelection& PlayerSelection);
+
+	UFUNCTION()
+	void StartMatchButtonClicked();
 };
+
+

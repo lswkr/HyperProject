@@ -4,6 +4,8 @@
 #include "GameMode/HPGameMode.h"
 #include "GameFramework/PlayerStart.h"
 #include "EngineUtils.h"
+#include "PlayerState/HPPlayerState.h"
+
 
 APlayerController* AHPGameMode::SpawnPlayerController(ENetRole InRemoteRole, const FString& Options)
 {
@@ -19,8 +21,47 @@ APlayerController* AHPGameMode::SpawnPlayerController(ENetRole InRemoteRole, con
 	return NewPlayerController;
 }
 
-FGenericTeamId AHPGameMode::GetTeamIDForPlayer(const APlayerController* PlayerController) const
+UClass* AHPGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
 {
+	AHPPlayerState* HPPlayerState = Controller->GetPlayerState<AHPPlayerState>();
+
+	if (HPPlayerState && HPPlayerState->GetSelectedCharacterClass())
+	{
+		return HPPlayerState->GetSelectedCharacterClass();
+	}
+	return BackupPawn;
+}
+
+APawn* AHPGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
+{
+	IGenericTeamAgentInterface* NewPlayerTeamInterface = Cast<IGenericTeamAgentInterface>(NewPlayer);
+
+	FGenericTeamId TeamId = GetTeamIDForPlayer(NewPlayer);
+	if (NewPlayerTeamInterface)
+	{
+		NewPlayerTeamInterface->SetGenericTeamId(TeamId);
+	}
+
+	StartSpot = FindNextStartSpotForTeam(TeamId);
+	NewPlayer->StartSpot = StartSpot;
+	
+	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
+}
+
+void AHPGameMode::StartPlay()
+{
+	Super::StartPlay();
+}
+
+FGenericTeamId AHPGameMode::GetTeamIDForPlayer(const AController* InController) const
+{
+	AHPPlayerState* HPPlayerState = InController->GetPlayerState<AHPPlayerState>();
+
+	if (HPPlayerState && HPPlayerState->GetSelectedCharacterClass())
+	{
+		return HPPlayerState->GetTeamIdBasedOnSlot();
+	}
+	
 	static int PlayerCount = 0;
 	++PlayerCount;
 	return FGenericTeamId(PlayerCount % 2);

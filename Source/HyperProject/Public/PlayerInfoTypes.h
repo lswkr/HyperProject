@@ -7,6 +7,7 @@
 #include "PlayerInfoTypes.generated.h"
 
 class APlayerState;
+class UPDA_CharacterDefinition;
 
 USTRUCT()
 struct FPlayerSelection
@@ -21,7 +22,9 @@ public:
 	FORCEINLINE uint8 GetPlayerSlot() const { return Slot; }
 	FORCEINLINE FUniqueNetIdRepl GetPlayerUniqueId() const { return PlayerUniqueId; }
 	FORCEINLINE FString GetPlayerNickName() const { return PlayerNickName; }
-
+	FORCEINLINE const UPDA_CharacterDefinition* GetCharacterDefinition() const { return CharacterDefinition; }
+	FORCEINLINE void SetCharacterDefinition(const UPDA_CharacterDefinition* NewCharacterDefinition) { CharacterDefinition = NewCharacterDefinition; }
+	
 	bool IsForPlayer(const APlayerState* PlayerState) const;
 	bool IsValid() const;
 	static uint8 GetInvalidSlot();
@@ -34,4 +37,7 @@ private:
 
 	UPROPERTY()
 	FString PlayerNickName;
+
+	UPROPERTY()
+	const UPDA_CharacterDefinition* CharacterDefinition;
 };

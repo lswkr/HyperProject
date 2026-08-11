@@ -5,10 +5,11 @@
 #include "GameFramework/PlayerState.h"
 #include "Network/HPNetStatics.h"
 
-FPlayerSelection::FPlayerSelection():Slot{GetInvalidSlot()}, PlayerUniqueId{FUniqueNetIdRepl::Invalid()}, PlayerNickName{}
+FPlayerSelection::FPlayerSelection():Slot{GetInvalidSlot()}, PlayerUniqueId{FUniqueNetIdRepl::Invalid()},
+PlayerNickName{}, CharacterDefinition{nullptr}
 {}
 
-FPlayerSelection::FPlayerSelection(uint8 InSlot, const APlayerState* InPlayerState):Slot(InSlot)
+FPlayerSelection::FPlayerSelection(uint8 InSlot, const APlayerState* InPlayerState):Slot(InSlot), CharacterDefinition{nullptr}
 {
 	if (InPlayerState)
 	{

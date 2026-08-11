@@ -9,12 +9,27 @@
 /**
  * 
  */
+DECLARE_DELEGATE(FOnSwitchToHeroSelectionDelegate);
+
 UCLASS()
 class HYPERPROJECT_API ALobbyPlayerController : public AMenuPlayerController
 {
 	GENERATED_BODY()
 
 public:
+	ALobbyPlayerController();
+	
+	FOnSwitchToHeroSelectionDelegate OnSwitchToHeroSelectionDelegate;
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_RequestSlotSelectionChange(uint8 NewSlotID);	
+	void Server_RequestSlotSelectionChange(uint8 NewSlotID);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_StartHeroSelection();
+
+	UFUNCTION(Client, Reliable)
+	void Client_StartHeroSelection();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_RequestStartMatch();
+	
 };

@@ -17,12 +17,18 @@ class HYPERPROJECT_API AHPGameMode : public AGameModeBase
 	
 public:
 	virtual APlayerController* SpawnPlayerController(ENetRole InRemoteRole, const FString& Options) override;
-
+	virtual void StartPlay() override;
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
+	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
+	
 private:
-	FGenericTeamId GetTeamIDForPlayer(const APlayerController* PlayerController) const;
+	FGenericTeamId GetTeamIDForPlayer(const AController* InController) const;
 
 	AActor* FindNextStartSpotForTeam(const FGenericTeamId& TeamID) const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Team")
-	TMap<FGenericTeamId, FName> TeamStartSpotTagMap;	
+	TMap<FGenericTeamId, FName> TeamStartSpotTagMap;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Team")
+	TSubclassOf<APawn> BackupPawn;
 };
