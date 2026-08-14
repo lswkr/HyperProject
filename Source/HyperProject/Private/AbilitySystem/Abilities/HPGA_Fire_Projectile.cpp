@@ -307,6 +307,11 @@ void UHPGA_Fire_Projectile::FireOneShot()
 void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 	const FGameplayAbilityTargetDataHandle& GameplayAbilityTargetDataHandle, FGameplayTag GameplayTag)
 {
+	if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
 	const FGameplayAbilityTargetData* Data = GameplayAbilityTargetDataHandle.Get(0);
 
 	if (!Data)

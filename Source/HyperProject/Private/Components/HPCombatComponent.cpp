@@ -73,23 +73,23 @@ void UHPCombatComponent::EquipWeapon(AHPWeaponBase* NewWeapon)
 	AttachActorToCharacterMeshSocket(NewWeapon, RightHandSocketName);
 }
 
-void UHPCombatComponent::AddPendingBullets(int32 AddedBullets)
-{
-	ClientPendingBullets += AddedBullets;
-}
+// void UHPCombatComponent::AddPendingBullets(int32 AddedBullets)
+// {
+// 	ClientPendingBullets += AddedBullets;
+// }
 
-int32 UHPCombatComponent::GetClientPendingBullets(int32 NewServerBullets)
-{
-	int32 DifferenceBetweenDelegate = NewServerBullets - LastServerBullets;
-	ClientPendingBullets -= DifferenceBetweenDelegate;
-
-	return ClientPendingBullets;
-}
-
-void UHPCombatComponent::SetServerBullets(int32 NewBullets)
-{
-	LastServerBullets = NewBullets;
-}
+// int32 UHPCombatComponent::GetClientPendingBullets(int32 NewServerBullets)
+// {
+// 	int32 DifferenceBetweenDelegate = NewServerBullets - LastServerBullets;
+// 	ClientPendingBullets -= DifferenceBetweenDelegate;
+//
+// 	return ClientPendingBullets;
+// }
+//
+// void UHPCombatComponent::SetServerBullets(int32 NewBullets)
+// {
+// 	LastServerBullets = NewBullets;
+// }
 
 //Deprecated Function
 void UHPCombatComponent::ReturnHitTargetFromMuzzleSocket(FVector& StartLocation, FHitResult& OutHitTarget)
@@ -108,7 +108,6 @@ void UHPCombatComponent::ReturnHitTargetFromMuzzleSocket(FVector& StartLocation,
 	FVector End = HitTargetImpactPoint + TraceDirection*100.f;
 //	FVector End = TraceStart.GetLocation() + (HitTargetImpactPoint - TraceStart.GetLocation());
 
-	//NEXTTHINGTODO: ECC_Visibility 다른 판정으로 조정하기
 	World->LineTraceSingleByChannel(
 		OutHitTarget,
 		TraceStart.GetLocation(),

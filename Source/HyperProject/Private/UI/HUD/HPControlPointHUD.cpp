@@ -16,9 +16,29 @@ void AHPControlPointHUD::InitOverlay(APlayerController* PC, UAbilitySystemCompon
 	ControlPointGameState = Cast<AControlPointGameState>(GetWorld()->GetGameState());
 
 	HPPlayerController->BindControlPointGameModeHUD(this);
+	
 	ControlPointOverlayWidget = Cast<UHPControlPointOverlayWidget>(OverlayWidget);
 
-	ControlPointGameState->BindHUD(this);
+	//GameState nullptr방지
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	if (AControlPointGameState* CPGameState =
+		Cast<AControlPointGameState>(World->GetGameState()))
+	{
+		CPGameState->BindHUD(this);
+	}
+	else
+	{
+		World->GameStateSetEvent.AddLambda([this](AGameStateBase* GSBase)
+		{
+			if (AControlPointGameState* CPGameState = Cast<AControlPointGameState>(GSBase))
+			{
+				CPGameState->BindHUD(this);
+			}
+		});
+	}
 }
 
 void AHPControlPointHUD::OnUpdateControlPoint(float MyTeamFightingPercent, float EnemyTeamFightingPercent,

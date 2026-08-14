@@ -28,6 +28,8 @@ AHPProjectileBase::AHPProjectileBase()
 	
 	ProjectileMovement->ProjectileGravityScale = 0.f;
 
+	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
+	BulletMesh->SetupAttachment(GetRootComponent());
 }
 
 void AHPProjectileBase::SetGenericTeamId(const FGenericTeamId& NewTeamID)
@@ -51,12 +53,6 @@ void AHPProjectileBase::BeginPlay()
 		BoxComponent->OnComponentHit.AddDynamic(this, &AHPProjectileBase::OnBoxComponentHit);
 	}
 	
-}
-
-void AHPProjectileBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 void AHPProjectileBase::SetProjectileEffectParams(const FProjectileParams& InProjectileParams)

@@ -58,7 +58,7 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 	AddLambda([this](const FOnAttributeChangeData& Data)
 	{
 		
-		OnBulletChangedDelegate.Broadcast(Data.NewValue - GetHPCombatComponent()->GetClientPendingBullets(Data.NewValue));
+		OnBulletChangedDelegate.Broadcast(Data.NewValue /*- GetHPCombatComponent()->GetClientPendingBullets(Data.NewValue)*/);
 		//GetHPCombatComponent()->SetServerBullets(Data.NewValue);
 	}
 	);

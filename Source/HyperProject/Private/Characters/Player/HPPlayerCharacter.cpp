@@ -19,6 +19,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Components/LagCompensationComponent.h"
 #include "Components/WidgetComponent.h"
+#include "HyperProject/HyperProject.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "Kismet/KismetMathLibrary.h"
@@ -130,10 +131,9 @@ AHPPlayerCharacter::AHPPlayerCharacter()
 	{
 		if (Box.Value)
 		{
-			//NEXTTHINGTODO
-			// Box.Value->SetCollisionObjectType(ECC_HitBox);
-			// Box.Value->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-			// Box.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
+			Box.Value->SetCollisionObjectType(ECC_HitBox);
+			Box.Value->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+			Box.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 			Box.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	}

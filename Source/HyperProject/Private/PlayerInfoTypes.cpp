@@ -36,12 +36,14 @@ bool FPlayerSelection::IsValid() const
 #else
 	if (!PlayerUniqueId.IsValid())
 		return false;
+
 	if (Slot == GetInvalidSlot())
 		return false;
-	return true;
 
 	if (Slot>=UHPNetStatics::GetPlayerCountPerTeam()*2)
 		return false;
+
+	return true;
 #endif
 }
 

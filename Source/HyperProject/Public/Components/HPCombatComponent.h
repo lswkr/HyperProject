@@ -43,11 +43,11 @@ public:
 
 	void EquipWeapon(AHPWeaponBase* NewWeapon);
 
-	UFUNCTION(BlueprintCallable)
-	void AddPendingBullets(int32 AddedBullets);
-	
-	int32 GetClientPendingBullets(int32 NewServerBullets);
-	void SetServerBullets(int32 NewBullets);
+	// UFUNCTION(BlueprintCallable)
+	// void AddPendingBullets(int32 AddedBullets);
+	//
+	// int32 GetClientPendingBullets(int32 NewServerBullets);
+	// void SetServerBullets(int32 NewBullets);
 
 	UFUNCTION(BlueprintCallable)
 	void ReturnHitTargetFromMuzzleSocket(FVector& StartLocation, FHitResult& OutHitTarget);
@@ -93,9 +93,9 @@ private:
 
 	void TraceUnderCrossHair(FHitResult& TraceHitResult) const;
 
-	int32 ClientPendingBullets;
-	int32 LastServerBullets;
-	int32 CurrentServerBullets;
+	// int32 ClientPendingBullets;
+	// int32 LastServerBullets;
+	// int32 CurrentServerBullets;
 
 	/* Aiming Start */
 	float AimStartTime;

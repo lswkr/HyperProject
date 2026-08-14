@@ -29,7 +29,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	virtual void Tick(float DeltaTime) override;
 
 	void SetProjectileEffectParams(const FProjectileParams& InProjectileParams);
 
@@ -38,16 +37,19 @@ public:
 	FORCEINLINE bool IsMine() const { return bIsMine;}
 	void BindExplosionCallbackFunction(AActor* PlayerCharacter);
 
-	
+
 protected:
-	//Projectile종류마다 Mesh의 사용여부나 ProjectileMovementComponent사용설정이 달라 Subobject는 각 Projectile의 종류에 따라 붙이기
+	//Projectile종류마다 ProjectileMovementComponent사용설정이 달라 Subobject는 각 Projectile의 종류에 따라 붙이기
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	UProjectileMovementComponent* ProjectileMovementComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	UStaticMeshComponent* BulletMesh;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float InitialSpeed = 15000.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float GravityScale = 0.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")

@@ -15,6 +15,7 @@
 #include "Components/HPCombatComponent.h"
 #include "Components/LagCompensationComponent.h"
 #include "Controller/HPPlayerController.h"
+#include "HyperProject/HyperProject.h"
 #include "Interfaces/CombatInterface.h"
 #include "Weapons/HPProjectileBase.h"
 #include "Weapons/HPVisualProjectile.h"
@@ -99,6 +100,7 @@ bool UHPGA_HybridFire::MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& 
 	FVector MuzzleLocation;
 	FVector EndLocation;
 	bool bUseServerSideRewind = false;
+	
 	if (AActor* PlayerActor = GetAvatarActorFromActorInfo())
 	{
 		if (PlayerActor->Implements<UCombatInterface>())
@@ -240,12 +242,10 @@ void UHPGA_HybridFire::FireOneShot()
 {
 	if (IsAiming())
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Aiming"));
 		Fire_HitScan();
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Not Aiming"));
 		Fire_Projectile();
 	}
 }
@@ -576,12 +576,20 @@ void UHPGA_HybridFire::OnServerReceiveTargetData_Projectile(const FGameplayAbili
 	{
 		return;
 	}
+
+	if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+	
 	const FGameplayAbilityTargetData* Data = TargetDataHandle.Get(0);
 
 	if (!Data)
 	{
 		return;
 	}
+	
 	if (Data && Data->GetScriptStruct() == FGameplayAbilityTargetData_LocationInfo::StaticStruct())
 	{
 		const FGameplayAbilityTargetData_LocationInfo* LocationData =
