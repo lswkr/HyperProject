@@ -117,7 +117,6 @@ bool UHPGA_Fire_Projectile::MakeTargetData(FGameplayAbilityTargetDataHandle& Out
 
 void UHPGA_Fire_Projectile::SendTargetDataToServer(const FGameplayAbilityTargetDataHandle& TargetDataHandle)
 {
-	
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	if (!ASC)
 	{
@@ -212,7 +211,7 @@ void UHPGA_Fire_Projectile::FireOneShot()
 			InstigatorPawn,
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 			
-			ServerSideRewindProjectile->SetProjectileEffectParams(MakeProjectileParams());
+			ServerSideRewindProjectile->SetProjectileParams(MakeProjectileParams());
 			if (IGenericTeamAgentInterface* TeamAgentInterface= Cast<IGenericTeamAgentInterface>(InstigatorPawn))
 			{
 				ServerSideRewindProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());
@@ -240,11 +239,8 @@ void UHPGA_Fire_Projectile::FireOneShot()
 				return;
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("FIREPROJECTILE COST(Client)"));
 			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
 		
-			
-
 			if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
 			{
 				SendTargetDataToServer(TargetDataHandle);

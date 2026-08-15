@@ -51,7 +51,9 @@ public:
 	UFUNCTION()
 	void UpdateControlPointState(const FHPControlPointData& ControlPointData);
 
-	
+	UFUNCTION()
+	void UpdateCapturedTeamState(bool TeamOneCaptured, bool TeamTwoCaptured);
+
 private:
 	UPROPERTY()
 	class AHPPlayerCharacter* HPPlayerCharacter;

@@ -181,7 +181,7 @@ void UHPGA_SpawnProjectile_AN::SpawnProjectile(FGameplayEventData Payload)
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
 
-	Projectile->SetProjectileEffectParams(MakeProjectileParams());
+	Projectile->SetProjectileParams(MakeProjectileParams());
 	Projectile->FinishSpawning(SpawnTransform);
 }
 

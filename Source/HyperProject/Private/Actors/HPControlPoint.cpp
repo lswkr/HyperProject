@@ -20,6 +20,7 @@ AHPControlPoint::AHPControlPoint()
 	BoxComponent->OnComponentEndOverlap.AddDynamic(this, &AHPControlPoint::OnBoxEndOverlap);
 	BoxComponent->SetBoxExtent(BoxExtent);
 
+	OnControlPointCaptured = FOnControlPointCaptured(false, false);
 	bReplicates = true;
 }
 
@@ -62,17 +63,23 @@ void AHPControlPoint::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION_NOTIFY(AHPControlPoint, ControlPointData, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(AHPControlPoint, OnControlPointCaptured, COND_None, REPNOTIFY_Always);
 }
 
 void AHPControlPoint::OnRep_ControlPointUpdate()
 {
-	
 	ControlPointUpdateDelegate.ExecuteIfBound(ControlPointData);
+}
+
+void AHPControlPoint::OnRep_ControlPointCaptured()
+{
+	ControlPointCapturedDelegate.ExecuteIfBound(OnControlPointCaptured.TeamOneCaptured, OnControlPointCaptured.TeamTwoCaptured);
 }
 
 void AHPControlPoint::BindPlayerControllerToControlPoint(AHPPlayerController* PlayerController)
 {
 	ControlPointUpdateDelegate.BindDynamic(PlayerController, &AHPPlayerController::UpdateControlPointState);
+	ControlPointCapturedDelegate.BindDynamic(PlayerController, &AHPPlayerController::UpdateCapturedTeamState);
 }
 
 void AHPControlPoint::BeginPlay()
@@ -95,10 +102,10 @@ void AHPControlPoint::Tick(float DeltaTime)
 	}
 	DrawDebugBox(GetWorld(), GetActorLocation(), BoxExtent/2, FColor::Green, false);
 
-	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentState != Team1Captured) //팀1 점령중
+	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentState != Team1Captured) //팀1 탈환중(점령 전)
 	{
 		if (CurrentState == EControlPointState::BeforeCapturing || //아무도 거점 점령하지 않았을 때
-			CurrentState == EControlPointState::FightingAtPoint || //한타 끝났을 때
+			CurrentState != EControlPointState::FightingAtPoint || //한타 끝났을 때
 			CurrentState == EControlPointState::Team2Captured)	   //다른 팀이 점령 했으면
 			CurrentState = EControlPointState::Team1Capturing;
 		if (CurrentTeam2FightingGauge >0.f) //남은 팀2게이지 다 버릴 때까지 
@@ -113,7 +120,9 @@ void AHPControlPoint::Tick(float DeltaTime)
 		if (CurrentTeam1FightingGauge >= 100.f)
 		{
 			CurrentState = EControlPointState::Team1Captured;
+			OnControlPointCaptured = FOnControlPointCaptured(true, false);
 			CurrentTeam1FightingGauge = 0.f;
+			CurrentTeam2FightingGauge = 0.f;
 		}
 		
 	}
@@ -122,7 +131,7 @@ void AHPControlPoint::Tick(float DeltaTime)
 	{
 	
 		if (CurrentState == EControlPointState::BeforeCapturing ||
-			CurrentState == EControlPointState::FightingAtPoint ||
+			CurrentState != EControlPointState::FightingAtPoint ||
 			CurrentState == EControlPointState::Team1Captured)
 			CurrentState = EControlPointState::Team2Capturing;
 
@@ -138,7 +147,11 @@ void AHPControlPoint::Tick(float DeltaTime)
 		if (CurrentTeam2FightingGauge >= 100.f)
 		{
 			CurrentState = EControlPointState::Team2Captured;
-			CurrentTeam2FightingGauge=0.f;
+			//캡처 끝나면 0으로 초기화
+			CurrentTeam1FightingGauge = 0.f;
+			CurrentTeam2FightingGauge = 0.f;
+
+			OnControlPointCaptured = FOnControlPointCaptured(false, true);
 		}
 	}
 
@@ -163,6 +176,11 @@ void AHPControlPoint::Tick(float DeltaTime)
 		if (CurrentTeam1CaptureGauge>=100.f)
 		{
 			//NEXTTHINGTODO: 팀1 승리
+			CurrentTeam1CaptureGauge= 0.f;
+			CurrentTeam1FightingGauge = 0.f;
+			CurrentTeam2CaptureGauge=0.f;
+			CurrentTeam2FightingGauge=0.f;
+			OnControlPointCaptured = FOnControlPointCaptured(false, false);
 			BroadcastWhatTeamCompleteControlPoint(ControlPointType, 0);
 		}
 	}
@@ -173,6 +191,11 @@ void AHPControlPoint::Tick(float DeltaTime)
 		if (CurrentTeam2CaptureGauge>=100.f)
 		{
 			//NEXTTHINGTODO: 팀2 승리
+			CurrentTeam1CaptureGauge= 0.f;
+			CurrentTeam1FightingGauge = 0.f;
+			CurrentTeam2CaptureGauge=0.f;
+			CurrentTeam2FightingGauge=0.f;
+			OnControlPointCaptured = FOnControlPointCaptured(false, false);
 			BroadcastWhatTeamCompleteControlPoint(ControlPointType, 1);
 		}
 	}

@@ -12,6 +12,7 @@ AHPVisualProjectile::AHPVisualProjectile()
 	bReplicates = true;
 	
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>("BoxComponent");
+	BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SetRootComponent(BoxComponent);
 	
 	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
@@ -22,7 +23,8 @@ AHPVisualProjectile::AHPVisualProjectile()
 
 void AHPVisualProjectile::BeginPlay()
 {
-	Super::BeginPlay();	
+	Super::BeginPlay();
+	BoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 #if WITH_EDITOR

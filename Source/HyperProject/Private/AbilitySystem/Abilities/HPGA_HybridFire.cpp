@@ -373,7 +373,7 @@ void UHPGA_HybridFire::Fire_Projectile()
 			InstigatorPawn,
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 			
-			ServerSideRewindProjectile->SetProjectileEffectParams(MakeProjectileParams());
+			ServerSideRewindProjectile->SetProjectileParams(MakeProjectileParams());
 			if (IGenericTeamAgentInterface* TeamAgentInterface= Cast<IGenericTeamAgentInterface>(InstigatorPawn))
 			{
 				ServerSideRewindProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());

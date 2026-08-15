@@ -88,8 +88,10 @@ public:
 		AHPPlayerCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity,
+		const FProjectileApplyEffectParams& ProjectileParams,
 		float HitTime
 	);
+	
 	FServerSideRewindResult ExplosionServerSideRewind(AHPPlayerCharacter* HitCharacter,
 	                                                  const FVector_NetQuantize& OriginLocation, float InnerRadius,
 	                                                  float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation);
@@ -99,8 +101,8 @@ public:
 		AHPPlayerCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity,
-		float HitTime,
-		const FProjectileApplyEffectParams& ProjectileApplyEffectParams
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
+		float HitTime
 	);
 
 	UFUNCTION(Server, Reliable)
@@ -111,7 +113,7 @@ public:
 	);
 
 	UFUNCTION(Server, Reliable)
-	void ExplosionServerApplyValidHit(
+	void ExplosionServerApplyValidHit_HitObject(
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity,
 		float HitTime,
@@ -119,6 +121,15 @@ public:
 		const TArray<AHPPlayerCharacter*>& OverlappedCharacters
 	);
 
+	UFUNCTION(Server, Reliable)
+	void ExplosionServerApplyValidHit_HitCharacter(
+		AHPPlayerCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime,
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
+		const TArray<AHPPlayerCharacter*>& OverlappedCharacters
+	);
 protected:
 	virtual void BeginPlay() override;
 	void CaptureFramePackage(FFramePackage& Package);
@@ -137,7 +148,8 @@ protected:
 		const FFramePackage& Package,
 		AHPPlayerCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
-		const FVector_NetQuantize& HitLocation);
+		const FVector_NetQuantize& HitLocation
+		);
 
 	/** 
 	* Projectile
@@ -147,10 +159,11 @@ protected:
 		AHPPlayerCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity,
+		const FProjectileApplyEffectParams& ProjectileParams,
 		float HitTime
 	);
 
-	FServerSideRewindResult ProjectileConfirmHit_ForEveryVisibleThing(
+	FServerSideRewindResult ProjectileConfirmHit_ForObject(
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity
 	);

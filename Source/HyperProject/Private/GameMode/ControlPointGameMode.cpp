@@ -31,6 +31,7 @@ void AControlPointGameMode::StartPlay()
 	ControlPoints.SetNum(3);
 
 	CPGameState = GetGameState<AControlPointGameState>();
+	
 	TArray<AActor*> FoundTargetPoints;
 	
 	UGameplayStatics::GetAllActorsOfClass(
@@ -54,9 +55,11 @@ void AControlPointGameMode::StartPlay()
 		ControlPoint->ControlPointCompletedDelegate.BindDynamic(this, &AControlPointGameMode::OnControlPointCompleted);
 	}
 
-
+	//게임 시작 전 상태 
 	ControlPointGameModeState = EControlPointGameModeState::BeforeGameStart;
 	CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
+
+	//10초 뒤 게임 시작
 	GetWorldTimerManager().SetTimer(
 		BeforeGameStartTimerHandle,
 		this,
@@ -64,6 +67,7 @@ void AControlPointGameMode::StartPlay()
 		10.f,
 		false);
 
+	//게임 시작 전 타이머
 	GetWorldTimerManager().SetTimer(
 	SendTimeLeftTimerHandle,
 	this,
@@ -81,6 +85,8 @@ void AControlPointGameMode::PostLogin(APlayerController* NewPlayer)
 	if (AHPPlayerController* PC = Cast<AHPPlayerController>(NewPlayer))
 	{
 		PC->Client_BindControlPoints(ControlPoints);
+		//들어왔을 때 GameMode의 상태가 어떤지 알 수 없을 수 있으므로
+		CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
 	}
 
 }
@@ -93,19 +99,21 @@ void AControlPointGameMode::BindControllerToControlPoints()
 		{
 			PC->Client_BindControlPoints(ControlPoints);
 		}
-
 	}
-
 }
 
-void AControlPointGameMode::OnGameStart()
+void AControlPointGameMode::OnGameStart() //게임 시작(문 열리는 시점)
 {
 	GetWorldTimerManager().ClearTimer(SendTimeLeftTimerHandle);
 	BindControllerToControlPoints();
 
+	TurnOnWaitToTurnOnNextPointTimerHandle(ActivateNextPointTime);
 	ControlPointGameModeState = EControlPointGameModeState::WaitToTurnOnNextPoint;
-	ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(true);
 	CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
+	
+	// ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(true);
+	// CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
+
 }
 
 void AControlPointGameMode::BeforeGameLeftTimeCheck()
@@ -140,10 +148,7 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 	//NEXTTHINGTODO:
 	//GameState에 값 넣기
 
-	if (ControlPointGameModeState==EControlPointGameModeState::GameComplete)
-	{
-		return;
-	}
+	
 	switch (TeamID)
 	{
 	case 0:
@@ -162,15 +167,19 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 		UE_LOG(LogTemp, Warning,TEXT("Team 1 Win"));
 		ControlPointGameModeState=EControlPointGameModeState::GameComplete;
 		ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
-		return;
 	}
 	else if (CurrentTeam2Point==VictoryPoint)
 	{
 		UE_LOG(LogTemp, Warning,TEXT("Team 2 Win"));
 		ControlPointGameModeState=EControlPointGameModeState::GameComplete;
 		ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
+	}
+	
+	if (ControlPointGameModeState==EControlPointGameModeState::GameComplete)
+	{
 		return;
 	}
+	
 	CurrentTargetPointIdx = static_cast<int32>(CompletedControlPoint);
 	
 	ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
@@ -184,21 +193,19 @@ void AControlPointGameMode::TurnOnWaitToTurnOnNextPointTimerHandle(float TimerTi
 	GetWorldTimerManager().ClearTimer(SendTimeLeftTimerHandle);
 
 	GetWorldTimerManager().SetTimer(
+		WaitToTurnOnNextPointTimerHandle,
+		this,
+		&AControlPointGameMode::AfterWaitingTimeToActivateNextPoint,
+		TimerTime,
+		false);
+	
+	GetWorldTimerManager().SetTimer(
 	SendTimeLeftTimerHandle,
 	this,
 	&AControlPointGameMode::BeforePointActivateLeftTimeCheck,
 	0.25f,
 	true
 	);
-	
-	GetWorldTimerManager().SetTimer(
-		WaitToTurnOnNextPointTimerHandle,
-		this,
-		&AControlPointGameMode::AfterWaitingTimeToActivateNextPoint,
-		TimerTime,
-		false);
-
-	
 }
 
 void AControlPointGameMode::AfterWaitingTimeToActivateNextPoint()
@@ -209,7 +216,6 @@ void AControlPointGameMode::AfterWaitingTimeToActivateNextPoint()
 	ControlPointGameModeState = EControlPointGameModeState::PointActive;
 
 	CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
-	
 }
 
 FGenericTeamId AControlPointGameMode::GetTeamIDForPlayer(const APlayerController* PlayerController) const

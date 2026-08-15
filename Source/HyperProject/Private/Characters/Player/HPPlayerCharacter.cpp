@@ -58,7 +58,7 @@ AHPPlayerCharacter::AHPPlayerCharacter()
 	OverHeadWidgetComponent = CreateDefaultSubobject<UWidgetComponent>("OverHeadWidgetComponent");
 	OverHeadWidgetComponent->SetupAttachment(GetRootComponent());
 
-	
+	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
 	/* Server Side Rewind*/
 	LagCompensationComponent = CreateDefaultSubobject<ULagCompensationComponent>("LagCompensationComponent");
 	
@@ -340,7 +340,7 @@ void AHPPlayerCharacter::HandleCrouch(const FInputActionValue& InputActionValue)
 	if (InputValue)
 	{
 		if (!bIsCrouched)
-		{
+		{	
 			Crouch();
 		}
 	}
@@ -451,10 +451,15 @@ void AHPPlayerCharacter::ClientSideInit()
 
 }
 
+void AHPPlayerCharacter::Respawn()
+{
+}
+
 void AHPPlayerCharacter::Death()
 {
 	DamageContributionComponent->SpreadKillLogs(HPAttributeSet->GetMaxHealth());
 }
+
 
 void AHPPlayerCharacter::ToggleMeleeHitBox_Implementation(bool TurnOn)
 {
@@ -482,7 +487,6 @@ void AHPPlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 	
 	DOREPLIFETIME(AHPPlayerCharacter, TeamID);
 }
-
 
 void AHPPlayerCharacter::TurnInPlace(float DeltaSeconds)
 {

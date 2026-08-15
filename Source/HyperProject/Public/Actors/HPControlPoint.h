@@ -12,6 +12,19 @@
 class UBoxComponent;
 class AHPPlayerController;
 
+USTRUCT(BlueprintType)
+struct FOnControlPointCaptured
+{
+	GENERATED_BODY()
+	
+	FOnControlPointCaptured():TeamOneCaptured(false), TeamTwoCaptured(false) {}
+	FOnControlPointCaptured(bool T1Captured, bool T2Captured):TeamOneCaptured(T1Captured), TeamTwoCaptured(T2Captured){}
+	UPROPERTY()
+	bool TeamOneCaptured;
+	UPROPERTY()
+	bool TeamTwoCaptured;
+};
+
 enum EControlPointState
 {
 	Team1Capturing,
@@ -32,7 +45,7 @@ enum class EControlPointType : uint8
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FOnControlPointUpdateDelegate, const FHPControlPointData&, ControlPointData);
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnControlPointCompletedDelegate, EControlPointType, ControlPointType, int32, CompleteTeamID);
-
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnControlPointCapturedDelegate, bool, TeamOne, bool, TeamTwo);
 
 UCLASS()
 class HYPERPROJECT_API AHPControlPoint : public AActor
@@ -53,12 +66,16 @@ public:
 	UFUNCTION()
 	void OnRep_ControlPointUpdate();
 
+	UFUNCTION()
+	void OnRep_ControlPointCaptured();
+	
 	void BindPlayerControllerToControlPoint(AHPPlayerController* PlayerController);
 
 	FORCEINLINE void SetControlPointState(EControlPointType InControlPointType) {ControlPointType = InControlPointType;}
 	FORCEINLINE EControlPointType GetControlPointType() const {return ControlPointType;}
 	FOnControlPointCompletedDelegate ControlPointCompletedDelegate;
-
+	FOnControlPointCapturedDelegate ControlPointCapturedDelegate;
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -86,6 +103,9 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_ControlPointUpdate)
 	FHPControlPointData ControlPointData;
 
+	UPROPERTY(ReplicatedUsing = OnRep_ControlPointCaptured)
+	FOnControlPointCaptured OnControlPointCaptured;
+	
 	FOnControlPointUpdateDelegate ControlPointUpdateDelegate;
 
 	UPROPERTY(EditAnywhere)

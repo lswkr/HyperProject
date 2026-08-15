@@ -10,6 +10,12 @@
 #include "Weapons/AbilitySpawnableActor.h"
 #include "Weapons/HPWeaponBase.h"
 
+void AHPSpawningProjectile::MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams)
+{
+	Super::MakeProjectileEffectParams(ProjectileApplyEffectParams);
+	ProjectileApplyEffectParams.SpawnableActorClass = SpawnedActorClass;
+}
+
 void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                               UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {

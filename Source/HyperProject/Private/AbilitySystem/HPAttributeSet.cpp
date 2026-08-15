@@ -74,10 +74,10 @@ void UHPAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModC
 		HandleIncomingDamage(Props);
 	}
 
-	// if (Data.EvaluatedData.Attribute == GetIncomingUltAttribute())
-	// {
-		
-	//}
+	if (Data.EvaluatedData.Attribute == GetIncomingHealAttribute())
+	{
+		HandleIncomingHeal(Props);
+	}
 }
 
 
@@ -157,7 +157,7 @@ void UHPAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 	const float LocalIncomingDamage = GetIncomingDamage();
 	SetIncomingDamage(0.f);
 	
-	if (FMath::Abs(LocalIncomingDamage) > 0.f) //힐도 궁극기에 영향 주기 위해 절댓값
+	if (LocalIncomingDamage > 0.f) //힐도 궁극기에 영향 주기 위해 절댓값
 	{
 		const float NewHealth = GetHealth() - LocalIncomingDamage;
 		const float NewUltPoint = GetHealth()>LocalIncomingDamage ? LocalIncomingDamage : GetHealth();
@@ -200,6 +200,45 @@ void UHPAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 	}
 }
 
+void UHPAttributeSet::HandleIncomingHeal(const FEffectProperties& Props)
+{
+	const float LocalIncomingHeal = GetIncomingHeal();
+	SetIncomingHeal(0.f);
+	
+	if (LocalIncomingHeal > 0.f) //힐도 궁극기에 영향 주기 위해 절댓값
+	{
+		const float NewHealth = GetHealth() + LocalIncomingHeal;
+		const float NewUltPoint = GetHealth()>LocalIncomingHeal ? LocalIncomingHeal : GetHealth();
+		
+		SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
+		SendUltEvent(Props, NewUltPoint);
+		
+		//NEXTTHINGTODO: ASC의 상태에 따라(궁극기 중에는 안 차도록)
+
+		
+			// if (Props.TargetCharacter->Implements<UCombatInterface>() && !ICombatInterface::Execute_IsBeingShocked(Props.TargetCharacter))
+			// {
+			// 	FGameplayTagContainer TagContainer;
+			// 	TagContainer.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
+			// 	Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+			// }
+			//
+			// const FVector& KnockbackForce = UAuraAbilitySystemLibrary::GetKnockbackForce(Props.EffectContextHandle);
+			// if (!KnockbackForce.IsNearlyZero(1.f))
+			// {
+			// 	Props.TargetCharacter->LaunchCharacter(KnockbackForce, true, true);
+			// }
+		
+			
+		// const bool bBlock = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContextHandle);
+		// const bool bCriticalHit = UAuraAbilitySystemLibrary::IsCriticalHit(Props.EffectContextHandle);
+		// ShowFloatingText(Props, LocalIncomingDamage, bBlock, bCriticalHit);
+		// if (UAuraAbilitySystemLibrary::IsSuccessfulDebuff(Props.EffectContextHandle))
+		// {
+		// 	Debuff(Props);
+		// }
+	}
+}
 void UHPAttributeSet::HandleUlt(const FEffectProperties& Props)
 {
 	SetUlt(FMath::Clamp(GetUlt(), 0.f, GetMaxUlt()));

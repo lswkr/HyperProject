@@ -22,7 +22,10 @@ public:
 	void FloatTimeRemaining(int32 RemainingTime);
 	
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateProgressBar(float TeamOneFightingPercent, float TeamTwoFightingPercent, float TeamOneCapturingPercent, float TeamTwoCapturingPercent);
+	void UpdateTeamFightingProgressBar(float MyTeamFightingPercent, float EnemyTeamFightingPercent);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateTeamCapturingProgressBar(float MyTeamCapturingPercent, float EnemyTeamCapturingPercent);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateTeamCompletePoint(int32 MyTeamCompleteCount, int32 EnemyTeamCompleteCount);
@@ -30,4 +33,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateControlPointGameModeState(EControlPointGameModeState CurrentControlPointGameModeState);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateControlPointCaptured(bool MyTeamCaptured, bool EnemyTeamCaptured);
 };

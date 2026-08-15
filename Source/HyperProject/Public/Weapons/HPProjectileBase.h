@@ -28,79 +28,93 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-public:
-
-	void SetProjectileEffectParams(const FProjectileParams& InProjectileParams);
-
-	FORCEINLINE bool CanHeadShot() const { return bCanHeadShot; }
-	
-	FORCEINLINE bool IsMine() const { return bIsMine;}
-	void BindExplosionCallbackFunction(AActor* PlayerCharacter);
-
-
 protected:
-	//Projectile종류마다 ProjectileMovementComponent사용설정이 달라 Subobject는 각 Projectile의 종류에 따라 붙이기
-	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	UProjectileMovementComponent* ProjectileMovementComponent;
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+	
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	UStaticMeshComponent* BulletMesh;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	float InitialSpeed = 15000.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	float GravityScale = 0.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	UBoxComponent* BoxComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	UStaticMeshComponent* ProjectileMesh;
+	FVector BoxExtent;
+
+	//ProjectileMovement 추적 시, 판정 구의 반경을 가로길이 또는 세로길이로 쓰도록
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	float FrontSideWidth;
+	
+	UFUNCTION()
+	virtual void OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	FTimerHandle DestroyTimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float DestroyTime = 3.f;
 
-	UFUNCTION()
-	virtual void OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	EEffectApplyTargetPolicy EffectApplyTargetPolicy = EEffectApplyTargetPolicy::EnemyOnly;
+	/* Effect Begin*/
+public:
+	void SetProjectileParams(const FProjectileParams& InProjectileParams);
+
+	FORCEINLINE bool CanHeadShot() const { return bCanHeadShot; }
+
+	virtual void MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams);
+	//FORCEINLINE bool IsMine() const { return bIsMine;}
+	//void BindExplosionCallbackFunction(AActor* PlayerCharacter);
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	TSubclassOf<UGameplayEffect> EnemyEffectClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	TSubclassOf<UGameplayEffect> DamageEffectClass;
+	TSubclassOf<UGameplayEffect> TeamEffectClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	TSubclassOf<UGameplayEffect> AdditionalEffectClass;
+	TArray<TSubclassOf<UGameplayEffect>> AdditionalEnemyEffectClasses;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	FScalableFloat Damage;
+	TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	FScalableFloat AdditionalValue;
+	FScalableFloat EnemyEffectValue;
 
-	FProjectileParams ProjectileParams;
-
-	EProjectileEffectType EffectType = EProjectileEffectType::EnemyOnly;
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	FScalableFloat TeamEffectValue;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	bool bCanHeadShot = false;
 
-	#if WITH_EDITOR
-		virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	#endif
+	// UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	// bool bIsMine = false;
+
+	// FOnMineExplodeDelegate OnMineExplodeDelegate;
+	//
+	FProjectileParams ProjectileParams;
+
+	EEffectApplyTargetPolicy EffectType = EEffectApplyTargetPolicy::EnemyOnly;
+	/* Effect End*/
+
+	
 		
-	UPROPERTY(VisibleDefaultsOnly)
+
+	/* Movement Begin*/
+	
+protected:
+	//Projectile종류마다 ProjectileMovementComponent사용설정이 달라 Subobject는 각 Projectile의 종류에 따라 붙이기
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	UProjectileMovementComponent* ProjectileMovement;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	bool bIsForMyTeam = false;
-
-	
+	float InitialSpeed = 15000.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
-	bool bIsMine = false;
-
-	FOnMineExplodeDelegate OnMineExplodeDelegate;
+	float GravityScale = 0.f;
+	/* Movement End*/
 
 	/* IGenericTeam Interface Begin*/
 

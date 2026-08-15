@@ -60,6 +60,7 @@ public:
 	
 	virtual void ClientSideInit() override; //InitOverlay용
 
+	void Respawn();
 	void Death();
 
 	virtual void ToggleMeleeHitBox_Implementation(bool TurnOn) override;
@@ -212,11 +213,11 @@ private:
 	
 	
 	/*Rotation and TurnInPlace*/
+	bool bIsCrouching;
 	void AimOffset(float DeltaSeconds);
 	float AO_Yaw;
 	float AO_Pitch;
 	float InterpAO_Yaw;
-	bool bIsCrouching;
 	FRotator StartingAimRotation;
 	float TimeSinceLastMovementReplication;
 	bool bRotateRootBone;

@@ -20,125 +20,295 @@ ULagCompensationComponent::ULagCompensationComponent()
 }
 
 
-void ULagCompensationComponent::ExplosionServerApplyValidHit_Implementation(/*AHPPlayerCharacter* HitCharacter,*/
+void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implementation(AHPPlayerCharacter* HitCharacter,
 	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime,
 	const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
 	const TArray<AHPPlayerCharacter*>& OverlappedCharacters)
 {
-	// FServerSideRewindResult Confirm = ExplosionServerSideRewind(/*HitCharacter,*/ TraceStart, InitialVelocity, HitTime);
+	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity,ProjectileApplyEffectParams, HitTime);
 
-	bool bHitConfirmed = false;
-	/* NEXTTHINGTODO: 잘작동되면 함수로 묶기*/
-	FPredictProjectilePathParams PathParams;
-	PathParams.bTraceWithCollision = true;
-	PathParams.MaxSimTime = MaxRecordTime;
-	PathParams.LaunchVelocity = InitialVelocity;
-	PathParams.StartLocation = TraceStart;
-	PathParams.SimFrequency = 15.f;
-	PathParams.ProjectileRadius = 5.f;
-	PathParams.TraceChannel = ECC_Visibility;
-	PathParams.ActorsToIgnore.Add(GetOwner());
+	//캐릭터 또는 뭔가에 닿았다-> 폭발
+	//->반복문 돌려서 거리 안에 들어오는 OverlappedCharacters 다 데미지 먹이기
+	//캐릭터에 닿았으면 -> 캐릭터에 닿은 용
+	//뭔가에 닿았으면 -> 뭔가 용
 
-	FPredictProjectilePathResult PathResult;
-	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
-	
-	if (PathResult.HitResult.bBlockingHit)
+	if (!HPCharacter)
 	{
-		bHitConfirmed = true;
+		HPCharacter = Cast<AHPPlayerCharacter>(GetOwner());
 	}
-	if (!bHitConfirmed)
-		return;
 	
-	/* NEXTTHINGTODO: 잘작동되면 함수로 묶기*/
-
-	
-	if (HPCharacter && bHitConfirmed)
+	if (HPCharacter && Confirm.bHitConfirmed)
 	{
 		UAbilitySystemComponent* SourceASC = ProjectileApplyEffectParams.SourceASC;
-		TSet<AHPPlayerCharacter*> AppliedActorSet;
+
 		for (AHPPlayerCharacter* OverlappedCharacter:OverlappedCharacters)
 		{
 			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OverlappedCharacter);
 
 			if (SourceASC && TargetASC)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s Hit!"), *OverlappedCharacter->GetName());
-				float Damage = ProjectileApplyEffectParams.Damage;
-				float AdditionalEffectValue  = ProjectileApplyEffectParams.AdditionalEffectValue;
-
-				FVector_NetQuantize HitLocation = FVector::ZeroVector;
-				FServerSideRewindResult ConfirmPerOverlappedActor = ExplosionServerSideRewind(OverlappedCharacter,ProjectileApplyEffectParams.OriginLocation, ProjectileApplyEffectParams.InnerRadius, ProjectileApplyEffectParams.OuterRadius, HitTime,HitLocation);
-
-				if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
-					continue;
+				EEffectApplyTargetPolicy EffectApplyPolicy = ProjectileApplyEffectParams.EffectApplyTargetPolicy;
 				
-				AppliedActorSet.Add(OverlappedCharacter);
-				float FinalDamage = Damage;
-				float PushPower = ProjectileApplyEffectParams.PushPower;
-				if (ProjectileApplyEffectParams.bDistanceFalloff)
+				if (ProjectileApplyEffectParams.GenericTeamId == OverlappedCharacter->GetGenericTeamId())
 				{
-					float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
-					FinalDamage *= (1-DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
-					PushPower/=(ProjectileApplyEffectParams.OuterRadius/1000);
-				}
-
-				if (ProjectileApplyEffectParams.DamageEffectClass)
-				{
-					FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
-				
-					FGameplayEffectSpecHandle DamageSpecHandle = SourceASC->MakeOutgoingSpec(
-						ProjectileApplyEffectParams.DamageEffectClass,
-						1,
-						Context
-						);
-					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalDamage);
-					TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
-					
-				}
-				//밀어낼 수 있다면
-				if (ProjectileApplyEffectParams.bCanPush)
-				{
-					FVector HitVelocity  = (ProjectileApplyEffectParams.OriginLocation-HitLocation)*PushPower;
-					OverlappedCharacter->LaunchCharacter(HitVelocity, true,true);
-				}
-				
-				if (ProjectileApplyEffectParams.AdditionalEffectClass)
-				{
-					float FinalValue = AdditionalEffectValue;
-					FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
-				
-					FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(
-						ProjectileApplyEffectParams.AdditionalEffectClass,
-						1,
-						Context
-						);
-
-
-					if (ProjectileApplyEffectParams.bAdditionalEffectForTeam)
+					if (EffectApplyPolicy == EEffectApplyTargetPolicy::TeamAndEnemy || EffectApplyPolicy == EEffectApplyTargetPolicy::TeamOnly)
 					{
+						//SourceCharacter, TargetCharacter, SourceASC, TargetASC,
+						//EnemyEffectClass, TeamEffectClass, AdditionalEnemyEffectClasses, AdditionalTeamEffectClasses
+						//OriginLocation, EnemyEffectValue, TeamEffectValue, bCanHeadShot, bCanPush, FrontSideWidth , bDistanceFalloff
+						//PushPower, InnerRadius, OuterRadius, EffectApplyTargetPolicy, GenericTeamId ,SpawnableActorClass
+						float Heal = ProjectileApplyEffectParams.TeamEffectValue;
+						float FinalHeal = Heal;
+	
+						FVector_NetQuantize HitLocation = FVector::ZeroVector;
+						FServerSideRewindResult ConfirmPerOverlappedActor = ExplosionServerSideRewind(OverlappedCharacter,ProjectileApplyEffectParams.OriginLocation, ProjectileApplyEffectParams.InnerRadius, ProjectileApplyEffectParams.OuterRadius, HitTime,HitLocation);
+	
+						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
+							continue;
 						
-						if (OverlappedCharacter->GetGenericTeamId()==ProjectileApplyEffectParams.GenericTeamId)
+						if (ProjectileApplyEffectParams.bDistanceFalloff)
 						{
-							UE_LOG(LogTemp, Warning, TEXT("OverlappedCharacterTeam: %d, BombTeam: %d"), OverlappedCharacter->GetGenericTeamId().GetId(), ProjectileApplyEffectParams.GenericTeamId.GetId());
-							UE_LOG(LogTemp, Warning, TEXT("MyTeam: %s"), *OverlappedCharacter->GetName());
-							//NEXTHINGTODO: Additional일 경우 SetByCaller태그도 같이 가져오는 방안 일단 생각 해보기
-							UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalValue);
-							TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
+							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
+							FinalHeal *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
+						}
+	
+						if (ProjectileApplyEffectParams.TeamEffectClass)
+						{
+							FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+							FGameplayEffectSpecHandle HealSpecHandle = SourceASC->MakeOutgoingSpec(
+								ProjectileApplyEffectParams.TeamEffectClass,
+								1,
+								Context
+								);
+							UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(HealSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingHeal, FinalHeal);
+							TargetASC->ApplyGameplayEffectSpecToSelf(*HealSpecHandle.Data);
+						}
+	
+						if (ProjectileApplyEffectParams.AdditionalTeamEffectClasses.Num()>0)
+						{
+							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : ProjectileApplyEffectParams.AdditionalTeamEffectClasses)
+							{
+								FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+								FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(
+									AdditionalEffectClass,
+									1,
+									Context
+									);
+								SourceASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
+							}
 						}
 					}
 				}
-			
+				else if (ProjectileApplyEffectParams.GenericTeamId != OverlappedCharacter->GetGenericTeamId())
+				{
+					if (EffectApplyPolicy == EEffectApplyTargetPolicy::TeamAndEnemy || EffectApplyPolicy == EEffectApplyTargetPolicy::EnemyOnly)
+					{
+						float Damage = ProjectileApplyEffectParams.EnemyEffectValue;
+						float FinalDamage = Damage;
+	
+						FVector_NetQuantize HitLocation = FVector::ZeroVector;
+						FServerSideRewindResult ConfirmPerOverlappedActor = ExplosionServerSideRewind(OverlappedCharacter,ProjectileApplyEffectParams.OriginLocation, ProjectileApplyEffectParams.InnerRadius, ProjectileApplyEffectParams.OuterRadius, HitTime,HitLocation);
+	
+						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
+							continue;
+						
+						float PushPower = ProjectileApplyEffectParams.PushPower;
+						
+						if (ProjectileApplyEffectParams.bDistanceFalloff)
+						{
+							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
+							FinalDamage *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
+							PushPower/=(ProjectileApplyEffectParams.OuterRadius/1000);
+						}
+	
+						if (ProjectileApplyEffectParams.EnemyEffectClass)
+						{
+							FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+							FGameplayEffectSpecHandle DamageSpecHandle = SourceASC->MakeOutgoingSpec(
+								ProjectileApplyEffectParams.EnemyEffectClass,
+								1,
+								Context
+								);
+							UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalDamage);
+							TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
+						}
+						if (ProjectileApplyEffectParams.bCanPush)
+						{
+							FVector HitVelocity  = (ProjectileApplyEffectParams.OriginLocation-HitLocation)*PushPower;
+							OverlappedCharacter->LaunchCharacter(HitVelocity, true,true);
+						}
+						
+						if (ProjectileApplyEffectParams.AdditionalEnemyEffectClasses.Num()>0)
+						{
+							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : ProjectileApplyEffectParams.AdditionalEnemyEffectClasses)
+							{
+								FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+								FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(
+									AdditionalEffectClass,
+									1,
+									Context
+									);
+								SourceASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
+							}
+						}
+					}
+				}
 			}
 		}
-		
+	}
+}
+
+void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implementation(
+	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime,
+	const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
+	const TArray<AHPPlayerCharacter*>& OverlappedCharacters)
+{
+	FServerSideRewindResult SSRResult = ProjectileConfirmHit_ForObject(TraceStart, InitialVelocity);
+
+	UE_LOG(LogTemp, Warning,TEXT("func: ExplosionServerApplyValidHit_HitObject_Implementation"));
+	if (!HPCharacter)
+	{
+		HPCharacter = Cast<AHPPlayerCharacter>(GetOwner());
+	}
+	
+	if (HPCharacter && SSRResult.bHitConfirmed)
+	{
+		UAbilitySystemComponent* SourceASC = ProjectileApplyEffectParams.SourceASC;
+
+		for (AHPPlayerCharacter* OverlappedCharacter : OverlappedCharacters)
+		{
+			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OverlappedCharacter);
+
+			if (SourceASC && TargetASC)
+			{
+				EEffectApplyTargetPolicy EffectApplyPolicy = ProjectileApplyEffectParams.EffectApplyTargetPolicy;
+				
+				if (ProjectileApplyEffectParams.GenericTeamId == OverlappedCharacter->GetGenericTeamId())
+				{	
+					if (EffectApplyPolicy == EEffectApplyTargetPolicy::TeamAndEnemy || EffectApplyPolicy == EEffectApplyTargetPolicy::TeamOnly)
+					{
+						UE_LOG(LogTemp, Warning,TEXT("Hit Team"));
+						//SourceCharacter, TargetCharacter, SourceASC, TargetASC,
+						//EnemyEffectClass, TeamEffectClass, AdditionalEnemyEffectClasses, AdditionalTeamEffectClasses
+						//OriginLocation, EnemyEffectValue, TeamEffectValue, bCanHeadShot, bCanPush, FrontSideWidth , bDistanceFalloff
+						//PushPower, InnerRadius, OuterRadius, EffectApplyTargetPolicy, GenericTeamId ,SpawnableActorClass
+						float Heal = ProjectileApplyEffectParams.TeamEffectValue;
+						float FinalHeal = Heal;
+	
+						FVector_NetQuantize HitLocation = FVector::ZeroVector;
+						FServerSideRewindResult ConfirmPerOverlappedActor = ExplosionServerSideRewind(OverlappedCharacter,ProjectileApplyEffectParams.OriginLocation, ProjectileApplyEffectParams.InnerRadius, ProjectileApplyEffectParams.OuterRadius, HitTime,HitLocation);
+	
+						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
+							continue;
+						UE_LOG(LogTemp, Warning,TEXT("Explosion Hit: Confirmed"));
+						if (ProjectileApplyEffectParams.bDistanceFalloff)
+						{
+							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
+							FinalHeal *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
+						}
+	
+						if (ProjectileApplyEffectParams.TeamEffectClass)
+						{
+							FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+							FGameplayEffectSpecHandle HealSpecHandle = SourceASC->MakeOutgoingSpec(
+								ProjectileApplyEffectParams.TeamEffectClass,
+								1,
+								Context
+								);
+							UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(HealSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingHeal, FinalHeal);
+							TargetASC->ApplyGameplayEffectSpecToSelf(*HealSpecHandle.Data);
+						}
+	
+						if (ProjectileApplyEffectParams.AdditionalTeamEffectClasses.Num()>0)
+						{
+							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : ProjectileApplyEffectParams.AdditionalTeamEffectClasses)
+							{
+								FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+								FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(
+									AdditionalEffectClass,
+									1,
+									Context
+									);
+								SourceASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
+							}
+						}
+					}
+				}
+				else if (ProjectileApplyEffectParams.GenericTeamId != OverlappedCharacter->GetGenericTeamId())
+				{
+					if (EffectApplyPolicy == EEffectApplyTargetPolicy::TeamAndEnemy || EffectApplyPolicy == EEffectApplyTargetPolicy::EnemyOnly)
+					{
+						UE_LOG(LogTemp, Warning,TEXT("Hit Enemy"));
+						float Damage = ProjectileApplyEffectParams.EnemyEffectValue;
+						float FinalDamage = Damage;
+						UE_LOG(LogTemp, Warning, TEXT("Damage(Before): %f"), FinalDamage);
+						FVector_NetQuantize HitLocation = FVector::ZeroVector;
+						FServerSideRewindResult ConfirmPerOverlappedActor = ExplosionServerSideRewind(OverlappedCharacter,ProjectileApplyEffectParams.OriginLocation, ProjectileApplyEffectParams.InnerRadius, ProjectileApplyEffectParams.OuterRadius, HitTime,HitLocation);
+	
+						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
+							continue;
+
+						UE_LOG(LogTemp, Warning,TEXT("Explosion Hit: Confirmed"));
+						float PushPower = ProjectileApplyEffectParams.PushPower;
+						
+						if (ProjectileApplyEffectParams.bDistanceFalloff)
+						{
+							UE_LOG(LogTemp, Warning,TEXT("bDistanceFalloff true"));
+							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
+							FinalDamage *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
+							PushPower/=(ProjectileApplyEffectParams.OuterRadius/1000);
+						}
+	
+						if (ProjectileApplyEffectParams.EnemyEffectClass)
+						{
+							UE_LOG(LogTemp, Warning,TEXT("EnemyEffectClass Exist"));
+							UE_LOG(LogTemp, Warning, TEXT("Damage(After): %f"), FinalDamage);
+							FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+							FGameplayEffectSpecHandle DamageSpecHandle = SourceASC->MakeOutgoingSpec(
+								ProjectileApplyEffectParams.EnemyEffectClass,
+								1,
+								Context
+								);
+							UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalDamage);
+							TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
+						}
+						if (ProjectileApplyEffectParams.bCanPush)
+						{
+							FVector HitVelocity  = (ProjectileApplyEffectParams.OriginLocation-HitLocation)*PushPower;
+							OverlappedCharacter->LaunchCharacter(HitVelocity, true,true);
+						}
+						
+						if (ProjectileApplyEffectParams.AdditionalEnemyEffectClasses.Num()>0)
+						{
+							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : ProjectileApplyEffectParams.AdditionalEnemyEffectClasses)
+							{
+								FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+					
+								FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(
+									AdditionalEffectClass,
+									1,
+									Context
+									);
+								SourceASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
 void ULagCompensationComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("LagComp BeginPlay: %s"),
-		   IsComponentTickEnabled() ? TEXT("Tick Enabled") : TEXT("Tick Disabled"));	
 }
 
 void ULagCompensationComponent::CaptureFramePackage(FFramePackage& Package)
@@ -260,7 +430,7 @@ FServerSideRewindResult ULagCompensationComponent::ConfirmHit(const FFramePackag
 
 FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FFramePackage& Package,
 	AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart,
-	const FVector_NetQuantize100& InitialVelocity, float HitTime)
+	const FVector_NetQuantize100& InitialVelocity, const FProjectileApplyEffectParams& ProjectileParams, float HitTime)
 {
 	FPredictProjectilePathParams PathParams;
 	PathParams.bTraceWithCollision = true;
@@ -268,22 +438,9 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	PathParams.LaunchVelocity = InitialVelocity;
 	PathParams.StartLocation = TraceStart;
 	PathParams.SimFrequency = 15.f;
-	PathParams.ProjectileRadius = 5.f;
-	PathParams.TraceChannel = ECC_Visibility; //땅, 플레이어 모두의 경우를 확인하기 위해
+	PathParams.ProjectileRadius = ProjectileParams.FrontSideWidth;
+	PathParams.TraceChannel = ECC_HitBox; 
 	PathParams.ActorsToIgnore.Add(GetOwner());
-
-	FPredictProjectilePathResult PathResult;
-	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
-
-	if (!HitCharacter)//캐릭터가 아닌 것에 맞았을 경우
-	{
-		if (PathResult.HitResult.bBlockingHit) 
-		{
-			return FServerSideRewindResult(true,false);
-		}
-		return FServerSideRewindResult(false,false);
-	}
-	
 
 	FFramePackage CurrentFrame;
 	CacheBoxPositions(HitCharacter, CurrentFrame);
@@ -293,8 +450,10 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	// Enable collision for the head first
 	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-
 	HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
+
+	FPredictProjectilePathResult PathResult;
+	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
 	
 	if (PathResult.HitResult.bBlockingHit)
 	{
@@ -309,7 +468,7 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 			if (HitBoxPair.Value != nullptr)
 			{
 				HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-				HitBoxPair.Value->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
+				HitBoxPair.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 			}
 		}
 
@@ -327,7 +486,7 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	return FServerSideRewindResult{ false, false };
 }
 
-FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit_ForEveryVisibleThing(
+FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit_ForObject(
 	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity)
 {
 	FPredictProjectilePathParams PathParams;
@@ -337,7 +496,7 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit_ForEvery
 	PathParams.StartLocation = TraceStart;
 	PathParams.SimFrequency = 15.f;
 	PathParams.ProjectileRadius = 5.f;
-	PathParams.TraceChannel = ECC_Visibility; //땅, 플레이어 모두의 경우를 확인하기 위해
+	PathParams.TraceChannel = ECC_Visibility; //오브젝트의 경우를 확인하기 위해
 	PathParams.ActorsToIgnore.Add(GetOwner());
 
 	FPredictProjectilePathResult PathResult;
@@ -353,6 +512,9 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit_ForEvery
 FServerSideRewindResult ULagCompensationComponent::ExplosionConfirmHit(const FFramePackage& Package,
                                                                        AHPPlayerCharacter* HitCharacter,const FVector_NetQuantize& OriginLocation, float InnerRadius, float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation)
 {
+	UE_LOG(LogTemp, Warning, TEXT("func: ExplosionConfirmHit"));
+	UE_LOG(LogTemp, Warning, TEXT("HitCharacter: %s"),*HitCharacter->GetName());
+
 	FFramePackage CurrentFrame;
 	CacheBoxPositions(HitCharacter, CurrentFrame);
 	MoveBoxes(HitCharacter, Package);
@@ -363,13 +525,13 @@ FServerSideRewindResult ULagCompensationComponent::ExplosionConfirmHit(const FFr
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
+
 	for (auto& HitBoxPair : HitCharacter->HitCollisionBoxes)
 	{
 		if (HitBoxPair.Value != nullptr)
 		{
 			HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			HitBoxPair.Value->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
-			
+			HitBoxPair.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 		}		
 	}
 
@@ -380,8 +542,18 @@ FServerSideRewindResult ULagCompensationComponent::ExplosionConfirmHit(const FFr
 	TArray<AActor*> ActorsToIgnore;
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Visibility));//NEXTTHINGTODO: 채널 바꾸기
-	
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_HitBox));
+	DrawDebugSphere(
+			GetWorld(),
+			OriginLocation,   // 중심
+			OuterRadius,   // 반지름
+			32,                // Segments
+			FColor::Red,
+			false,             // PersistentLines
+			2.f,               // LifeTime
+			0,
+				2.f                // Thickness
+			);
 	const bool bOverlapped =
 		UKismetSystemLibrary::SphereOverlapComponents(
 			GetWorld(),
@@ -416,9 +588,9 @@ FServerSideRewindResult ULagCompensationComponent::ExplosionConfirmHit(const FFr
 				2.f                // Thickness
 			);
 	}
-	// 	
-	// ResetHitBoxes(HitCharacter, CurrentFrame);
-	// EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+		
+	ResetHitBoxes(HitCharacter, CurrentFrame);
+	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
 	
 	return FServerSideRewindResult{ bHitConfirmed, false };
 }
@@ -624,10 +796,10 @@ FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AHPPlayerCha
 }
 
 FServerSideRewindResult ULagCompensationComponent::ProjectileServerSideRewind(AHPPlayerCharacter* HitCharacter,
-	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
+	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, const FProjectileApplyEffectParams& ProjectileParams, float HitTime)
 {
 	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
-	return ProjectileConfirmHit(FrameToCheck, HitCharacter, TraceStart, InitialVelocity, HitTime);
+	return ProjectileConfirmHit(FrameToCheck, HitCharacter, TraceStart, InitialVelocity, ProjectileParams, HitTime);
 }
 
 FServerSideRewindResult ULagCompensationComponent::ExplosionServerSideRewind(AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& OriginLocation, float InnerRadius, float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation)
@@ -640,7 +812,7 @@ void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_Implementa
 	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity,
 	const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
 {
-	FServerSideRewindResult SSRResult = ProjectileConfirmHit_ForEveryVisibleThing(TraceStart,InitialVelocity);
+	FServerSideRewindResult SSRResult = ProjectileConfirmHit_ForObject(TraceStart,InitialVelocity);
 
 	if (!SSRResult.bHitConfirmed)
 		return;
@@ -677,13 +849,12 @@ void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_Implementa
 
 
 void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHPPlayerCharacter* HitCharacter,
-                                                                             const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime,
-                                                                             const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
+                                                                             const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, const FProjectileApplyEffectParams& ProjectileApplyEffectParams,float HitTime)
 {
 	if (!HitCharacter)
 		return;
 	
-	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity, HitTime);
+	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity,ProjectileApplyEffectParams, HitTime);
 
 	bool bHeadShot = Confirm.bHeadShot;
 	bool bHitConfirmed = Confirm.bHitConfirmed;
@@ -691,47 +862,92 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 	if (HPCharacter && HitCharacter && Confirm.bHitConfirmed)
 	{
 		UAbilitySystemComponent* SourceASC = ProjectileApplyEffectParams.SourceASC;
-		UAbilitySystemComponent* TargetASC = ProjectileApplyEffectParams.TargetASC;
-
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitCharacter);
+		bHeadShot &= ProjectileApplyEffectParams.bCanHeadShot; //Headshot 설정인지 아닌지 확인
+		
 		if (SourceASC && TargetASC)
 		{
-			float Damage = ProjectileApplyEffectParams.Damage;
-			float AdditionalEffectValue  = ProjectileApplyEffectParams.AdditionalEffectValue;
-			bHeadShot &= ProjectileApplyEffectParams.bCanHeadShot;
-			
-			if (ProjectileApplyEffectParams.DamageEffectClass)
+			if (ProjectileApplyEffectParams.GenericTeamId != HitCharacter->GetGenericTeamId())//적일 경우
 			{
-				float FinalDamage = Damage;
-				FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
-				
-				FGameplayEffectSpecHandle DamageSpecHandle = SourceASC->MakeOutgoingSpec(
-					ProjectileApplyEffectParams.DamageEffectClass,
-					1,
-					Context
-					);
-				if (bHeadShot)
-				{
-					FinalDamage*=2;
-				}
-				UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalDamage);
-				TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
-			}
-			if (ProjectileApplyEffectParams.AdditionalEffectClass)
-			{
-				float FinalValue = AdditionalEffectValue;
-				FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
-				
-				FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(
-					ProjectileApplyEffectParams.AdditionalEffectClass,
-					1,
-					Context
-					);
+				if (ProjectileApplyEffectParams.EffectApplyTargetPolicy == EEffectApplyTargetPolicy::TeamOnly)
+					return;
 
-				//NEXTHINGTODO: Additional일 경우 SetByCaller태그도 같이 가져오는 방안 일단 생각 해보기
-				UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalValue);
-				TargetASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
+				bool bIsNanoBoosted = SourceASC->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Combat_NanoBoosted);
+
+				float FinalDamage= ProjectileApplyEffectParams.EnemyEffectValue;
+				
+				if (ProjectileApplyEffectParams.EnemyEffectClass)
+				{
+					if (bIsNanoBoosted)
+					{
+						FinalDamage*=1.3;
+					}
+					if (bHeadShot)
+					{
+						FinalDamage*=2;
+					}
+					FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+				
+					FGameplayEffectSpecHandle DamageSpecHandle = SourceASC->MakeOutgoingSpec(
+						ProjectileApplyEffectParams.EnemyEffectClass,
+						1,
+						Context);
+					
+					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalDamage);
+					TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
+				}
+
+				if(ProjectileApplyEffectParams.AdditionalEnemyEffectClasses.Num()>0)
+				{
+					for (const TSubclassOf<UGameplayEffect> AdditionalEffectClass :ProjectileApplyEffectParams.AdditionalEnemyEffectClasses)
+					{
+						FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+				
+						FGameplayEffectSpecHandle DamageSpecHandle = SourceASC->MakeOutgoingSpec(
+							AdditionalEffectClass,
+							1,
+							Context);
+						
+						TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
+					}
+				}
 			}
 			
+			else if (ProjectileApplyEffectParams.GenericTeamId == HitCharacter->GetGenericTeamId())
+			{
+				if (ProjectileApplyEffectParams.EffectApplyTargetPolicy == EEffectApplyTargetPolicy::EnemyOnly)
+					return;
+
+				float FinalHeal= ProjectileApplyEffectParams.TeamEffectValue;
+				
+				if (ProjectileApplyEffectParams.TeamEffectClass)
+				{
+					FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+				
+					FGameplayEffectSpecHandle HealSpecHandle = SourceASC->MakeOutgoingSpec(
+						ProjectileApplyEffectParams.TeamEffectClass,
+						1,
+						Context);
+					
+					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(HealSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingHeal, FinalHeal);
+					TargetASC->ApplyGameplayEffectSpecToSelf(*HealSpecHandle.Data);
+				}
+
+				if(ProjectileApplyEffectParams.AdditionalEnemyEffectClasses.Num()>0)
+				{
+					for (const TSubclassOf<UGameplayEffect> AdditionalEffectClass :ProjectileApplyEffectParams.AdditionalTeamEffectClasses)
+					{
+						FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
+				
+						FGameplayEffectSpecHandle HealSpecHandle = SourceASC->MakeOutgoingSpec(
+							AdditionalEffectClass,
+							1,
+							Context);
+					
+						TargetASC->ApplyGameplayEffectSpecToSelf(*HealSpecHandle.Data);
+					}
+				}
+			}
 		}
 	}
 }

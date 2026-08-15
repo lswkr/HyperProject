@@ -38,7 +38,7 @@ enum class EProjectileSpawnSocketType : uint8
 };
 
 UENUM(BlueprintType)
-enum class EProjectileEffectType : uint8
+enum class EEffectApplyTargetPolicy: uint8
 {
 	None		UMETA(DisplayName = "None"),
 	EnemyOnly	UMETA(DisplayName = "Enemy Only"),
@@ -174,6 +174,14 @@ struct FProjectileApplyEffectParams
 {
 	GENERATED_BODY()
 
+	//변수 활용 시 복사/붙여넣기 위한 변수 목록들
+	//SourceCharacter, TargetCharacter, SourceASC, TargetASC,
+	//EnemyEffectClass, TeamEffectClass, AdditionalEnemyEffectClasses, AdditionalTeamEffectClasses
+	//OriginLocation, EnemyEffectValue, TeamEffectValue
+	//float: PushPower,InnerRadius, OuterRadius, FrontSideWidth
+	//bool:bCanHeadShot, bCanPush, bDistanceFalloff
+	//etc: EffectApplyTargetPolicy, GenericTeamId ,SpawnableActorClass
+	
 	UPROPERTY()
 	AHPPlayerCharacter* SourceCharacter = nullptr;
 
@@ -187,19 +195,25 @@ struct FProjectileApplyEffectParams
 	UAbilitySystemComponent* TargetASC = nullptr;
 
 	UPROPERTY()
-	TSubclassOf<UGameplayEffect> DamageEffectClass = nullptr;
+	TSubclassOf<UGameplayEffect> EnemyEffectClass = nullptr;
 
 	UPROPERTY()
-	TSubclassOf<UGameplayEffect> AdditionalEffectClass = nullptr;
+	TSubclassOf<UGameplayEffect> TeamEffectClass = nullptr;
+	
+	UPROPERTY()
+	TArray<TSubclassOf<UGameplayEffect>> AdditionalEnemyEffectClasses = TArray<TSubclassOf<UGameplayEffect>>(); 
 
+	UPROPERTY()
+	TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses = TArray<TSubclassOf<UGameplayEffect>>();
+	
 	UPROPERTY()
 	FVector OriginLocation = FVector::ZeroVector;
 	
 	UPROPERTY()
-	float Damage = 0.f;
+	float EnemyEffectValue = 0.f;
 
 	UPROPERTY()
-	float AdditionalEffectValue = 0.f;
+	float TeamEffectValue = 0.f;
 
 	UPROPERTY()
 	bool bCanHeadShot = false;
@@ -208,10 +222,10 @@ struct FProjectileApplyEffectParams
 	bool bCanPush = false;
 
 	UPROPERTY()
-	bool bDistanceFalloff = false;
-
+	float FrontSideWidth = 0.f;
+	
 	UPROPERTY()
-	bool bAdditionalEffectForTeam = false;
+	bool bDistanceFalloff = false;
 
 	UPROPERTY()
 	float PushPower = 0.0f;
@@ -223,7 +237,7 @@ struct FProjectileApplyEffectParams
 	float OuterRadius = 0.0f;
 
 	UPROPERTY()
-	EProjectileEffectType EffectType = EProjectileEffectType::None;
+	EEffectApplyTargetPolicy EffectApplyTargetPolicy = EEffectApplyTargetPolicy::EnemyOnly;
 
 	UPROPERTY()
 	FGenericTeamId GenericTeamId;

@@ -3,6 +3,7 @@
 
 #include "Weapons/HPProjectileBase.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/BoxComponent.h"
 #include "Components/LagCompensationComponent.h"
@@ -17,6 +18,7 @@ AHPProjectileBase::AHPProjectileBase()
 	//bReplicates는 ServerSideRewind용과 일반용이 다르므로 BP에서 따로 설정->생성자에서 제외함 
 
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>("BoxComponent");
+	BoxComponent->SetBoxExtent(BoxExtent);
 	SetRootComponent(BoxComponent);
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
@@ -55,19 +57,46 @@ void AHPProjectileBase::BeginPlay()
 	
 }
 
-void AHPProjectileBase::SetProjectileEffectParams(const FProjectileParams& InProjectileParams)
+void AHPProjectileBase::SetProjectileParams(const FProjectileParams& InProjectileParams)
 {
 	ProjectileParams = InProjectileParams;
 }
 
-void AHPProjectileBase::BindExplosionCallbackFunction(AActor* InPlayerCharacter)
+void AHPProjectileBase::MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams)
 {
-	AHPPlayerCharacter* PlayerCharacter = Cast<AHPPlayerCharacter>(InPlayerCharacter);
-	if (PlayerCharacter->CanSetMine())
+	//공동으로 채워야 할 것->TargetASC, TargetCharacter
+	//Radial Projectile: OriginLocation, bCanPush,PushPower,InnerRadius,OuterRadius, bDistanceFalloff
+	//SpawnableProjectile: SpawnableActorClass
+
+	ProjectileApplyEffectParams.SourceCharacter =  Cast<AHPPlayerCharacter>(GetOwner());
+
+	if (ProjectileApplyEffectParams.SourceCharacter)
 	{
-		OnMineExplodeDelegate.BindDynamic(PlayerCharacter, &AHPPlayerCharacter::BombExplosionCallbackFunc);
+		ProjectileApplyEffectParams.SourceASC = ProjectileApplyEffectParams.SourceCharacter->GetAbilitySystemComponent();
 	}
+	ProjectileApplyEffectParams.EnemyEffectClass = EnemyEffectClass;
+	ProjectileApplyEffectParams.TeamEffectClass = TeamEffectClass;
+
+	ProjectileApplyEffectParams.EnemyEffectValue = EnemyEffectValue.GetValueAtLevel(1);
+	ProjectileApplyEffectParams.TeamEffectValue =TeamEffectValue.GetValueAtLevel(1);
+	ProjectileApplyEffectParams.AdditionalEnemyEffectClasses = AdditionalEnemyEffectClasses;
+	ProjectileApplyEffectParams.AdditionalTeamEffectClasses = AdditionalTeamEffectClasses;
+	
+	ProjectileApplyEffectParams.bCanHeadShot = bCanHeadShot;
+	ProjectileApplyEffectParams.FrontSideWidth = FrontSideWidth;
+	ProjectileApplyEffectParams.EffectApplyTargetPolicy = EffectApplyTargetPolicy;
+
+	ProjectileApplyEffectParams.GenericTeamId = GetGenericTeamId();
 }
+
+// void AHPProjectileBase::BindExplosionCallbackFunction(AActor* InPlayerCharacter)
+// {
+// 	AHPPlayerCharacter* PlayerCharacter = Cast<AHPPlayerCharacter>(InPlayerCharacter);
+// 	if (PlayerCharacter->CanSetMine())
+// 	{
+// 		OnMineExplodeDelegate.BindDynamic(PlayerCharacter, &AHPPlayerCharacter::BombExplosionCallbackFunc);
+// 	}
+// }
 
 void AHPProjectileBase::OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                           UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

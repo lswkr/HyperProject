@@ -46,6 +46,12 @@ public:
 	UFUNCTION()
 	void OnRep_ControlPointModeChanged();
 
+	UFUNCTION()
+	void OnRep_TeamOneCaptured();
+
+	UFUNCTION()
+	void OnRep_TeamTwoCaptured();
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	void BindHUD(AHPControlPointHUD* InHUD);
 
@@ -58,7 +64,13 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_TimeRemaining)
 	int32 TimeRemaining;
-	
+
+	UPROPERTY(ReplicatedUsing = OnRep_TeamOneCaptured)
+	bool TeamOneCaptured = false;
+
+	UPROPERTY(ReplicatedUsing = OnRep_TeamTwoCaptured)
+	bool TeamTwoCaptured = false;
+
 	UPROPERTY(ReplicatedUsing = OnRep_ControlPointModeChanged)
 	EControlPointGameModeState CurrentControlPointGameModeState; 
 	

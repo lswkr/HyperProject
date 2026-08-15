@@ -65,6 +65,7 @@ public:
 	
 	ATTRIBUTE_ACCESSORS(UHPAttributeSet,MoveSpeed)
 	ATTRIBUTE_ACCESSORS(UHPAttributeSet,IncomingDamage)
+	ATTRIBUTE_ACCESSORS(UHPAttributeSet,IncomingHeal)
 	ATTRIBUTE_ACCESSORS(UHPAttributeSet,IncomingUlt)
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -102,6 +103,9 @@ private:
 	FGameplayAttributeData IncomingDamage;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes", meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData IncomingHeal;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Meta Attributes", meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData IncomingUlt;
 	
 	UFUNCTION()
@@ -131,5 +135,6 @@ private:
 	void SetEffectProperties(const FGameplayEffectModCallbackData& Data, FEffectProperties& OutProps) const;
 	void HandleIncomingDamage(const FEffectProperties& Props);
 	void HandleUlt(const FEffectProperties& Props);
+	void HandleIncomingHeal(const FEffectProperties& Props);
 	void SendUltEvent(const FEffectProperties& Props, float UltPoint);
 };

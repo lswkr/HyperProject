@@ -39,6 +39,11 @@ void FHPGameplayTags::InitializeNativeGameplayTags()
 	FString("Tag for Belica's BasicAttack")
 	);
 
+	GameplayTags.Ability_Attack_Belica_HealBan = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Ability.Attack.Belica.HealBan"),
+	FString("Tag for Belica's HealBan")
+	);
+
 	GameplayTags.Ability_Ult_Belica_NanoBoost = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Ability.Ult.Belica.NanoBoost"),
 	FString("Tag for Belica's NanoBoost")
@@ -142,6 +147,11 @@ void FHPGameplayTags::InitializeNativeGameplayTags()
 	FName("SetByCaller.IncomingDamage"),
 	FString("Incoming Damage Tag for SetByCaller")
 	);
+
+	GameplayTags.SetByCaller_IncomingHeal = UGameplayTagsManager::Get().AddNativeGameplayTag(
+FName("SetByCaller.IncomingHeal"),
+FString("Incoming Heal Tag for SetByCaller")
+);
 	GameplayTags.SetByCaller_IncomingUlt = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("SetByCaller.IncomingUlt"),
 	FString("Incoming Ult Tag for SetByCaller")
@@ -208,9 +218,14 @@ void FHPGameplayTags::InitializeNativeGameplayTags()
 	FString("Cooldown tag for mine ability")
 	);
 
+	GameplayTags.Cooldown_Ability_HealBan= UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("Cooldown.Ability.HealBan"),
+	FString("Cooldown tag for HealBan ability")
+	);
+	
 	GameplayTags.Attribute_Meta_IncomingUlt = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Attribute.Meta.IncomingUlt"),
-	FString("Cooldown tag for ult point")
+	FString("IncomingUlt tag for Listen ult event")
 	);
 	
 	GameplayTags.Remove_SetMine = UGameplayTagsManager::Get().AddNativeGameplayTag(

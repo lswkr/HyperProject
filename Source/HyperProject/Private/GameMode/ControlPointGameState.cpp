@@ -53,6 +53,22 @@ void AControlPointGameState::OnRep_ControlPointModeChanged()
 	GameModeStateChangeDelegate.ExecuteIfBound(CurrentControlPointGameModeState);
 }
 
+void AControlPointGameState::OnRep_TeamOneCaptured()
+{
+	if (TeamOneCaptured)
+	{
+		TeamTwoCaptured = false;
+	}
+}
+
+void AControlPointGameState::OnRep_TeamTwoCaptured()
+{
+	if (TeamTwoCaptured)
+	{
+		TeamOneCaptured = false;
+	}
+}
+
 void AControlPointGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

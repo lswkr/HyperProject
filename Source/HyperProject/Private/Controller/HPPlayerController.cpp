@@ -90,6 +90,22 @@ void AHPPlayerController::UpdateControlPointState(const FHPControlPointData& Con
 	CPHUD->OnUpdateControlPoint(MyTeamFightingPercent, EnemyTeamFightingPercent, MyTeamCapturingPercent, EnemyTeamCapturingPercent);
 }
 
+void AHPPlayerController::UpdateCapturedTeamState(bool TeamOneCaptured, bool TeamTwoCaptured)
+{
+
+	
+	if (TeamID == 0)
+	{
+		UE_LOG(LogTemp, Warning,TEXT("UpdateCapturedTeamState: MyTeam: %d, EnemyTeam %d"), TeamOneCaptured, TeamTwoCaptured);
+		CPHUD->OnControlPointCaptured(TeamOneCaptured, TeamTwoCaptured);
+	}
+	else if (TeamID == 1)
+	{
+		UE_LOG(LogTemp, Warning,TEXT("UpdateCapturedTeamState: MyTeam: %d, EnemyTeam %d"), TeamTwoCaptured, TeamOneCaptured);
+		CPHUD->OnControlPointCaptured(TeamTwoCaptured, TeamOneCaptured);
+	}
+}
+
 void AHPPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
 {
 	UE_LOG(LogTemp, Warning, TEXT("bHighPing = %d"), bHighPing);

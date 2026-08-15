@@ -18,6 +18,7 @@ public:
 	FGameplayTag Ability_Attack_Murdock_BasicAttack;
 	FGameplayTag Ability_Attack_Murdock_Mine;
 	FGameplayTag Ability_Attack_Belica_BasicAttack;
+	FGameplayTag Ability_Attack_Belica_HealBan;
 	FGameplayTag Ability_Ult_Belica_NanoBoost;
 	FGameplayTag Ability_Ult_Murdock_GravitonSurge;
 	FGameplayTag Ability_Attack_MeleeHit;
@@ -54,6 +55,7 @@ public:
 	FGameplayTag SetByCaller_MaxBullet;
 	FGameplayTag SetByCaller_BulletsPerShot;
 	FGameplayTag SetByCaller_IncomingDamage;
+	FGameplayTag SetByCaller_IncomingHeal;
 	FGameplayTag SetByCaller_IncomingUlt;
 	/*SetByCaller End*/
 	
@@ -76,6 +78,8 @@ public:
 
 	/* Cooldown Begin */
 	FGameplayTag Cooldown_Ability_Mine;
+	FGameplayTag Cooldown_Ability_HealBan;
+	
 	/* Cooldown End */
 
 	/* Attributes Begin*/
