@@ -60,9 +60,10 @@ public:
 	
 	virtual void ClientSideInit() override; //InitOverlay용
 
-	void Respawn();
+	void HandleRespawn();
+	void HandleDeath();
 	void Death();
-
+	
 	virtual void ToggleMeleeHitBox_Implementation(bool TurnOn) override;
 
 	/* CombatInterface Begin */
@@ -100,6 +101,21 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	USpringArmComponent* SpringArm;
 
+	/* Death And Reswpawn Begin */
+	UFUNCTION()
+	void DeathTagUpdated(FGameplayTag GameplayTag, int TagCount);
+
+	UPROPERTY(EditDefaultsOnly,Category = "Death")
+	UAnimMontage* DeathAnimMontage;
+
+	void PlayDeadAnimation();
+	void DeathMontageFinished();
+
+	FTimerHandle DeathMontageTimerHandle;
+
+bool IsDead() const;
+	/* Death And Respawn End */
+	
 	/* Widget Begin*/
 	UPROPERTY(EditDefaultsOnly, Category = "Widget")
 	UWidgetComponent* OverHeadWidgetComponent;
@@ -138,6 +154,8 @@ private:
 	
 	FName MeleeHitBoxSocketName;
 
+
+	
 	UPROPERTY(EditDefaultsOnly,Category = "MeleeHit")
 	UAnimMontage* MeleeHitAnimMontage;
 	virtual UAnimMontage* GetMeleeHitAnimMontage_Implementation() const override;

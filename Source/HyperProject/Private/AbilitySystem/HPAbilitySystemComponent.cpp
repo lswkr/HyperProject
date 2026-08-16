@@ -12,13 +12,12 @@
 
 UHPAbilitySystemComponent::UHPAbilitySystemComponent()
 {
-	GetGameplayAttributeValueChangeDelegate(UHPAttributeSet::GetHealthAttribute()).AddUObject(this, &UHPAbilitySystemComponent::OnHealthUpdate);
-	GetGameplayAttributeValueChangeDelegate(UHPAttributeSet::GetUltAttribute()).AddUObject(this, &UHPAbilitySystemComponent::OnUltUpdate);
+	//GetGameplayAttributeValueChangeDelegate(UHPAttributeSet::GetHealthAttribute()).AddUObject(this, &UHPAbilitySystemComponent::OnHealthUpdate);
+	//GetGameplayAttributeValueChangeDelegate(UHPAttributeSet::GetUltAttribute()).AddUObject(this, &UHPAbilitySystemComponent::OnUltUpdate);
 }
 
 void UHPAbilitySystemComponent::InitializeBaseAttributes()
 {
-	UE_LOG(LogTemp, Warning, TEXT("InitializeBaseAttributes Called"));
 	if (!HPAbilitySystemDataAsset|| !HPAbilitySystemDataAsset->GetBaseStatDataTable()|| !GetOwner())
 	{
 		return;
@@ -26,7 +25,6 @@ void UHPAbilitySystemComponent::InitializeBaseAttributes()
 	const UDataTable* BaseStatDataTable = HPAbilitySystemDataAsset->GetBaseStatDataTable();
 	const FHPHeroBaseStats* HeroBaseStats = nullptr;
 
-	UE_LOG(LogTemp, Warning, TEXT("InitializeBaseAttributes Passed"));
 	for (const TPair<FName, uint8*>& DataPair : BaseStatDataTable->GetRowMap())
 	{
 		HeroBaseStats = BaseStatDataTable->FindRow<FHPHeroBaseStats>(DataPair.Key,"");
@@ -39,8 +37,6 @@ void UHPAbilitySystemComponent::InitializeBaseAttributes()
 	
 	if (HeroBaseStats)
 	{
-
-		UE_LOG(LogTemp, Warning, TEXT("MaxAttribute Initialized"));
 		//NEXTTHINGTODO: HeroBaseStats살펴보고 더 채워넣기
 		SetNumericAttributeBase(UHPAttributeSet::GetMaxHealthAttribute(), HeroBaseStats->BaseMaxHealth);
 		SetNumericAttributeBase(UHPAttributeSet::GetMoveSpeedAttribute(), HeroBaseStats->BaseMoveSpeed);
@@ -107,10 +103,8 @@ void UHPAbilitySystemComponent::OnRep_ActivateAbilities()
 {
 	Super::OnRep_ActivateAbilities();
 
-	UE_LOG(LogTemp, Warning,TEXT("OnRep_ActivateAbilities"));
 	if (!AbilitiesGiven)
 	{
-		UE_LOG(LogTemp, Warning,TEXT("OnRep_ActivateAbilities In"));
 		AbilitiesGiven = true;
 		AbilitiesGivenDelegate.Broadcast();
 	}
@@ -118,11 +112,9 @@ void UHPAbilitySystemComponent::OnRep_ActivateAbilities()
 
 void UHPAbilitySystemComponent::ForEachAbility(const FForEachAbilityDelegate& Delegate)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ForEachAbility In, %d"), GetAvatarActor()->HasAuthority());
 	FScopedAbilityListLock ActiveScopeLock(*this);
 	for (const FGameplayAbilitySpec& AbilitySpec : GetActivatableAbilities())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ForEachAbility ForLoop"));
 		if (!Delegate.ExecuteIfBound(AbilitySpec))
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to execute delegate in %hs"), __FUNCTION__);
@@ -183,6 +175,18 @@ void UHPAbilitySystemComponent::GiveInitialAbilities()
 	}
 }
 
+void UHPAbilitySystemComponent::InitAbilityAndEffectAtRespawn()
+{
+	ApplyInitialEffects();
+
+	for (const TSubclassOf<UGameplayAbility>& Ability :HPAbilitySystemDataAsset->GetPassiveAbilities())
+	{
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(Ability, 1, -1, nullptr);
+		GiveAbilityAndActivateOnce(AbilitySpec); //Passive Ability는 버튼이 필요없어 inputID는 1로 설정
+	}
+	
+}
+
 void UHPAbilitySystemComponent::ApplyFullStatEffect()
 {
 	if (!HPAbilitySystemDataAsset)
@@ -199,91 +203,92 @@ void UHPAbilitySystemComponent::AuthApplyGameplayEffect(const TSubclassOf<UGamep
 	{
 		return;
 	}
+	
 	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(GameplayEffect, Level,MakeEffectContext());
 	ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 }
-
-void UHPAbilitySystemComponent::OnHealthUpdate(const FOnAttributeChangeData& ChangedData)
-{
-	if (!GetOwner() || !GetOwner()->HasAuthority())
-	{
-		return;
-	}
-
-	bool bFound = false;
-
-	float MaxHealth = GetGameplayAttributeValue(UHPAttributeSet::GetMaxHealthAttribute(), bFound);
-
-	if (bFound && ChangedData.NewValue >= MaxHealth)
-	{
-		if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Health_Full))
-		{
-			AddLooseGameplayTag(FHPGameplayTags::Get().State_Health_Full);
-		}
-		else
-		{
-			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Health_Full);
-		}
-
-		if (ChangedData.NewValue <= 0)
-		{
-			if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Health_Empty))
-			{
-				AddLooseGameplayTag(FHPGameplayTags::Get().State_Health_Empty);
-
-			
-				if(HPAbilitySystemDataAsset && HPAbilitySystemDataAsset->GetDeathEffect())
-					AuthApplyGameplayEffect(HPAbilitySystemDataAsset->GetDeathEffect());
-
-				FGameplayEventData DeadAbilityEventData;
-				if(ChangedData.GEModData)
-					DeadAbilityEventData.ContextHandle = ChangedData.GEModData->EffectSpec.GetContext();
-
-				UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetOwner(), FHPGameplayTags::Get().State_Dead, DeadAbilityEventData);
-			}
-		}
-		else
-		{
-			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Health_Empty);
-		}
-	}
-}
-
-void UHPAbilitySystemComponent::OnUltUpdate(const FOnAttributeChangeData& ChangedData)
-{
-	if (!GetOwner() || !GetOwner()->HasAuthority())
-	{
-		return;
-	}
-
-	bool bFound = false;
-
-	float MaxUlt = GetGameplayAttributeValue(UHPAttributeSet::GetMaxUltAttribute(), bFound);
-
-	if (bFound && ChangedData.NewValue >= MaxUlt)
-	{
-		if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Ult_Full))
-		{
-			AddLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
-		}
-		else
-		{
-			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
-		}
-
-		if (ChangedData.NewValue <= 0)
-		{
-			if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Ult_Empty))
-			{
-				AddLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Empty);
-			}
-		}
-		else
-		{
-			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Empty);
-		}
-	}
-}
+//
+// void UHPAbilitySystemComponent::OnHealthUpdate(const FOnAttributeChangeData& ChangedData)
+// {
+// 	if (!GetOwner() || !GetOwner()->HasAuthority())
+// 	{
+// 		return;
+// 	}
+//
+// 	bool bFound = false;
+//
+// 	float MaxHealth = GetGameplayAttributeValue(UHPAttributeSet::GetMaxHealthAttribute(), bFound);
+//
+// 	if (bFound && ChangedData.NewValue >= MaxHealth)
+// 	{
+// 		if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Health_Full))
+// 		{
+// 			AddLooseGameplayTag(FHPGameplayTags::Get().State_Health_Full);
+// 		}
+// 		else
+// 		{
+// 			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Health_Full);
+// 		}
+//
+// 		if (ChangedData.NewValue <= 0)
+// 		{
+// 			if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Health_Empty))
+// 			{
+// 				AddLooseGameplayTag(FHPGameplayTags::Get().State_Health_Empty);
+//
+// 			
+// 				if(HPAbilitySystemDataAsset && HPAbilitySystemDataAsset->GetDeathEffect())
+// 					AuthApplyGameplayEffect(HPAbilitySystemDataAsset->GetDeathEffect());
+//
+// 				FGameplayEventData DeadAbilityEventData;
+// 				if(ChangedData.GEModData)
+// 					DeadAbilityEventData.ContextHandle = ChangedData.GEModData->EffectSpec.GetContext();
+//
+// 				UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetOwner(), FHPGameplayTags::Get().State_Dead, DeadAbilityEventData);
+// 			}
+// 		}
+// 		else
+// 		{
+// 			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Health_Empty);
+// 		}
+// 	}
+// }
+//
+// void UHPAbilitySystemComponent::OnUltUpdate(const FOnAttributeChangeData& ChangedData)
+// {
+// 	if (!GetOwner() || !GetOwner()->HasAuthority())
+// 	{
+// 		return;
+// 	}
+//
+// 	bool bFound = false;
+//
+// 	float MaxUlt = GetGameplayAttributeValue(UHPAttributeSet::GetMaxUltAttribute(), bFound);
+//
+// 	if (bFound && ChangedData.NewValue >= MaxUlt)
+// 	{
+// 		if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Ult_Full))
+// 		{
+// 			AddLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
+// 		}
+// 		else
+// 		{
+// 			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
+// 		}
+//
+// 		if (ChangedData.NewValue <= 0)
+// 		{
+// 			if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Ult_Empty))
+// 			{
+// 				AddLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Empty);
+// 			}
+// 		}
+// 		else
+// 		{
+// 			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Empty);
+// 		}
+// 	}
+// }
 
 FGameplayTag UHPAbilitySystemComponent::GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec) const
 {
@@ -304,6 +309,15 @@ int32 UHPAbilitySystemComponent::GetInputIDFromSpec(const FGameplayAbilitySpec& 
 {
 	return AbilitySpec.InputID;
 }
+
+void UHPAbilitySystemComponent::ApplyDeathEffect()
+{
+	if (HPAbilitySystemDataAsset && HPAbilitySystemDataAsset->GetDeathEffect())
+	{
+		AuthApplyGameplayEffect(HPAbilitySystemDataAsset->GetDeathEffect());
+	}
+}
+
 FGameplayTag UHPAbilitySystemComponent::GetUltTagForCurrentCharacter()
 {
 	FScopedAbilityListLock ActiveScopeLock(*this);
@@ -323,3 +337,4 @@ FGameplayTag UHPAbilitySystemComponent::GetUltTagForCurrentCharacter()
 	}
 	return FGameplayTag();
 }
+

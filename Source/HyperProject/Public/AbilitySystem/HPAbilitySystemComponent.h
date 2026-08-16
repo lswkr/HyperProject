@@ -47,13 +47,15 @@ public:
 	FGameplayTag GetUltTagForCurrentCharacter();
 	int32 GetInputIDFromSpec(const FGameplayAbilitySpec& AbilitySpec) const;
 
+	void ApplyDeathEffect();
+	void InitAbilityAndEffectAtRespawn();
+	
 private:
+	void AuthApplyGameplayEffect(const TSubclassOf<UGameplayEffect>& GameplayEffect, int32 Level = 1);
 	void ApplyInitialEffects();
 	void GiveInitialAbilities();
-	void AuthApplyGameplayEffect(const TSubclassOf<UGameplayEffect>& GameplayEffect, int32 Level = 1);
-	
-	void OnHealthUpdate(const FOnAttributeChangeData& ChangedData);
-	void OnUltUpdate(const FOnAttributeChangeData& ChangedData);
+	//void OnHealthUpdate(const FOnAttributeChangeData& ChangedData);
+	//void OnUltUpdate(const FOnAttributeChangeData& ChangedData);
 
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	TMap<EHPAbilityInputID, TSubclassOf<UGameplayAbility>> Abilities;

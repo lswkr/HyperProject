@@ -173,6 +173,7 @@ void UHPAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 		{
 			AHPPlayerCharacter* PlayerCharacter = Cast<AHPPlayerCharacter>(Props.TargetCharacter);
 			PlayerCharacter->Death();
+			
 		}
 		else
 		{

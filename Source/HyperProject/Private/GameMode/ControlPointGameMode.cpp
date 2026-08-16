@@ -6,6 +6,8 @@
 #include "EngineUtils.h"
 #include "Actors/ControlPointSpawnTargetPoint.h"
 #include "Actors/HPControlPoint.h"
+#include "Actors/RespawnPlayerStart.h"
+#include "Characters/Player/HPPlayerCharacter.h"
 #include "Controller/HPPlayerController.h"
 #include "GameFramework/PlayerStart.h"
 #include "GameMode/ControlPointGameState.h"
@@ -13,6 +15,20 @@
 
 APlayerController* AControlPointGameMode::SpawnPlayerController(ENetRole InRemoteRole, const FString& Options)
 {
+	TArray<AActor*> CurrentPlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(
+	this,
+	ARespawnPlayerStart::StaticClass(),
+	CurrentPlayerStarts);
+
+	for (AActor* PlayerStartActor : CurrentPlayerStarts)
+	{
+		if (ARespawnPlayerStart* RespawnPlayerStart = Cast<ARespawnPlayerStart>(PlayerStartActor))
+		{
+			RespawnPlayerStarts.Add(RespawnPlayerStart);
+		}
+	}
+
 	APlayerController* NewPlayerController = Super::SpawnPlayerController(InRemoteRole, Options);
 	IGenericTeamAgentInterface* NewPlayerTeamInterface = Cast<IGenericTeamAgentInterface>(NewPlayerController);
 	FGenericTeamId TeamId = GetTeamIDForPlayer(NewPlayerController);
@@ -23,6 +39,29 @@ APlayerController* AControlPointGameMode::SpawnPlayerController(ENetRole InRemot
 
 	NewPlayerController->StartSpot = FindNextStartSpotForTeam(TeamId);
 	return NewPlayerController;
+}
+
+ARespawnPlayerStart* AControlPointGameMode::GetRespawnPlayerStart(AHPPlayerCharacter* RespawningCharacter)
+{
+	const FName* StartSpotTag = TeamStartSpotTagMap.Find(RespawningCharacter->GetGenericTeamId());
+
+	UE_LOG(LogTemp, Warning,TEXT("RespawningCharacter GenricId %d"), RespawningCharacter->GetGenericTeamId().GetId());
+	if (!StartSpotTag)
+	{
+		return nullptr;
+	}
+	
+	for (ARespawnPlayerStart* PlayerStart : RespawnPlayerStarts)
+	{
+		if (PlayerStart->PlayerStartTag == *StartSpotTag &&
+			PlayerStart->GetPlayerStartControlPointNum() == CurrentTargetPointIdx &&
+			!PlayerStart->IsOccupied())
+		{
+			PlayerStart->SetOccupied(true);
+			return PlayerStart;
+		}
+	}
+	return nullptr;
 }
 
 void AControlPointGameMode::StartPlay()
@@ -228,6 +267,7 @@ FGenericTeamId AControlPointGameMode::GetTeamIDForPlayer(const APlayerController
 AActor* AControlPointGameMode::FindNextStartSpotForTeam(const FGenericTeamId& TeamID) const
 {
 	const FName* StartSpotTag = TeamStartSpotTagMap.Find(TeamID);
+	
 	if (!StartSpotTag)
 	{
 		return nullptr;
@@ -235,12 +275,25 @@ AActor* AControlPointGameMode::FindNextStartSpotForTeam(const FGenericTeamId& Te
 
 	UWorld* World = GetWorld();
 	
-	for (TActorIterator<APlayerStart> It(World); It; ++It)
+	for (TActorIterator<ARespawnPlayerStart> It(World); It; ++It)
 	{
-		if (It->PlayerStartTag == *StartSpotTag)
+		if (It->PlayerStartTag == *StartSpotTag &&
+			It->GetPlayerStartControlPointNum() == CurrentTargetPointIdx &&
+			!It->IsOccupied())
 		{
-			It->PlayerStartTag = FName("Taken");
+			It->SetOccupied(true);
 			return *It;
+		}
+	}
+
+	for (ARespawnPlayerStart* PlayerStart:RespawnPlayerStarts)
+	{
+		if (PlayerStart->PlayerStartTag == *StartSpotTag &&
+			PlayerStart->GetPlayerStartControlPointNum() == CurrentTargetPointIdx &&
+			!PlayerStart->IsOccupied())
+		{
+			PlayerStart->SetOccupied(true);
+			return Cast<AActor>(PlayerStart);
 		}
 	}
 	return nullptr;

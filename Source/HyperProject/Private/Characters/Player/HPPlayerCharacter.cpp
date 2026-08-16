@@ -17,8 +17,11 @@
 #include "Components/HPCombatComponent.h"
 #include "Controller/HPPlayerController.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "Actors/HPControlPoint.h"
+#include "Actors/RespawnPlayerStart.h"
 #include "Components/LagCompensationComponent.h"
 #include "Components/WidgetComponent.h"
+#include "GameMode/ControlPointGameMode.h"
 #include "HyperProject/HyperProject.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -30,6 +33,8 @@
 
 AHPPlayerCharacter::AHPPlayerCharacter()
 {
+	HPAbilitySystemComponent->RegisterGameplayTagEvent(FHPGameplayTags::Get().State_Dead, EGameplayTagEventType::NewOrRemoved).
+	AddUObject(this,&AHPPlayerCharacter::DeathTagUpdated);
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
 	SpringArm->SetupAttachment(GetRootComponent());
 	SpringArm->bUsePawnControlRotation = true;
@@ -182,7 +187,16 @@ void AHPPlayerCharacter::ServerSideInit()
 {
 	Super::ServerSideInit();
 	DamageContributionComponent->BindAbilitySystemComponent(HPAbilitySystemComponent);
-	
+	//첫 생성 시 PlayerStart초기화를 위해
+	if (GetController()->StartSpot.IsValid())
+	{
+		ARespawnPlayerStart* PlayerStart = Cast<ARespawnPlayerStart>(GetController()->StartSpot.Get());
+		if (PlayerStart)
+		{
+			UE_LOG(LogTemp, Warning,TEXT("Init StartSpot"));
+			PlayerStart->SetOccupied(false);
+		}	
+	}
 	//BroadcastInitialValues();
 }
 
@@ -255,6 +269,40 @@ void AHPPlayerCharacter::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 	{
 		MeleeHitBoxComponent->AttachToComponent(GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,MeleeHitBoxSocketName);
 	}
+}
+
+void AHPPlayerCharacter::DeathTagUpdated(FGameplayTag GameplayTag, int TagCount)
+{
+	UE_LOG(LogTemp, Warning,TEXT("DeathTagUpdated: TagCount = %d"), TagCount);
+	if (TagCount==1)
+	{
+		HandleDeath();
+	}
+	else if (TagCount==0)
+	{
+		HandleRespawn();
+	}
+}
+
+void AHPPlayerCharacter::PlayDeadAnimation()
+{
+	if (DeathAnimMontage)
+	{
+		float MontageDuration = PlayAnimMontage(DeathAnimMontage);
+		GetWorldTimerManager().SetTimer(DeathMontageTimerHandle, this, &AHPPlayerCharacter::DeathMontageFinished, MontageDuration-0.8f);
+	}
+}
+
+void AHPPlayerCharacter::DeathMontageFinished()
+{
+}
+
+bool AHPPlayerCharacter::IsDead() const
+{
+	if (!HPAbilitySystemComponent)
+		return false;
+	
+	return HPAbilitySystemComponent->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Dead);
 }
 #endif
 
@@ -451,13 +499,55 @@ void AHPPlayerCharacter::ClientSideInit()
 
 }
 
-void AHPPlayerCharacter::Respawn()
+void AHPPlayerCharacter::HandleRespawn()
 {
+	//NextThingTODO: Basic Ability(ListenForEvent같은거)는 다시 시작하기
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//NextThingTODO: 빼야할 위젯 정해서 WidgetController에서 위젯 켜기
+
+	GetMesh()->GetAnimInstance()->StopAllMontages(0.f);
+	if (HasAuthority())
+	{
+		HPAbilitySystemComponent->InitAbilityAndEffectAtRespawn();
+		if (AControlPointGameMode* CPGameMode = Cast<AControlPointGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			//현재 거점 상태에 따라 특정 위치에서 생성
+			ARespawnPlayerStart* RespawnPlayerStart = CPGameMode->GetRespawnPlayerStart(this);
+			if (RespawnPlayerStart)
+			{
+				SetActorLocation(RespawnPlayerStart->GetActorLocation());
+				RespawnPlayerStart->SetOccupied(false);
+				UE_LOG(LogTemp, Warning,TEXT("Respawn at PlayerStart"));
+				return;
+			}
+		}
+		
+			TWeakObjectPtr<AActor> StartSpot =  GetController()->StartSpot;
+			if (StartSpot.IsValid())
+			{
+				SetActorLocation(StartSpot->GetActorLocation());
+			}
+		
+	}
+}
+
+void AHPPlayerCharacter::HandleDeath()
+{
+	UE_LOG(LogTemp, Warning, TEXT("HandleDeath"));
+	DamageContributionComponent->SpreadKillLogs(HPAttributeSet->GetMaxHealth());
+	PlayDeadAnimation();
+	if (HPAbilitySystemComponent)
+	{
+		HPAbilitySystemComponent->CancelAllAbilities();
+	}
+	//NextThingTODO: 빼야할 위젯 정해서 WidgetController에서 처리하기
+
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AHPPlayerCharacter::Death()
 {
-	DamageContributionComponent->SpreadKillLogs(HPAttributeSet->GetMaxHealth());
+	HPAbilitySystemComponent->ApplyDeathEffect();
 }
 
 

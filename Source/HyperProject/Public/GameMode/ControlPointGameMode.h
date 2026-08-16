@@ -12,10 +12,11 @@
  * 
  */
 
+class ARespawnPlayerStart;
 class AControlPointSpawnTargetPoint;
 class AHPControlPoint;
 class AControlPointGameState;
-
+class AHPPlayerCharacter;
 UENUM(BlueprintType)
 enum class EControlPointGameModeState : uint8
 {
@@ -89,6 +90,7 @@ private:
 public:
 	virtual APlayerController* SpawnPlayerController(ENetRole InRemoteRole, const FString& Options) override;
 
+	ARespawnPlayerStart* GetRespawnPlayerStart(AHPPlayerCharacter* RespawningCharacter);
 private:
 	FGenericTeamId GetTeamIDForPlayer(const APlayerController* PlayerController) const;
 
@@ -97,6 +99,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Team")
 	
 	TMap<FGenericTeamId, FName> TeamStartSpotTagMap;
+
+	UPROPERTY()
+	TArray<ARespawnPlayerStart*> RespawnPlayerStarts; 
 	/*
 	 * HPGameMode End
 	 */
