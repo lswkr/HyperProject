@@ -117,6 +117,8 @@ bool IsDead() const;
 	/* Death And Respawn End */
 	
 	/* Widget Begin*/
+	void ShowOverHeadWidget();
+
 	UPROPERTY(EditDefaultsOnly, Category = "Widget")
 	UWidgetComponent* OverHeadWidgetComponent;
 

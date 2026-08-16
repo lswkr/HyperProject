@@ -149,6 +149,8 @@ void AHPPlayerCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	RotateInPlace(DeltaSeconds);
+
+	ShowOverHeadWidget();
 }
 
 void AHPPlayerCharacter::PawnClientRestart()
@@ -233,6 +235,10 @@ void AHPPlayerCharacter::BeginPlay()
 	
 	SpawnWeapon(0);
 	ConfigureOverHeadWidget();
+	UE_LOG(LogTemp ,Warning ,TEXT("Widget Relative: %s/ World: %s"),
+		*OverHeadWidgetComponent->GetRelativeLocation().ToString(),
+		*OverHeadWidgetComponent->GetComponentLocation().ToString());
+	
 }
 
 void AHPPlayerCharacter::PostInitializeComponents()
@@ -271,6 +277,9 @@ void AHPPlayerCharacter::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 	}
 }
 
+#endif
+
+
 void AHPPlayerCharacter::DeathTagUpdated(FGameplayTag GameplayTag, int TagCount)
 {
 	UE_LOG(LogTemp, Warning,TEXT("DeathTagUpdated: TagCount = %d"), TagCount);
@@ -304,7 +313,32 @@ bool AHPPlayerCharacter::IsDead() const
 	
 	return HPAbilitySystemComponent->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Dead);
 }
-#endif
+
+void AHPPlayerCharacter::ShowOverHeadWidget()
+{
+	if (HasAuthority())
+		return;
+	
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		FVector CameraLocation = FVector::ZeroVector;
+		FRotator CameraRotation = FRotator::ZeroRotator;
+				
+		PC->GetPlayerViewPoint(CameraLocation,CameraRotation);
+			
+		FVector Direction = CameraLocation - OverHeadWidgetComponent->GetComponentLocation();
+		OverHeadWidgetComponent->SetWorldRotation(Direction.Rotation());
+		UE_LOG(LogTemp, Warning,
+	TEXT("%s | Actor=%s | WidgetWorld=%s | WidgetRel=%s | Parent=%s | AbsLoc=%d"),
+	*GetName(),
+	*GetActorLocation().ToString(),
+	*OverHeadWidgetComponent->GetComponentLocation().ToString(),
+	*OverHeadWidgetComponent->GetRelativeLocation().ToString(),
+	*GetNameSafe(OverHeadWidgetComponent->GetAttachParent()),
+	OverHeadWidgetComponent->IsUsingAbsoluteLocation()
+);
+	}	
+}
 
 UAnimMontage* AHPPlayerCharacter::GetMeleeHitAnimMontage_Implementation() const
 {
@@ -756,9 +790,10 @@ void AHPPlayerCharacter::ConfigureOverHeadWidget()
 	{
 		BindCallbacksToDependencies();
 		HPUserWidget->SetWidgetController(this);
-
 		BroadcastInitialValues();
 		OverHeadWidgetComponent->SetHiddenInGame(false);
+		OverHeadWidgetComponent->SetTwoSided(true);
+		
 		GetWorldTimerManager().ClearTimer(OverHeadWidgetTimerHandle);
 		GetWorldTimerManager().SetTimer(OverHeadWidgetTimerHandle, this, &AHPPlayerCharacter::UpdateOverHeadWidgetVisibility, OverHeadWidgetVisibilityPeriod, true);
 	}

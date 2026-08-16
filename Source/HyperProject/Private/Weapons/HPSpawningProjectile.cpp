@@ -14,16 +14,16 @@ void AHPSpawningProjectile::MakeProjectileEffectParams(FProjectileApplyEffectPar
 {
 	Super::MakeProjectileEffectParams(ProjectileApplyEffectParams);
 	ProjectileApplyEffectParams.SpawnableActorClass = SpawnedActorClass;
+	//ProjectileApplyEffectParams.bIsBounded = bNeedToBeBounded;
 }
 
 void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                               UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (!HasAuthority())
-		return;
-
 	if (!bServerSideRewind)
 	{
+		if (!HasAuthority())
+			return;
 		FTransform SpawnTransform;
 		SpawnTransform.SetLocation(Hit.ImpactPoint);
 		SpawnTransform.SetRotation(FQuat::Identity);
@@ -61,43 +61,41 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 		if (OwnerController)
 		{
 			AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(OtherActor);
+			
 			if (bServerSideRewind && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled())
 			{
-				// if (HitCharacter) //캐릭터에 닿았을 경우
-				// {
-				// 	UAbilitySystemComponent* SourceASC = ProjectileParams.SourceASC;
-				// 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitCharacter);
-				//
-				// 	FProjectileApplyEffectParams ProjectileApplyEffectParams;
-				// 	ProjectileApplyEffectParams.SourceASC=SourceASC;
-				// 	ProjectileApplyEffectParams.TargetASC=TargetASC;
-				// 	ProjectileApplyEffectParams.DamageEffectClass = DamageEffectClass;
-				// 	ProjectileApplyEffectParams.AdditionalEffectClass = AdditionalEffectClass;
-				// 	ProjectileApplyEffectParams.Damage = Damage.GetValueAtLevel(1);
-				// 	ProjectileApplyEffectParams.AdditionalEffectValue = AdditionalValue.GetValueAtLevel(1);
-				// 	ProjectileApplyEffectParams.bAdditionalEffectForTeam = bIsForMyTeam;
-				// 	ProjectileApplyEffectParams.GenericTeamId = GetGenericTeamId();
-				// 	
-				// 	OwnerCharacter->GetLagCompensationComponent()->ProjectileServerApplyValidHit(
-				// 		HitCharacter,
-				// 		TraceStart,
-				// 		InitialVelocity,
-				// 		OwnerController->GetServerTime() - OwnerController->SingleTripTime,
-				// 		ProjectileApplyEffectParams
-				// 	);
-				// }
-				//else //오브젝트에 닿았을 경우
-				//{
-				UAbilitySystemComponent* SourceASC = ProjectileParams.SourceASC;
-				
-				FProjectileApplyEffectParams ProjectileApplyEffectParams;
-				ProjectileApplyEffectParams.SourceASC=SourceASC;
-				ProjectileApplyEffectParams.SourceCharacter = OwnerCharacter;
-				ProjectileApplyEffectParams.SpawnableActorClass = SpawnedActorClass;
-				ProjectileApplyEffectParams.OriginLocation = Hit.ImpactPoint;
-				ProjectileApplyEffectParams.GenericTeamId = GetGenericTeamId();
-				OwnerCharacter->GetLagCompensationComponent()->SpawningProjectileServerApplyValidHit(TraceStart, InitialVelocity, ProjectileApplyEffectParams);
-				//}
+				if (HitCharacter) //캐릭터에 닿았을 경우
+				{
+					UAbilitySystemComponent* SourceASC = ProjectileParams.SourceASC;
+					UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitCharacter);
+					
+					FProjectileApplyEffectParams ProjectileApplyEffectParams;
+					MakeProjectileEffectParams(ProjectileApplyEffectParams);
+					ProjectileApplyEffectParams.TargetCharacter = HitCharacter;
+					ProjectileApplyEffectParams.TargetASC=TargetASC;
+					ProjectileApplyEffectParams.OriginLocation = Hit.ImpactPoint;
+					
+					OwnerCharacter->GetLagCompensationComponent()->SpawningProjectileServerApplyValidHit_HitCharacter
+					(	HitCharacter,
+						TraceStart,
+						InitialVelocity,
+						OwnerController->GetServerTime() - OwnerController->SingleTripTime,
+						ProjectileApplyEffectParams
+						);
+				}
+				else //오브젝트에 닿았을 경우
+				{
+					FProjectileApplyEffectParams ProjectileApplyEffectParams;
+
+					MakeProjectileEffectParams(ProjectileApplyEffectParams);
+					ProjectileApplyEffectParams.OriginLocation = Hit.ImpactPoint;
+					
+					OwnerCharacter->GetLagCompensationComponent()->SpawningProjectileServerApplyValidHit_HitObject(
+						TraceStart,
+						InitialVelocity,
+						ProjectileApplyEffectParams
+						);
+				}
 			}
 		}
 	}

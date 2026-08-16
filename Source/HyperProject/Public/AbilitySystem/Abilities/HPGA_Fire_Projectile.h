@@ -66,4 +66,7 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly)
 	bool bNeedCooldown = false;
+	//
+	// UPROPERTY(EditDefaultsOnly)
+	// bool bHasBoundedSpawnedActor = false;
 };

@@ -121,5 +121,14 @@ public:
 private:
 	UPROPERTY(Replicated)
 	bool bUseServerSideRewind = true;
+
+	/* Set Spawning Actor*/
+public:
+	//void SetSpawnedActor(AActor* SpawnedActor) { SpawnedActorBySpawningProjectile = SpawnedActor; }
+	//void TryDestroyBoundedSpawnedActor();
+//private:
+	//UPROPERTY()
+	//AActor* SpawnedActorBySpawningProjectile = nullptr;
 	/* Server Side Rewind End*/
+
 };

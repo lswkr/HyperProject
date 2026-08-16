@@ -53,6 +53,11 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTag BeamGameplayCueTag;
 	
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag HitVFXCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag HitSoundCueTag;
 	FDelegateHandle TargetDataDelegateHandle_Projectile;
 	FDelegateHandle TargetDataDelegateHandle_HitScan;
 
@@ -68,6 +73,9 @@ private:
 	void StartFireDelay();
 
 	bool IsAiming() const;
+
+	UPROPERTY(EditDefaultsOnly)
+	bool bIsForBoth = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	TSubclassOf<UGameplayEffect> PrimaryEffectClass;

@@ -717,7 +717,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 	AHPPlayerCharacter* HPCharacter = GetHPPlayerCharacterFromActorInfo();
 	float AimingDuration = 0.f;
 	
-	float FinalValue = PrimaryValue.GetValueAtLevel(1);
+	float Damage = PrimaryValue.GetValueAtLevel(1);
 	
 	const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
 	const FGameplayAbilityTargetData_HPCustom* TargetData = nullptr ;
@@ -735,15 +735,17 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 		bool bIsNanoBoosted = TargetData->GetNanoBoosted();
 		bool bIsAiming = TargetData->IsAiming();
 		
+		AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor());
 		
-		if (AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor()))
+		if (HitCharacter)
 		{
 			FServerSideRewindResult SSRResult = HPCharacter->GetLagCompensationComponent()->ServerSideRewind(HitCharacter,TargetData->GetStartPoint(),HitResult->ImpactPoint, TargetData->GetHitTime());
 
 			bIsHeadShot = SSRResult.bHeadShot;
 			bIsShotConfirmed = SSRResult.bHitConfirmed;
 		}
-	
+		float Multiplier = 1.f;
+		
 		if (bIsShotConfirmed)
 		{
 			if (!HitResult->bBlockingHit)
@@ -754,38 +756,63 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 			{
 				//NEXTTHINGTODO: 헤드샷 위젯 표시
 				UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
-				FinalValue*=2;
+				Multiplier*=2;
 			}
 
 			if (bIsAiming)
 			{
-				FinalValue*=FMath::Clamp<float>(1+AimingDuration, 1.f, 3.f);	
+				Multiplier*=FMath::Clamp<float>(1+AimingDuration, 1.f, 3.f);	
 			}
 
 			if (bIsNanoBoosted)
 			{
-				FinalValue*=1.5;
+				Multiplier*=1.5;
 			}
 			
 			FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(PrimaryEffectClass,1,Context);
-			UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, FinalValue);
+			UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, Damage*Multiplier);
 			
 			if (!EffectSpecHandle.IsValid())
 			{
 				return;
 			}
-			EffectSpecHandle.Data->GetContext().AddHitResult(*HitResult, true);
 			DrawDebugSphere(GetWorld(),HitResult->ImpactPoint, 20,10, FColor::Red, false, 10);
 
-			//
-			// if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
-			// {
-			// 	ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitResult->GetActor());
-			// 	if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
-			// 	{
-			ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
-			// 	}
-			// }
+			
+			if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
+			{
+				ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitCharacter);
+				if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
+				{
+					
+					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
+				}
+
+				else if (bIsForBoth)
+				{
+					float Heal = SecondaryValue.GetValueAtLevel(1);
+
+
+					FGameplayEffectSpecHandle SecondSpecHandle = SourceASC->MakeOutgoingSpec(SecondaryEffectClass,1,Context);
+					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SecondSpecHandle, GameplayTags.SetByCaller_IncomingHeal, Heal*Multiplier);
+			
+					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, SecondSpecHandle, TargetDataHandle);
+
+					HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*SecondSpecHandle.Data.Get());
+				}
+				
+				if (HitCharacter->GetAbilitySystemComponent())
+				{
+					HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
+	
+					FGameplayCueParameters GameplayCueParams;
+					GameplayCueParams.Location = HitResult->ImpactPoint;
+
+					HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitVFXCueTag, GameplayCueParams);
+					HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitSoundCueTag,GameplayCueParams);
+				}
+			}
+			
 		
 		}
 	}

@@ -9,6 +9,7 @@
 #include "Components/BoxComponent.h"
 #include "Engine/OverlapResult.h"
 #include "GameplayEffect.h"
+#include "Characters/Player/HPPlayerCharacter.h"
 
 AAbilitySpawnableActor_Mine::AAbilitySpawnableActor_Mine()
 {
@@ -30,15 +31,15 @@ void AAbilitySpawnableActor_Mine::SetAbilitySystem(UAbilitySystemComponent* InAS
 			).AddUObject(this, &AAbilitySpawnableActor_Mine::OnTagChanged);
 	}
 }
-
-void AAbilitySpawnableActor_Mine::OnTagChanged(FGameplayTag GameplayTag, int TagCount)
-{
-	if (TagCount == 0)
-	{
-		Destroy_Normal();	
-	}
-}
-
+ 
+ void AAbilitySpawnableActor_Mine::OnTagChanged(FGameplayTag GameplayTag, int TagCount)
+ {
+ 	if (TagCount == 0)
+ 	{
+ 		Destroy_Normal();	
+ 	}
+ }
+ 
 void AAbilitySpawnableActor_Mine::Destroy_Normal()
 {
 	if (!HasAuthority())
@@ -60,12 +61,20 @@ void AAbilitySpawnableActor_Mine::Destroy_WithExplosion()
 void AAbilitySpawnableActor_Mine::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	UE_LOG(LogTemp, Warning,TEXT("Mine OVERLAPPED"));
 	if (HasAuthority())
 	{
-		//NEXTTHINGTODO: 같은 팀이면 지나가기, 다른 팀이면 폭발
-		//일단은 닿으면 폭발하도록
 		
-		//Destroy_WithExplosion();
+		IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(GetInstigator());
+
+		if (OwnerTeamInterface)
+		{
+			ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*OtherActor);
+			if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
+			{
+				Destroy_WithExplosion();
+			}	
+		}
 	}
 }
 
@@ -118,9 +127,10 @@ void AAbilitySpawnableActor_Mine::Explosion()
 			{
 				float RangeRate = Pair.Value/(ExplosionOuterRadius);
 
-				UAbilitySystemComponent* OverlappedCharacterASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Pair.Key);
+				AHPPlayerCharacter* OverlappedCharacter = Cast<AHPPlayerCharacter>(Pair.Key);
+				//UAbilitySystemComponent* OverlappedCharacterASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Pair.Key);
 
-				if (OverlappedCharacterASC)
+				if (OverlappedCharacter)
 				{
 					float FinalDamage = ApplicableValue.GetValueAtLevel(1);
 					FinalDamage*= (1-RangeRate); //Damage는 MaxDamage로 해서
@@ -128,16 +138,20 @@ void AAbilitySpawnableActor_Mine::Explosion()
 					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, FinalDamage);
 
 					//NEXTTHINGTODO: 모두 다 Overlap시킨 뒤 Team인지 아닌지 구별해서 Team인 경우 Additional Effect적용하도록
-					
-					// if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
-					// {
-					// 	ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitResult->GetActor());
-					// 	if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
-					// 	{
-					OverlappedCharacterASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
-		
-					// 	}
-					// }
+
+					if (bPush)
+					{
+						FRotator NewRotation = (OverlappedCharacter->GetActorLocation() - GetActorLocation()).Rotation();
+						OverlappedCharacter->LaunchCharacter(NewRotation.Vector()* PushPower, true, true);
+					}
+					 if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(FiringPawn))
+					 {
+					 	ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*Pair.Key);
+					 	if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
+					 	{
+							OverlappedCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data);
+						}
+					}
 					
 				}
 			}

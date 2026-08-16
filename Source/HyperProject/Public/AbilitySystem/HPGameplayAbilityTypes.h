@@ -221,6 +221,9 @@ struct FProjectileApplyEffectParams
 	UPROPERTY()
 	bool bCanPush = false;
 
+	// UPROPERTY()
+	// bool bIsBounded = false;
+	
 	UPROPERTY()
 	float FrontSideWidth = 0.f;
 	

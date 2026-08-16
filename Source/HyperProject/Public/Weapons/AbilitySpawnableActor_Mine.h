@@ -50,5 +50,9 @@ private:
 	UFUNCTION()
 	void Explosion();
 
-	
+	UPROPERTY(EditDefaultsOnly, Category = "Mine")
+	bool bPush = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Mine")
+	float PushPower= 3000.f;
 };

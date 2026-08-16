@@ -267,6 +267,16 @@ void UHPCombatComponent::ShouldUseServerSideRewind(bool TooHighPing)
 	bUseServerSideRewind = !TooHighPing;
 }
 
+// void UHPCombatComponent::TryDestroyBoundedSpawnedActor()
+// {
+// 	if (GetOwner()->HasAuthority())
+// 	{
+// 		if (SpawnedActorBySpawningProjectile)
+// 		{
+// 			SpawnedActorBySpawningProjectile->Destroy();
+// 		}
+// 	}
+// }
 
 
 void UHPCombatComponent::ToggleMeleeHitBox(bool TurnOn)

@@ -328,8 +328,9 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 		bool bIsNanoBoosted = TargetData->GetNanoBoosted();
 		bool bIsAiming = TargetData->IsAiming();
 		
+		AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor());
 		
-		if (AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor()))
+		if (HitCharacter)
 		{
 			FServerSideRewindResult SSRResult = HPCharacter->GetLagCompensationComponent()->ServerSideRewind(HitCharacter,TargetData->GetStartPoint(),HitResult->ImpactPoint, TargetData->GetHitTime());
 
@@ -370,15 +371,26 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 			EffectSpecHandle.Data->GetContext().AddHitResult(*HitResult, true);
 			DrawDebugSphere(GetWorld(),HitResult->ImpactPoint, 20,10, FColor::Red, false, 10);
 
-			//
-			// if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
-			// {
-			// 	ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitResult->GetActor());
-			// 	if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
-			// 	{
-			ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
-			// 	}
-			// }
+			
+			if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
+			{
+				ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitCharacter);
+				if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
+				{
+					if (HitCharacter->GetAbilitySystemComponent())
+					{
+						HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
+	
+						FGameplayCueParameters GameplayCueParams;
+						GameplayCueParams.Location = HitResult->ImpactPoint;
+
+						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitVFXCueTag, GameplayCueParams);
+						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitSoundCueTag,GameplayCueParams);
+					}
+
+					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
+				}
+			}
 		
 		}
 	}

@@ -76,14 +76,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
 
-	/** 
-	* Hitscan
-	*/
+	/* Hitscan */
 	FServerSideRewindResult ServerSideRewind(AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 
-	/** 
-	* Projectile
-	*/
+	/* Projectile */
 	FServerSideRewindResult ProjectileServerSideRewind(
 		AHPPlayerCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
@@ -92,26 +88,10 @@ public:
 		float HitTime
 	);
 	
+	/* Explosion Projectile Begin */
 	FServerSideRewindResult ExplosionServerSideRewind(AHPPlayerCharacter* HitCharacter,
 	                                                  const FVector_NetQuantize& OriginLocation, float InnerRadius,
 	                                                  float OuterRadius, float HitTime, FVector_NetQuantize& HitLocation);
-	
-	UFUNCTION(Server, Reliable)
-	void ProjectileServerApplyValidHit(
-		AHPPlayerCharacter* HitCharacter,
-		const FVector_NetQuantize& TraceStart,
-		const FVector_NetQuantize100& InitialVelocity,
-		const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
-		float HitTime
-	);
-
-	UFUNCTION(Server, Reliable)
-	void SpawningProjectileServerApplyValidHit(
-		const FVector_NetQuantize& TraceStart,
-		const FVector_NetQuantize100& InitialVelocity,
-		const FProjectileApplyEffectParams& ProjectileApplyEffectParams
-	);
-
 	UFUNCTION(Server, Reliable)
 	void ExplosionServerApplyValidHit_HitObject(
 		const FVector_NetQuantize& TraceStart,
@@ -130,6 +110,39 @@ public:
 		const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
 		const TArray<AHPPlayerCharacter*>& OverlappedCharacters
 	);
+	
+	/* Explosion Projectile End */
+
+	/* Point Projectile Begin */
+	UFUNCTION(Server, Reliable)
+	void ProjectileServerApplyValidHit(
+		AHPPlayerCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams,
+		float HitTime
+	);
+	/* Point Projectile End */
+
+	/*  Spawning Projectile Begin */
+	UFUNCTION(Server, Reliable)
+	void SpawningProjectileServerApplyValidHit_HitCharacter(
+		AHPPlayerCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime,
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams
+		);
+
+	UFUNCTION(Server, Reliable)
+	void SpawningProjectileServerApplyValidHit_HitObject(
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		//float HitTime,
+		const FProjectileApplyEffectParams& ProjectileApplyEffectParams
+	);
+	/*  Spawning Projectile End */
+	
 protected:
 	virtual void BeginPlay() override;
 	void CaptureFramePackage(FFramePackage& Package);

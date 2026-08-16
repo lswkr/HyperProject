@@ -43,6 +43,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTag BeamGameplayCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag HitVFXCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag HitSoundCueTag;
 	
 	FDelegateHandle TargetDataDelegateHandle;
 

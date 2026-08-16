@@ -9,10 +9,12 @@
 #include "HPGameplayTags.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/BoxComponent.h"
+#include "Components/HPCombatComponent.h"
 #include "HyperProject/HyperProject.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/GameplayStaticsTypes.h"
 #include "Weapons/AbilitySpawnableActor.h"
+#include "Weapons/HPProjectileBase.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -304,6 +306,73 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 			}
 		}
 	}
+}
+
+void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_HitCharacter_Implementation(
+	AHPPlayerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart,
+	const FVector_NetQuantize100& InitialVelocity, float HitTime,
+	const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
+{
+	FServerSideRewindResult SSRResult = ProjectileServerSideRewind(HitCharacter, TraceStart,InitialVelocity, ProjectileApplyEffectParams, HitTime);
+
+	if (SSRResult.bHitConfirmed)
+	{
+		if (ProjectileApplyEffectParams.SpawnableActorClass)
+		{
+			FTransform SpawnTransform;
+			SpawnTransform.SetLocation(ProjectileApplyEffectParams.OriginLocation);
+			SpawnTransform.SetRotation(FRotator::ZeroRotator.Quaternion());
+			AAbilitySpawnableActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AAbilitySpawnableActor>(
+				ProjectileApplyEffectParams.SpawnableActorClass,
+				SpawnTransform,
+				ProjectileApplyEffectParams.SourceCharacter,
+				ProjectileApplyEffectParams.SourceCharacter,
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+				);
+
+			SpawnedActor->SetAbilitySystem(ProjectileApplyEffectParams.SourceASC);
+			
+			SpawnedActor->SetGenericTeamId(ProjectileApplyEffectParams.GenericTeamId);
+			SpawnedActor->FinishSpawning(SpawnTransform);
+			
+		//	if (ProjectileApplyEffectParams.bIsBounded)
+			//	ProjectileApplyEffectParams.SourceCharacter->GetCombatComponent()->SetSpawnedActor(SpawnedActor);
+		}
+	}
+}
+
+
+void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_HitObject_Implementation(
+	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity,
+	const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
+{
+	FServerSideRewindResult SSRResult = ProjectileConfirmHit_ForObject(TraceStart, InitialVelocity);
+
+	if (SSRResult.bHitConfirmed)
+	{
+		if (ProjectileApplyEffectParams.SpawnableActorClass)
+		{
+			FTransform SpawnTransform;
+			SpawnTransform.SetLocation(ProjectileApplyEffectParams.OriginLocation);
+			SpawnTransform.SetRotation(FRotator::ZeroRotator.Quaternion());
+			AAbilitySpawnableActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AAbilitySpawnableActor>(
+				ProjectileApplyEffectParams.SpawnableActorClass,
+				SpawnTransform,
+				ProjectileApplyEffectParams.SourceCharacter,
+				ProjectileApplyEffectParams.SourceCharacter,
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+				);
+
+			SpawnedActor->SetAbilitySystem(ProjectileApplyEffectParams.SourceASC);
+			
+			SpawnedActor->SetGenericTeamId(ProjectileApplyEffectParams.GenericTeamId);
+			SpawnedActor->FinishSpawning(SpawnTransform);
+
+			//if (ProjectileApplyEffectParams.bIsBounded)
+			//	ProjectileApplyEffectParams.SourceCharacter->GetCombatComponent()->SetSpawnedActor(SpawnedActor);
+		}
+	}
+	
 }
 
 void ULagCompensationComponent::BeginPlay()
@@ -808,44 +877,44 @@ FServerSideRewindResult ULagCompensationComponent::ExplosionServerSideRewind(AHP
 	return ExplosionConfirmHit(FrameToCheck, HitCharacter, OriginLocation, InnerRadius,OuterRadius, HitTime, HitLocation);
 }
 
-void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_Implementation(
-	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity,
-	const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
-{
-	FServerSideRewindResult SSRResult = ProjectileConfirmHit_ForObject(TraceStart,InitialVelocity);
-
-	if (!SSRResult.bHitConfirmed)
-		return;
-
-	if (ProjectileApplyEffectParams.SourceCharacter && ProjectileApplyEffectParams.SpawnableActorClass)
-	{
-		
-		FTransform SpawnTransform;
-		SpawnTransform.SetLocation(ProjectileApplyEffectParams.OriginLocation);
-		SpawnTransform.SetRotation(FRotator::ZeroRotator.Quaternion());
-		
-		AAbilitySpawnableActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AAbilitySpawnableActor>(
-			ProjectileApplyEffectParams.SpawnableActorClass,
-			SpawnTransform,
-			ProjectileApplyEffectParams.SourceCharacter,
-			ProjectileApplyEffectParams.SourceCharacter,
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-			);
-		
-		SpawnedActor->SetAbilitySystem(ProjectileApplyEffectParams.SourceASC);
-		// if (AHPProjectileBase* SpawnedProjectile = Cast<AHPProjectileBase>(SpawnedActor))
-		// {
-		// 	
-		// 	SpawnedProjectile->SetProjectileEffectParams(ProjectileParams);
-		// 	if (SpawnedProjectile->IsMine())
-		// 	{
-		// 		SpawnedProjectile->BindExplosionCallbackFunction(GetOwner());
-		// 	}
-		// }
-		SpawnedActor->SetGenericTeamId(ProjectileApplyEffectParams.GenericTeamId);
-		SpawnedActor->FinishSpawning(SpawnTransform);
-	}
-}
+// void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_Implementation(
+// 	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity,
+// 	const FProjectileApplyEffectParams& ProjectileApplyEffectParams)
+// {
+// 	FServerSideRewindResult SSRResult = ProjectileConfirmHit_ForObject(TraceStart,InitialVelocity);
+//
+// 	if (!SSRResult.bHitConfirmed)
+// 		return;
+//
+// 	if (ProjectileApplyEffectParams.SourceCharacter && ProjectileApplyEffectParams.SpawnableActorClass)
+// 	{
+// 		
+// 		FTransform SpawnTransform;
+// 		SpawnTransform.SetLocation(ProjectileApplyEffectParams.OriginLocation);
+// 		SpawnTransform.SetRotation(FRotator::ZeroRotator.Quaternion());
+// 		
+// 		AAbilitySpawnableActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AAbilitySpawnableActor>(
+// 			ProjectileApplyEffectParams.SpawnableActorClass,
+// 			SpawnTransform,
+// 			ProjectileApplyEffectParams.SourceCharacter,
+// 			ProjectileApplyEffectParams.SourceCharacter,
+// 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+// 			);
+// 		
+// 		SpawnedActor->SetAbilitySystem(ProjectileApplyEffectParams.SourceASC);
+// 		// if (AHPProjectileBase* SpawnedProjectile = Cast<AHPProjectileBase>(SpawnedActor))
+// 		// {
+// 		// 	
+// 		// 	SpawnedProjectile->SetProjectileEffectParams(ProjectileParams);
+// 		// 	if (SpawnedProjectile->IsMine())
+// 		// 	{
+// 		// 		SpawnedProjectile->BindExplosionCallbackFunction(GetOwner());
+// 		// 	}
+// 		// }
+// 		SpawnedActor->SetGenericTeamId(ProjectileApplyEffectParams.GenericTeamId);
+// 		SpawnedActor->FinishSpawning(SpawnTransform);
+// 	}
+// }
 
 
 void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHPPlayerCharacter* HitCharacter,

@@ -8,6 +8,8 @@
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
 #include "AbilitySystem/HPAttributeSet.h"
+#include "Characters/Player/HPPlayerCharacter.h"
+#include "Components/HPCombatComponent.h"
 #include "Interfaces/CombatInterface.h"
 #include "Weapons/HPProjectileBase.h"
 #include "Weapons/HPVisualProjectile.h"
@@ -239,6 +241,7 @@ void UHPGA_Fire_Projectile::FireOneShot()
 				return;
 			}
 
+
 			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
 		
 			if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
@@ -322,6 +325,12 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
+		//
+		// if (bHasBoundedSpawnedActor)
+		// {
+		// 	GetHPPlayerCharacterFromActorInfo()->GetCombatComponent()->TryDestroyBoundedSpawnedActor();
+		// }
+		//
 		FGameplayTagContainer Tags;
 		Tags.AddTag(FHPGameplayTags::Get().State_Ult_Full);
 
@@ -350,6 +359,7 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 		SpawnRotation,
 		SpawnParams);
 		//NEXTTHINGTODO: 비주얼용 투사체 꾸미기
+		
 	}
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }

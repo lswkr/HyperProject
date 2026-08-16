@@ -35,7 +35,6 @@ void AHPRadialEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompon
 {
 	APawn* FiringPawn = GetInstigator();
 
-	UE_LOG(LogTemp, Warning, TEXT("OnBoxComponentHit"));
 	if (FiringPawn)
 	{
 		FHPGameplayTags GameplayTags = FHPGameplayTags::Get();
