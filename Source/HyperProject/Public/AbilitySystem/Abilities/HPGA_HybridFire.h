@@ -57,7 +57,17 @@ private:
 	FGameplayTag HitVFXCueTag;
 
 	UPROPERTY(EditDefaultsOnly)
+	UParticleSystem* LocalHitParticle;
+	
+	UPROPERTY(EditDefaultsOnly)
 	FGameplayTag HitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag LocalBodyHitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag LocalHeadHitSoundCueTag;
+	
 	FDelegateHandle TargetDataDelegateHandle_Projectile;
 	FDelegateHandle TargetDataDelegateHandle_HitScan;
 

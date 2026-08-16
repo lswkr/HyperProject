@@ -203,6 +203,19 @@ void AHPPlayerCharacter::ServerSideInit()
 }
 
 
+void AHPPlayerCharacter::Client_HitConfirm_Implementation(bool bIsHeadShot)
+{
+	UE_LOG(LogTemp, Warning,TEXT("HitConfirm Called"));
+	UGameplayStatics::PlaySound2D(this, bIsHeadShot? HeadHitSound :BodyHitSound);
+
+	AHPPlayerController* CurrentHPPlayerController = GetHPPlayerController();
+
+	if (CurrentHPPlayerController)
+	{
+		CurrentHPPlayerController->PlayHitFeedbackWidget(bIsHeadShot);
+	}
+}
+
 void AHPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -328,15 +341,6 @@ void AHPPlayerCharacter::ShowOverHeadWidget()
 			
 		FVector Direction = CameraLocation - OverHeadWidgetComponent->GetComponentLocation();
 		OverHeadWidgetComponent->SetWorldRotation(Direction.Rotation());
-		UE_LOG(LogTemp, Warning,
-	TEXT("%s | Actor=%s | WidgetWorld=%s | WidgetRel=%s | Parent=%s | AbsLoc=%d"),
-	*GetName(),
-	*GetActorLocation().ToString(),
-	*OverHeadWidgetComponent->GetComponentLocation().ToString(),
-	*OverHeadWidgetComponent->GetRelativeLocation().ToString(),
-	*GetNameSafe(OverHeadWidgetComponent->GetAttachParent()),
-	OverHeadWidgetComponent->IsUsingAbsoluteLocation()
-);
 	}	
 }
 
@@ -521,12 +525,13 @@ void AHPPlayerCharacter::ClientSideInit()
 
 
 	// OnAscRegistered.Broadcast(AbilitySystemComponent);
-
-	if (AHPPlayerController* HPPlayerController = Cast<AHPPlayerController>(GetController()))
+	
+	
+	if (AHPPlayerController* CurrentPlayerController = GetHPPlayerController())
 	{
-		if (AHPHUD* HPHUD = Cast<AHPHUD>(HPPlayerController->GetHUD()))
+		if (AHPHUD* HPHUD = Cast<AHPHUD>(CurrentPlayerController->GetHUD()))
 		{
-			HPHUD->InitOverlay(HPPlayerController, HPAbilitySystemComponent, HPAttributeSet, CombatComponent);
+			HPHUD->InitOverlay(CurrentPlayerController, HPAbilitySystemComponent, HPAttributeSet, CombatComponent);
 		}
 	}
 
@@ -758,6 +763,15 @@ void AHPPlayerCharacter::AimOffset(float DeltaSeconds)
 		TurningInPlace = ETurningInPlace::NotTurning;
 	}
 	CalculateAO_Pitch();
+}
+
+AHPPlayerController* AHPPlayerCharacter::GetHPPlayerController()
+{
+	if (!HPPlayerController)
+	{
+		HPPlayerController = Cast<AHPPlayerController>(GetController());
+	}
+	return HPPlayerController;
 }
 
 //Simulated Proxy와 로컬 플레이어 사이의 거리를 Timer의 주기대로 측정해 사라지거나 보이도록

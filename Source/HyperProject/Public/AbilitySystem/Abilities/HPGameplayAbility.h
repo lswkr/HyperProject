@@ -36,5 +36,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	bool bIsUlt = false;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> UltTagEffect;
 	
 };

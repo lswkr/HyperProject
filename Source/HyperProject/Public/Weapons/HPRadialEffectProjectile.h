@@ -43,4 +43,7 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float PushPower = 300.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	UParticleSystem* LocalParticleEffect;
 };

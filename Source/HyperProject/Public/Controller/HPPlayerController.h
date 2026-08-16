@@ -13,6 +13,7 @@
 
 class AHPControlPointHUD;
 class AHPControlPoint;
+class AHPHUD;
 
 struct FHPControlPointData;
 
@@ -35,6 +36,8 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void AcknowledgePossession(class APawn* InPawn) override;
 
+	void PlayHitFeedbackWidget(bool bIsHeadShot);
+	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	/* IGenericTeamAgentInterface Begin */
 	virtual FGenericTeamId GetGenericTeamId() const override;
@@ -69,6 +72,9 @@ public:
 private:
 	FOnUpdateControlPointDelegate OnUpdateControlPointDelegate;
 
+	UPROPERTY()
+	AHPHUD* HPHUD;
+	
 	UPROPERTY()
 	AHPControlPointHUD* CPHUD;
 	/* ControlPointGameMode End */

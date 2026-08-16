@@ -4,9 +4,11 @@
 #include "Weapons/HPPointEffectProjectile.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/LagCompensationComponent.h"
 #include "Controller/HPPlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 void AHPPointEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                                  UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -19,6 +21,16 @@ void AHPPointEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompone
 			AHPPlayerController* OwnerController = Cast<AHPPlayerController>(OwnerCharacter->Controller);
 			if (OwnerController)
 			{
+			if(LocalParticleEffect)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(
+					this,
+					LocalParticleEffect,
+					Hit.ImpactPoint,
+			Hit.ImpactNormal.Rotation());
+			
+			}
+				
 				AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(OtherActor);
 				if (bServerSideRewind && OwnerCharacter->GetLagCompensationComponent() && OwnerCharacter->IsLocallyControlled() && HitCharacter)
 				{

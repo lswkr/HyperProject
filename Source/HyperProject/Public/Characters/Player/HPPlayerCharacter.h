@@ -84,6 +84,16 @@ public:
 
 	FORCEINLINE UCameraComponent* GetPlayerCamera() const { return Camera; }
 
+	/* HitConfirm Effect Begin*/
+public:
+	UFUNCTION(Client,Unreliable)
+	void Client_HitConfirm(bool bIsHeadShot);
+
+	UPROPERTY(EditDefaultsOnly , Category = "HitConfirm")
+	USoundBase* BodyHitSound;
+	
+	UPROPERTY(EditDefaultsOnly , Category = "HitConfirm")
+	USoundBase* HeadHitSound;
 	
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -113,7 +123,7 @@ private:
 
 	FTimerHandle DeathMontageTimerHandle;
 
-bool IsDead() const;
+	bool IsDead() const;
 	/* Death And Respawn End */
 	
 	/* Widget Begin*/
@@ -315,5 +325,9 @@ protected:
 	
 	/* Server Side Rewind End*/
 
-	
+public:
+	AHPPlayerController* GetHPPlayerController();
+private:
+	UPROPERTY()
+	AHPPlayerController* HPPlayerController;
 };

@@ -17,6 +17,7 @@
 #include "Controller/HPPlayerController.h"
 #include "HyperProject/HyperProject.h"
 #include "Interfaces/CombatInterface.h"
+#include "Kismet/GameplayStatics.h"
 #include "Weapons/HPProjectileBase.h"
 #include "Weapons/HPVisualProjectile.h"
 
@@ -129,7 +130,17 @@ bool UHPGA_HybridFire::MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& 
 	{
 		HitResult.ImpactPoint = End;
 	}
-	
+	else
+	{
+		//여기에서는 자신의 로컬만 효과가 보이는 곳
+		//그래서 Muzzle에서 나오는 이펙트나 총 소리는 모든 클라에서 재생되는 Montage에 넣음
+		UGameplayStatics::SpawnEmitterAtLocation(
+			GetAvatarActorFromActorInfo(),
+			LocalHitParticle,
+			HitResult.ImpactPoint,
+			HitResult.ImpactNormal.Rotation()
+		);
+	}	
 	float HitTime = 0.f;
 	
 	if (bUseServerSideRewind)
@@ -171,6 +182,7 @@ bool UHPGA_HybridFire::MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& 
 	ContextHandle.AddHitResult(HitResult);
 	CueParams.EffectContext = ContextHandle;
 
+	//Beam이펙트는 판정과 큰 상관이 없어 여기서 쏜다.
 	GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(BeamGameplayCueTag, CueParams);
 	
 	if (HitResult.ImpactPoint.ContainsNaN())
@@ -784,7 +796,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 				ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitCharacter);
 				if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
 				{
-					
+					HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());					
 					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
 				}
 
@@ -810,6 +822,15 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 
 					HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitVFXCueTag, GameplayCueParams);
 					HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitSoundCueTag,GameplayCueParams);
+
+					if (bIsHeadShot)
+					{
+						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(LocalHeadHitSoundCueTag,GameplayCueParams);
+					}
+					else
+					{
+						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(LocalBodyHitSoundCueTag,GameplayCueParams);
+					}
 				}
 			}
 			

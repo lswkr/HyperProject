@@ -17,9 +17,9 @@ void AHPPlayerCharacter_UsingDC::ClientSideInit()
 {
 	Super::ClientSideInit();
 
-	if (AHPPlayerController* HPPlayerController = Cast<AHPPlayerController>(GetController()))
+	if (AHPPlayerController* CurrentHPPlayerController = GetHPPlayerController())
 	{
-		DetectComponent->InitComponent(HPAbilitySystemComponent, HPPlayerController, this);
+		DetectComponent->InitComponent(HPAbilitySystemComponent, CurrentHPPlayerController, this);
 	}
 	
 }

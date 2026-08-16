@@ -5,6 +5,22 @@
 
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+
+void AHPVisualProjectile::OnBoxHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+                                   UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if(LocalParticleEffect)
+	{
+	UGameplayStatics::SpawnEmitterAtLocation(
+    					this,
+    					LocalParticleEffect,
+    					Hit.ImpactPoint,
+    			Hit.ImpactNormal.Rotation());
+	}
+	
+				
+}
 
 AHPVisualProjectile::AHPVisualProjectile()
 {
@@ -12,7 +28,8 @@ AHPVisualProjectile::AHPVisualProjectile()
 	bReplicates = true;
 	
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>("BoxComponent");
-	BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	BoxComponent->OnComponentHit.AddDynamic(this, &AHPVisualProjectile::OnBoxHit);
 	SetRootComponent(BoxComponent);
 	
 	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
@@ -24,8 +41,8 @@ AHPVisualProjectile::AHPVisualProjectile()
 void AHPVisualProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-	BoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
+
 
 #if WITH_EDITOR
 void AHPVisualProjectile::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -52,3 +69,5 @@ void AHPVisualProjectile::PostEditChangeProperty(FPropertyChangedEvent& Property
 	}
 }
 #endif
+
+

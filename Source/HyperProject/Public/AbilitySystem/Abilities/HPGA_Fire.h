@@ -49,6 +49,15 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTag HitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag LocalBodyHitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag LocalHeadHitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	UParticleSystem* LocalHitParticle;
 	
 	FDelegateHandle TargetDataDelegateHandle;
 

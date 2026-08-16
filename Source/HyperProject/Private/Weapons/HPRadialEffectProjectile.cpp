@@ -11,6 +11,7 @@
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/LagCompensationComponent.h"
 #include "Controller/HPPlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 AHPRadialEffectProjectile::AHPRadialEffectProjectile()
 {
@@ -41,6 +42,18 @@ void AHPRadialEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompon
 		UAbilitySystemComponent* SourceASC = ProjectileParams.SourceASC;
 		FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 
+		if (Hit.bBlockingHit)
+		{
+			if(LocalParticleEffect)
+			{
+		UGameplayStatics::SpawnEmitterAtLocation(
+					this,
+					LocalParticleEffect,
+					Hit.ImpactPoint,
+			Hit.ImpactNormal.Rotation());
+			}
+				
+		}
 		TArray<AActor*> IgnoreActors;
 		IgnoreActors.Add(this);
 		IgnoreActors.Add(FiringPawn);
@@ -75,7 +88,6 @@ void AHPRadialEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompon
 			if (AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(Overlap.GetActor()))
 			{
 				HPCharacterSet.Add(HPPlayerCharacter);
-				UE_LOG(LogTemp, Warning,TEXT("HIT: %s"),*HPPlayerCharacter->GetName());
 			}
 		}
 	

@@ -6,6 +6,7 @@
 #include "UI/Widget/HPInGameOverlayWidget.h"
 #include "UI/Widget/HPUserWidget.h"
 #include "UI/WidgetController/OverlayWidgetController.h"
+#include "UI/Widget/HitFeedbackWidget.h"
 
 void AHPHUD::InitOverlay(APlayerController* PC, UAbilitySystemComponent* ASC, UAttributeSet* AS, UHPCombatComponent* CC)
 {
@@ -42,3 +43,36 @@ void AHPHUD::GetOverlayWidgetFloatKillLog(FName VictimNickName, float Contributi
 		OverlayWidget->FloatKillLog(VictimNickName, ContributionValue);
 	}
 }
+
+void AHPHUD::PlayHitFeedback(bool bIsHeadShot)
+{
+	if (!HitFeedbackWidgetClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HitFeedbackWidgetClass isn't set"));
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("HitFeedbackWidgetClass set"));
+	if (!HitFeedbackWidget)
+	{
+		HitFeedbackWidget = CreateWidget<UHitFeedbackWidget>(GetWorld(), HitFeedbackWidgetClass);
+		HitFeedbackWidget->AddToViewport();
+		HitFeedbackWidget->SetAlignmentInViewport(FVector2D(0.5f,0.5f));
+
+		
+		if (GetOwningPlayerController())
+		{
+			int32 ViewportWidth = 0;
+			int32 ViewportHeight = 0;
+			
+			GetOwningPlayerController()->GetViewportSize(ViewportWidth, ViewportHeight);
+			HitFeedbackWidget->SetPositionInViewport(FVector2D(ViewportWidth/2,ViewportHeight/2));
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Play HitFeedback"));
+	bIsHeadShot ?
+	HitFeedbackWidget->PlayHeadShotAnimation():
+	HitFeedbackWidget->PlayBodyShotAnimation();
+
+}
+

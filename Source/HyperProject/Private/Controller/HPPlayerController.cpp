@@ -46,6 +46,18 @@ void AHPPlayerController::AcknowledgePossession(APawn* InPawn)
 	}
 }
 
+void AHPPlayerController::PlayHitFeedbackWidget(bool bIsHeadShot)
+{
+	if (!HPHUD)
+	{
+		HPHUD = Cast<AHPHUD>(GetHUD());
+	}
+	if (HPHUD)
+	{
+		HPHUD->PlayHitFeedback(bIsHeadShot);
+	}
+}
+
 void AHPPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

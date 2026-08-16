@@ -358,6 +358,21 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 		SourceLocation,
 		SpawnRotation,
 		SpawnParams);
+
+		if (bIsUlt)
+		{
+			if (UltTagEffect)
+			{
+				FGameplayEffectContextHandle UltTagContextHandle = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
+
+				FGameplayEffectSpecHandle UltTagSpecHandle = GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(UltTagEffect, 1, UltTagContextHandle);
+
+				if (UltTagSpecHandle.IsValid())
+				{
+					GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToSelf(*UltTagSpecHandle.Data.Get());
+				}
+			}
+		}
 		//NEXTTHINGTODO: 비주얼용 투사체 꾸미기
 		
 	}

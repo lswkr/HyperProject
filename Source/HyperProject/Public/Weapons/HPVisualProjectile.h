@@ -13,12 +13,16 @@ class HYPERPROJECT_API AHPVisualProjectile : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
+public:
 	AHPVisualProjectile();
 
 protected:
 	virtual void BeginPlay() override;
 	
+	UFUNCTION()
+	void OnBoxHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
@@ -37,4 +41,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float GravityScale = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	UParticleSystem* LocalParticleEffect;
+
+
 };

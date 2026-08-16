@@ -117,7 +117,18 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 	{
 		HitResult.ImpactPoint = End;
 	}
-	
+	else
+	{
+		//여기에서는 자신의 로컬만 효과가 보이는 곳
+		//그래서 Muzzle에서 나오는 이펙트나 총 소리는 모든 클라에서 재생되는 Montage에 넣음
+		UGameplayStatics::SpawnEmitterAtLocation(
+			GetAvatarActorFromActorInfo(),
+			LocalHitParticle,
+			HitResult.ImpactPoint,
+			HitResult.ImpactNormal.Rotation()
+		);
+	}	
+		
 	float HitTime = 0.f;
 	
 	if (bUseServerSideRewind)
@@ -383,11 +394,15 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 	
 						FGameplayCueParameters GameplayCueParams;
 						GameplayCueParams.Location = HitResult->ImpactPoint;
-
+						GameplayCueParams.Instigator = GetAvatarActorFromActorInfo();
+						
 						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitVFXCueTag, GameplayCueParams);
 						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitSoundCueTag,GameplayCueParams);
+
+						
 					}
 
+					HPCharacter->Client_HitConfirm(bIsHeadShot);
 					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
 				}
 			}

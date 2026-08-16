@@ -43,10 +43,11 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 	{
 		UAbilitySystemComponent* SourceASC = ProjectileApplyEffectParams.SourceASC;
 
+		bool bExplosionHitSomebody = false; 
 		for (AHPPlayerCharacter* OverlappedCharacter:OverlappedCharacters)
 		{
 			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OverlappedCharacter);
-
+		
 			if (SourceASC && TargetASC)
 			{
 				EEffectApplyTargetPolicy EffectApplyPolicy = ProjectileApplyEffectParams.EffectApplyTargetPolicy;
@@ -67,7 +68,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 	
 						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
 							continue;
-						
+						bExplosionHitSomebody = true;
 						if (ProjectileApplyEffectParams.bDistanceFalloff)
 						{
 							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
@@ -115,7 +116,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 	
 						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
 							continue;
-						
+						bExplosionHitSomebody = true;
 						float PushPower = ProjectileApplyEffectParams.PushPower;
 						
 						if (ProjectileApplyEffectParams.bDistanceFalloff)
@@ -161,6 +162,14 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 				}
 			}
 		}
+
+		if (ProjectileApplyEffectParams.SourceCharacter)
+		{
+			if (bExplosionHitSomebody)
+			{
+				ProjectileApplyEffectParams.SourceCharacter->Client_HitConfirm(false);
+			}
+		}
 	}
 }
 
@@ -180,7 +189,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 	if (HPCharacter && SSRResult.bHitConfirmed)
 	{
 		UAbilitySystemComponent* SourceASC = ProjectileApplyEffectParams.SourceASC;
-
+		bool bExplosionHitSomebody = false;
 		for (AHPPlayerCharacter* OverlappedCharacter : OverlappedCharacters)
 		{
 			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OverlappedCharacter);
@@ -206,7 +215,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 	
 						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
 							continue;
-						UE_LOG(LogTemp, Warning,TEXT("Explosion Hit: Confirmed"));
+						bExplosionHitSomebody = true;
 						if (ProjectileApplyEffectParams.bDistanceFalloff)
 						{
 							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
@@ -256,7 +265,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 						if (!ConfirmPerOverlappedActor.bHitConfirmed) //닿지 않았으면 continue;
 							continue;
 
-						UE_LOG(LogTemp, Warning,TEXT("Explosion Hit: Confirmed"));
+						bExplosionHitSomebody = true;
 						float PushPower = ProjectileApplyEffectParams.PushPower;
 						
 						if (ProjectileApplyEffectParams.bDistanceFalloff)
@@ -305,6 +314,15 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 				}
 			}
 		}
+
+		if (ProjectileApplyEffectParams.SourceCharacter)
+		{
+			if (bExplosionHitSomebody)
+			{
+				ProjectileApplyEffectParams.SourceCharacter->Client_HitConfirm(false);
+			}
+		}
+		
 	}
 }
 
@@ -964,6 +982,12 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 					
 					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageSpecHandle, FHPGameplayTags::Get().SetByCaller_IncomingDamage, FinalDamage);
 					TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data);
+
+					if (HPCharacter)
+					{
+						HPCharacter->Client_HitConfirm(bHeadShot);
+					}
+					
 				}
 
 				if(ProjectileApplyEffectParams.AdditionalEnemyEffectClasses.Num()>0)
@@ -1002,7 +1026,7 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 					TargetASC->ApplyGameplayEffectSpecToSelf(*HealSpecHandle.Data);
 				}
 
-				if(ProjectileApplyEffectParams.AdditionalEnemyEffectClasses.Num()>0)
+				if(ProjectileApplyEffectParams.AdditionalTeamEffectClasses.Num()>0)
 				{
 					for (const TSubclassOf<UGameplayEffect> AdditionalEffectClass :ProjectileApplyEffectParams.AdditionalTeamEffectClasses)
 					{
@@ -1015,6 +1039,11 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 					
 						TargetASC->ApplyGameplayEffectSpecToSelf(*HealSpecHandle.Data);
 					}
+				}
+
+				if (HPCharacter)
+				{
+					HPCharacter->Client_HitConfirm(bHeadShot);
 				}
 			}
 		}

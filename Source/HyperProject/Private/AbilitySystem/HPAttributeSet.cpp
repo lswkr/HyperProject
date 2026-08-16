@@ -268,13 +268,19 @@ void UHPAttributeSet::HandleUlt(const FEffectProperties& Props)
 
 void UHPAttributeSet::SendUltEvent(const FEffectProperties& Props, float UltPoint)
 {
-	if (AHPPlayerCharacter* SourcePlayerCharacter = Cast<AHPPlayerCharacter>(Props.SourceCharacter))
+	const FHPGameplayTags& GameplayTags = FHPGameplayTags::Get();
+	if(Props.SourceASC)
 	{
-		const FHPGameplayTags& GameplayTags = FHPGameplayTags::Get();
+		if(Props.SourceASC->HasMatchingGameplayTag(GameplayTags.State_Using_Ult))
+		{
+			return;
+		}
+	
 		FGameplayEventData Payload;
 		Payload.EventTag = GameplayTags.Attribute_Meta_IncomingUlt;
 		Payload.EventMagnitude = UltPoint;
 		UE_LOG(LogTemp,Warning,TEXT("ULT: %f"), UltPoint);
 		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, GameplayTags.Attribute_Meta_IncomingUlt, Payload);
 	}
+	
 }

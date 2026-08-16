@@ -42,7 +42,7 @@ void UHPGA_SendEventToDetectedActor::ActivateAbility(const FGameplayAbilitySpecH
 			ActivationInfo.GetActivationPredictionKey()
 			);
 	}
-	UAbilityTask_WaitInputPress* InputPressTask = UAbilityTask_WaitInputPress::WaitInputPress(this, false);
+	UAbilityTask_WaitInputPress* InputPressTask = UAbilityTask_WaitInputPress::WaitInputPress(this, true);
 
 	InputPressTask->OnPress.AddDynamic(this, &UHPGA_SendEventToDetectedActor::OnInputPressed);
 	InputPressTask->ReadyForActivation();

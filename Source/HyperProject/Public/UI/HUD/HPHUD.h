@@ -15,6 +15,7 @@ class UHPCombatComponent;
 class UOverlayWidgetController;
 class UHPUserWidget;
 class UHPInGameOverlayWidget;
+class UHitFeedbackWidget;
 
 struct FWidgetControllerParams;
 
@@ -30,6 +31,8 @@ public:
 
 	void GetOverlayWidgetFloatKillLog(FName VictimNickName, float ContributionValue);
 
+	void PlayHitFeedback(bool bIsHeadShot);
+	
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	UHPInGameOverlayWidget* OverlayWidget;
@@ -42,4 +45,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UOverlayWidgetController> OverlayWidgetControllerClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UHitFeedbackWidget> HitFeedbackWidgetClass;
+
+	UPROPERTY()
+	UHitFeedbackWidget* HitFeedbackWidget;
 };

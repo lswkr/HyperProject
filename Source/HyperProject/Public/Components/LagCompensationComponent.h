@@ -196,4 +196,16 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float MaxRecordTime = 4.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag HitVFXCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag HitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag LocalBodyHitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag LocalHeadHitSoundCueTag;
 };
