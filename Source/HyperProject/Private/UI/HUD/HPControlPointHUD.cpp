@@ -41,32 +41,9 @@ void AHPControlPointHUD::InitOverlay(APlayerController* PC, UAbilitySystemCompon
 	}
 }
 
-void AHPControlPointHUD::OnUpdateControlPoint(float TeamOneFightingPercent, float TeamTwoFightingPercent,
-	float TeamOneCapturingPercent, float TeamTwoCapturingPercent) 
+void AHPControlPointHUD::OnUpdateControlPoint(float MyTeamFightingPercent, float EnemyTeamFightingPercent,
+	float MyTeamCapturingPercent, float EnemyTeamCapturingPercent) 
 {
-	int32 PlayerTeamID = HPPlayerController->GetGenericTeamId().GetId();
-
-	float MyTeamFightingPercent = 0;
-	float EnemyTeamFightingPercent = 0;
-	float MyTeamCapturingPercent = 0;
-	float EnemyTeamCapturingPercent= 0;
-	
-	if (PlayerTeamID == 0)
-	{
-		MyTeamFightingPercent = TeamOneFightingPercent;
-		EnemyTeamFightingPercent = TeamTwoFightingPercent;
-
-		MyTeamCapturingPercent = TeamOneCapturingPercent;
-		EnemyTeamCapturingPercent= TeamTwoCapturingPercent;
-	}
-	else if (PlayerTeamID == 1)
-	{
-		MyTeamFightingPercent = TeamTwoFightingPercent;
-		EnemyTeamFightingPercent = TeamOneFightingPercent;
-
-		MyTeamCapturingPercent = TeamTwoCapturingPercent;
-		EnemyTeamCapturingPercent = TeamOneCapturingPercent;
-	}
 
 	ControlPointOverlayWidget->UpdateTeamFightingProgressBar(MyTeamFightingPercent, EnemyTeamFightingPercent);
 
@@ -104,8 +81,8 @@ void AHPControlPointHUD::OnUpdateControlPointGameModeState(EControlPointGameMode
 	ControlPointOverlayWidget->UpdateControlPointGameModeState(CurrentControlPointGameModeState);
 }
 
-void AHPControlPointHUD::OnControlPointCaptured(bool TeamOne, bool TeamTwo)
+void AHPControlPointHUD::OnControlPointCaptured(bool MyTeam, bool EnemyTeam)
 {
-	ControlPointOverlayWidget->UpdateControlPointCaptured(TeamOne, TeamTwo);
+	ControlPointOverlayWidget->UpdateControlPointCaptured(MyTeam, EnemyTeam);
 }
 

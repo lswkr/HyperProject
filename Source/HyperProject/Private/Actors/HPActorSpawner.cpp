@@ -27,7 +27,6 @@ AHPActorSpawner::AHPActorSpawner()
 	GaugeWidgetComponent->SetupAttachment(GetRootComponent());
 
 	GaugeWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
-
 }
 
 void AHPActorSpawner::Tick(float DeltaTime)

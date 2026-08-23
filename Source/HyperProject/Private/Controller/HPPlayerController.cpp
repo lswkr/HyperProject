@@ -81,6 +81,7 @@ void AHPPlayerController::UpdateControlPointState(const FHPControlPointData& Con
 	float EnemyTeamFightingPercent = 0.f;
 	float MyTeamCapturingPercent = 0.f;
 	float EnemyTeamCapturingPercent = 0.f;
+	
 	if (TeamID == 0)
 	{
 		MyTeamFightingPercent = ControlPointData.TeamOneFightingPercent;
@@ -104,8 +105,6 @@ void AHPPlayerController::UpdateControlPointState(const FHPControlPointData& Con
 
 void AHPPlayerController::UpdateCapturedTeamState(bool TeamOneCaptured, bool TeamTwoCaptured)
 {
-
-	
 	if (TeamID == 0)
 	{
 		UE_LOG(LogTemp, Warning,TEXT("UpdateCapturedTeamState: MyTeam: %d, EnemyTeam %d"), TeamOneCaptured, TeamTwoCaptured);

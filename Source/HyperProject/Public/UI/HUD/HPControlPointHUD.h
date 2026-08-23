@@ -23,7 +23,8 @@ public:
 	virtual void InitOverlay(APlayerController* PC, UAbilitySystemComponent* ASC, UAttributeSet* AS, UHPCombatComponent* CC) override;
 
 	UFUNCTION()
-	void OnUpdateControlPoint(float TeamOneFightingPercent, float TeamTwoFightingPercent, float TeamOneCapturingPercent, float TeamTwoCapturingPercent);
+	void OnUpdateControlPoint(float MyTeamFightingPercent, float EnemyTeamFightingPercent,
+	float MyTeamCapturingPercent, float EnemyTeamCapturingPercent);
 
 	UFUNCTION()
 	void OnUpdateTimeRemaining(int32 RemainingTime);
@@ -35,7 +36,7 @@ public:
 	void OnUpdateControlPointGameModeState(EControlPointGameModeState CurrentControlPointGameModeState);
 	
 	UFUNCTION()
-	void OnControlPointCaptured(bool TeamOne, bool TeamTwo);
+	void OnControlPointCaptured(bool MyTeam, bool EnemyTeam);
 private:
 	UPROPERTY()
 	UHPControlPointOverlayWidget* ControlPointOverlayWidget;

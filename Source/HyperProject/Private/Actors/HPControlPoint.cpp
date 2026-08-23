@@ -105,7 +105,7 @@ void AHPControlPoint::Tick(float DeltaTime)
 	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentState != Team1Captured) //팀1 탈환중(점령 전)
 	{
 		if (CurrentState == EControlPointState::BeforeCapturing || //아무도 거점 점령하지 않았을 때
-			CurrentState != EControlPointState::FightingAtPoint || //한타 끝났을 때
+			CurrentState == EControlPointState::FightingAtPoint || //한타 끝났을 때
 			CurrentState == EControlPointState::Team2Captured)	   //다른 팀이 점령 했으면
 			CurrentState = EControlPointState::Team1Capturing;
 		if (CurrentTeam2FightingGauge >0.f) //남은 팀2게이지 다 버릴 때까지 
@@ -131,7 +131,7 @@ void AHPControlPoint::Tick(float DeltaTime)
 	{
 	
 		if (CurrentState == EControlPointState::BeforeCapturing ||
-			CurrentState != EControlPointState::FightingAtPoint ||
+			CurrentState == EControlPointState::FightingAtPoint ||
 			CurrentState == EControlPointState::Team1Captured)
 			CurrentState = EControlPointState::Team2Capturing;
 
@@ -162,12 +162,13 @@ void AHPControlPoint::Tick(float DeltaTime)
 
 	else	//아무도 없을 때
 	{
+		CurrentTeam1FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
+		CurrentTeam2FightingGauge = FMath::Clamp(CurrentTeam2FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
+
 		if (CurrentTeam1CaptureGauge == 0.f && CurrentTeam2CaptureGauge == 0.f) //아무 팀도 거점 못 먹었으면
 		{
 			CurrentState = EControlPointState::BeforeCapturing;
 		}
-		CurrentTeam1FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
-		CurrentTeam2FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
 	}
 	
 	if (CurrentState == EControlPointState::Team1Captured) //팀1이 거점 먹은 경우
@@ -191,10 +192,10 @@ void AHPControlPoint::Tick(float DeltaTime)
 		if (CurrentTeam2CaptureGauge>=100.f)
 		{
 			//NEXTTHINGTODO: 팀2 승리
-			CurrentTeam1CaptureGauge= 0.f;
+			CurrentTeam1CaptureGauge = 0.f;
 			CurrentTeam1FightingGauge = 0.f;
-			CurrentTeam2CaptureGauge=0.f;
-			CurrentTeam2FightingGauge=0.f;
+			CurrentTeam2CaptureGauge = 0.f;
+			CurrentTeam2FightingGauge = 0.f;
 			OnControlPointCaptured = FOnControlPointCaptured(false, false);
 			BroadcastWhatTeamCompleteControlPoint(ControlPointType, 1);
 		}
@@ -216,6 +217,7 @@ void AHPControlPoint::ActivateControlPoint(bool TurnOn)
 {
 	BoxComponent->SetCollisionEnabled(TurnOn?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
 	IsActivating = TurnOn;
+	/*NEXTTHINGTODO: 위젯 켜기/끄기 */
 }
 
 void AHPControlPoint::BroadcastWhatTeamCompleteControlPoint(EControlPointType InControlPointType, int32 CompleteTeamID)
