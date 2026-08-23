@@ -248,8 +248,6 @@ void UHPAttributeSet::HandleUlt(const FEffectProperties& Props)
 	
 	if (GetUlt() >=GetMaxUlt())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UltFull"));
-
 		if (UAbilitySystemComponent* ASC = Props.TargetASC)
 		{
 			const FHPGameplayTags& GameplayTags = FHPGameplayTags::Get();
@@ -261,6 +259,22 @@ void UHPAttributeSet::HandleUlt(const FEffectProperties& Props)
 			FGameplayEventData Payload;
 			Payload.EventTag = GameplayTags.State_Ult_Full;
 			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.TargetAvatarActor, GameplayTags.Event_ListenFor_Ult_Full,Payload);
+		}
+	}
+	else
+	{
+		if (UAbilitySystemComponent* ASC = Props.TargetASC)
+		{
+			const FHPGameplayTags& GameplayTags = FHPGameplayTags::Get();
+			
+			if (ASC->HasMatchingGameplayTag(GameplayTags.State_Ult_Full))
+			{
+			
+				UE_LOG(LogTemp, Warning, TEXT("UltFull Applied"));
+				FGameplayTagContainer TagContainer;
+				TagContainer.AddTag(GameplayTags.State_Ult_Full);
+				ASC->RemoveActiveEffectsWithGrantedTags(TagContainer);
+			}
 		}
 	}
 	
@@ -279,7 +293,6 @@ void UHPAttributeSet::SendUltEvent(const FEffectProperties& Props, float UltPoin
 		FGameplayEventData Payload;
 		Payload.EventTag = GameplayTags.Attribute_Meta_IncomingUlt;
 		Payload.EventMagnitude = UltPoint;
-		UE_LOG(LogTemp,Warning,TEXT("ULT: %f"), UltPoint);
 		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Props.SourceCharacter, GameplayTags.Attribute_Meta_IncomingUlt, Payload);
 	}
 	

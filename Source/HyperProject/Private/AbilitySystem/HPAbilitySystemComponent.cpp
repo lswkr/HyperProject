@@ -254,41 +254,29 @@ void UHPAbilitySystemComponent::AuthApplyGameplayEffect(const TSubclassOf<UGamep
 // 	}
 // }
 //
-void UHPAbilitySystemComponent::OnUltUpdate(const FOnAttributeChangeData& ChangedData)
-{
-	if (!GetOwner() || !GetOwner()->HasAuthority())
-	{
-		return;
-	}
-
-	bool bFound = false;
-
-	float MaxUlt = GetGameplayAttributeValue(UHPAttributeSet::GetMaxUltAttribute(), bFound);
-
-	if (bFound && ChangedData.NewValue >= MaxUlt)
-	{
-		if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Ult_Full))
-		{
-			AddLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
-		}
-		else
-		{
-			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
-		}
-
-		if (ChangedData.NewValue <= 0)
-		{
-			if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Ult_Empty))
-			{
-				AddLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Empty);
-			}
-		}
-		else
-		{
-			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Empty);
-		}
-	}
-}
+// void UHPAbilitySystemComponent::OnUltUpdate(const FOnAttributeChangeData& ChangedData)
+// {
+// 	if (!GetOwner() || !GetOwner()->HasAuthority())
+// 	{
+// 		return;
+// 	}
+//
+// 	bool bFound = false;
+//
+// 	float MaxUlt = GetGameplayAttributeValue(UHPAttributeSet::GetMaxUltAttribute(), bFound);
+//
+// 	if (bFound && ChangedData.NewValue >= MaxUlt)
+// 	{
+// 		if (!HasMatchingGameplayTag(FHPGameplayTags::Get().State_Ult_Full))
+// 		{
+// 			AddLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
+// 		}
+// 		else
+// 		{
+// 			RemoveLooseGameplayTag(FHPGameplayTags::Get().State_Ult_Full);
+// 		}
+// 	}
+// }
 
 FGameplayTag UHPAbilitySystemComponent::GetAbilityTagFromSpec(const FGameplayAbilitySpec& AbilitySpec) const
 {

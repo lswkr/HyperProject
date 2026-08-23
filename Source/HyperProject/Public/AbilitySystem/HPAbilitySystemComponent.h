@@ -55,7 +55,7 @@ private:
 	void ApplyInitialEffects();
 	void GiveInitialAbilities();
 	//void OnHealthUpdate(const FOnAttributeChangeData& ChangedData);
-	void OnUltUpdate(const FOnAttributeChangeData& ChangedData);
+	//void OnUltUpdate(const FOnAttributeChangeData& ChangedData);
 
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	TMap<EHPAbilityInputID, TSubclassOf<UGameplayAbility>> Abilities;

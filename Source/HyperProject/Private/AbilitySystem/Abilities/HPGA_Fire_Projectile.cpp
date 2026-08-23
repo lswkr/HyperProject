@@ -325,17 +325,11 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
-		//
-		// if (bHasBoundedSpawnedActor)
-		// {
-		// 	GetHPPlayerCharacterFromActorInfo()->GetCombatComponent()->TryDestroyBoundedSpawnedActor();
-		// }
-		//
-		FGameplayTagContainer Tags;
-		Tags.AddTag(FHPGameplayTags::Get().State_Ult_Full);
 
-		GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithGrantedTags(Tags);
-		
+		// FGameplayTagContainer Tags;
+		// Tags.AddTag(FHPGameplayTags::Get().State_Ult_Full);
+		// GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithGrantedTags(Tags);
+		//
 		const FGameplayAbilityTargetData_LocationInfo* LocationData =
 			static_cast<const FGameplayAbilityTargetData_LocationInfo*>(Data);
 

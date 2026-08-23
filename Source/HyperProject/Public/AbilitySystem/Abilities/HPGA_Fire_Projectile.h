@@ -11,7 +11,7 @@
  */
 
 
-class AHPProjectileBase;
+class AHPProjectileBase; 
 class AHPVisualProjectile;
 /*
  * 투사체에 데미지나 힐 같은 이펙트를 넣을 것이기에 DamageGameAbility를 상속하지 않고

@@ -2,8 +2,10 @@
 
 
 #include "GameMode/LobbyGameMode.h"
+#include "Network/HPGameSession.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
 	bUseSeamlessTravel = true;
+	GameSessionClass = AHPGameSession::StaticClass();
 }

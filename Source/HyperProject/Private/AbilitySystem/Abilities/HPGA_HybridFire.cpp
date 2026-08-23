@@ -727,7 +727,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 	FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 
 	AHPPlayerCharacter* HPCharacter = GetHPPlayerCharacterFromActorInfo();
-	float AimingDuration = 0.f;
+
 	
 	float Damage = PrimaryValue.GetValueAtLevel(1);
 	
@@ -746,7 +746,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 		bool bIsShotConfirmed = false;
 		bool bIsNanoBoosted = TargetData->GetNanoBoosted();
 		bool bIsAiming = TargetData->IsAiming();
-		
+		float AimingDuration = TargetData->GetAimingDuration();
 		AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor());
 		
 		if (HitCharacter)
@@ -796,6 +796,8 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 				ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitCharacter);
 				if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
 				{
+					
+					UE_LOG(LogTemp ,Warning,TEXT("Deal"));
 					HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());					
 					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
 				}
@@ -807,7 +809,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 
 					FGameplayEffectSpecHandle SecondSpecHandle = SourceASC->MakeOutgoingSpec(SecondaryEffectClass,1,Context);
 					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SecondSpecHandle, GameplayTags.SetByCaller_IncomingHeal, Heal*Multiplier);
-			
+					UE_LOG(LogTemp, Warning,TEXT("HEAL: %f"),Heal*Multiplier );
 					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, SecondSpecHandle, TargetDataHandle);
 
 					HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*SecondSpecHandle.Data.Get());
@@ -815,8 +817,6 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 				
 				if (HitCharacter->GetAbilitySystemComponent())
 				{
-					HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
-	
 					FGameplayCueParameters GameplayCueParams;
 					GameplayCueParams.Location = HitResult->ImpactPoint;
 

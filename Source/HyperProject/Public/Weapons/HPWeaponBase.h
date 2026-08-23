@@ -41,13 +41,13 @@ public:
 	TMap<EHPAbilityInputID, TSubclassOf<UGameplayAbility>> WeaponAbilityMap;
 	
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UGameplayEffect> WeaponInitBulletEffect;
+	TSubclassOf<UGameplayEffect> WeaponInitBulletEffect = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UGameplayEffect> WeaponBulletChargeEffect;
+	TSubclassOf<UGameplayEffect> WeaponBulletChargeEffect = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
-	UNiagaraSystem* WeaponVFX;
+	UNiagaraSystem* WeaponVFX = nullptr;
 };
 
 UCLASS()

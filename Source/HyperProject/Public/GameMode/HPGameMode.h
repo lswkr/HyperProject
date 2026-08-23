@@ -16,6 +16,8 @@ class HYPERPROJECT_API AHPGameMode : public AGameModeBase
 	GENERATED_BODY()
 	
 public:
+	AHPGameMode();
+	
 	virtual APlayerController* SpawnPlayerController(ENetRole InRemoteRole, const FString& Options) override;
 	virtual void StartPlay() override;
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;

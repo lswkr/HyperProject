@@ -5,7 +5,12 @@
 #include "GameFramework/PlayerStart.h"
 #include "EngineUtils.h"
 #include "PlayerState/HPPlayerState.h"
+#include "Network/HPGameSession.h"
 
+AHPGameMode::AHPGameMode()
+{
+	GameSessionClass = AHPGameSession::StaticClass();
+}
 
 APlayerController* AHPGameMode::SpawnPlayerController(ENetRole InRemoteRole, const FString& Options)
 {

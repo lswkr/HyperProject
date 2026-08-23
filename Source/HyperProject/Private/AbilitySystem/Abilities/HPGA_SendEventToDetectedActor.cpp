@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "HPGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
 #include "Characters/Player/HPPlayerCharacter_UsingDC.h"
 #include "Components/DetectComponent.h"
@@ -124,7 +125,6 @@ void UHPGA_SendEventToDetectedActor::OnServerReceiveTargetData(const FGameplayAb
 	const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
 	const FGameplayAbilityTargetData_ActorArray* TargetData = nullptr ;
 
-	UE_LOG(LogTemp, Warning, TEXT("OnServerReceiveTargetData"));
 	
 	if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_ActorArray::StaticStruct())
 	{
@@ -150,6 +150,26 @@ void UHPGA_SendEventToDetectedActor::OnServerReceiveTargetData(const FGameplayAb
 		{
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
+		}
+
+		if (bIsUlt)
+		{
+			if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+			{
+				if (ASC->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Using_Ult))
+					return;
+			}
+			if (UltTagEffect)
+			{
+				FGameplayEffectContextHandle UltTagContextHandle = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
+
+				FGameplayEffectSpecHandle UltTagSpecHandle = GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(UltTagEffect, 1, UltTagContextHandle);
+
+				if (UltTagSpecHandle.IsValid())
+				{
+					GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToSelf(*UltTagSpecHandle.Data.Get());
+				}
+			}
 		}
 		UE_LOG(LogTemp, Warning, TEXT("Confirmed Actor: %s"),*ConfirmedActor->GetName());
 		FGameplayEventData Payload;

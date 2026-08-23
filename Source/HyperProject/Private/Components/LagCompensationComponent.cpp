@@ -992,7 +992,7 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 
 				if(ProjectileApplyEffectParams.AdditionalEnemyEffectClasses.Num()>0)
 				{
-					for (const TSubclassOf<UGameplayEffect> AdditionalEffectClass :ProjectileApplyEffectParams.AdditionalEnemyEffectClasses)
+					for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass :ProjectileApplyEffectParams.AdditionalEnemyEffectClasses)
 					{
 						FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 				
@@ -1028,7 +1028,7 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 
 				if(ProjectileApplyEffectParams.AdditionalTeamEffectClasses.Num()>0)
 				{
-					for (const TSubclassOf<UGameplayEffect> AdditionalEffectClass :ProjectileApplyEffectParams.AdditionalTeamEffectClasses)
+					for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass :ProjectileApplyEffectParams.AdditionalTeamEffectClasses)
 					{
 						FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 				
