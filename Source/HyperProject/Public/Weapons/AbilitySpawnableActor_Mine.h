@@ -25,6 +25,9 @@ public:
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Mine")
+	UParticleSystem* ExplosionParticle;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Mine")
 	float ExplosionOuterRadius = 300.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Mine")
@@ -50,6 +53,9 @@ private:
 	UFUNCTION()
 	void Explosion();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Explosion();
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Mine")
 	bool bPush = true;
 

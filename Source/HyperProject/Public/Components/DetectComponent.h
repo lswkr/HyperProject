@@ -32,7 +32,7 @@ protected:
 
 public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	void EraseTargetLockWidget();
 private:
 	UPROPERTY()
 	UAbilitySystemComponent* AbilitySystemComponent;
@@ -75,5 +75,5 @@ private:
 
 	FVector2D TargetLockWidgetSize;
 
-	void EraseTargetLockWidget();
+	
 };

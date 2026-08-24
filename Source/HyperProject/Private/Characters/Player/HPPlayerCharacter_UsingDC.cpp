@@ -13,6 +13,11 @@ AHPPlayerCharacter_UsingDC::AHPPlayerCharacter_UsingDC()
 	
 }
 
+void AHPPlayerCharacter_UsingDC::Client_OnSkillActivate_Implementation()
+{
+	DetectComponent->EraseTargetLockWidget();
+}
+
 void AHPPlayerCharacter_UsingDC::ClientSideInit()
 {
 	Super::ClientSideInit();

@@ -26,7 +26,7 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 			return;
 		FTransform SpawnTransform;
 		SpawnTransform.SetLocation(Hit.ImpactPoint);
-		SpawnTransform.SetRotation(FQuat::Identity);
+		SpawnTransform.SetRotation(Hit.ImpactNormal.ToOrientationQuat());
 		SpawnTransform.SetScale3D(FVector::OneVector);
 	
 		if (Hit.bBlockingHit && GetOwner() && GetInstigator())

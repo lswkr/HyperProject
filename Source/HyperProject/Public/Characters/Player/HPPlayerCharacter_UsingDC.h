@@ -21,6 +21,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DetectComponent")
 	UDetectComponent* GetDetectComponent() const { return DetectComponent; }
 
+	UFUNCTION(Client, Reliable)
+	void Client_OnSkillActivate();
 protected:
 	virtual void ClientSideInit() override;
 

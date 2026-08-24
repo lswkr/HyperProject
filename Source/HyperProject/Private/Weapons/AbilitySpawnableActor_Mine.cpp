@@ -10,6 +10,7 @@
 #include "Engine/OverlapResult.h"
 #include "GameplayEffect.h"
 #include "Characters/Player/HPPlayerCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 AAbilitySpawnableActor_Mine::AAbilitySpawnableActor_Mine()
 {
@@ -90,6 +91,7 @@ void AAbilitySpawnableActor_Mine::Explosion()
 		if (!SourceASC)
 			return;
 		
+		
 		FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 
 		TArray<AActor*> IgnoreActors;
@@ -97,7 +99,7 @@ void AAbilitySpawnableActor_Mine::Explosion()
 		IgnoreActors.Add(FiringPawn);
 		
 		FCollisionQueryParams SphereParams(SCENE_QUERY_STAT(ApplyRadialDamage),  false, this);
-
+		Multicast_Explosion();
 		TArray<FOverlapResult> Overlaps;
 		DrawDebugSphere(GetWorld(),GetActorLocation(), ExplosionOuterRadius, 16, FColor::Green,false, 5, 0,1 );
 		if (UWorld* World = GEngine->GetWorldFromContextObject(this, EGetWorldErrorMode::LogAndReturnNull))
@@ -158,4 +160,17 @@ void AAbilitySpawnableActor_Mine::Explosion()
 
 		}
 	}
+}
+
+void AAbilitySpawnableActor_Mine::Multicast_Explosion_Implementation()
+{
+	if (!ExplosionParticle)
+		return;
+	UGameplayStatics::SpawnEmitterAtLocation(
+			this,
+			ExplosionParticle,
+			GetActorLocation(),
+			FRotator::ZeroRotator,
+			true
+			);
 }

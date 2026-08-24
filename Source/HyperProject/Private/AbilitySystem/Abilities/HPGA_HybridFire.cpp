@@ -766,8 +766,6 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 			
 			if (bIsHeadShot)
 			{
-				//NEXTTHINGTODO: 헤드샷 위젯 표시
-				UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
 				Multiplier*=2;
 			}
 
@@ -831,6 +829,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 					{
 						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(LocalBodyHitSoundCueTag,GameplayCueParams);
 					}
+					HPCharacter->Client_HitConfirm(bIsHeadShot);
 				}
 			}
 			

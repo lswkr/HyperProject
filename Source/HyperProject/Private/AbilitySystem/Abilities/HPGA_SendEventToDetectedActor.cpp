@@ -176,7 +176,11 @@ void UHPGA_SendEventToDetectedActor::OnServerReceiveTargetData(const FGameplayAb
 		Payload.EventTag = EventTag;
 		Payload.Instigator = GetAvatarActorFromActorInfo();
 		Payload.Target = ConfirmedActor;
-		
+
+		if (AHPPlayerCharacter_UsingDC* HPDCCharacter = Cast<AHPPlayerCharacter_UsingDC>(GetAvatarActorFromActorInfo()))
+		{
+			HPDCCharacter->Client_OnSkillActivate();
+		}
 		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(ConfirmedActor, EventTag, Payload);
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 		return;
