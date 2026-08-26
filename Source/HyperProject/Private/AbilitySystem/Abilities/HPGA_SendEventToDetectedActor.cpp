@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "HPGameplayTags.h"
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
 #include "Characters/Player/HPPlayerCharacter_UsingDC.h"
 #include "Components/DetectComponent.h"
@@ -76,7 +77,6 @@ void UHPGA_SendEventToDetectedActor::OnInputPressed(float TimeHeld)
 		UE_LOG(LogTemp, Warning, TEXT("InputPressed"));
 		if (AHPPlayerCharacter_UsingDC* HPPlayerCharacter = Cast<AHPPlayerCharacter_UsingDC>(GetAvatarActorFromActorInfo()))
 		{
-			
 			if (AActor* ConfirmedActor = HPPlayerCharacter->GetDetectComponent()->GetConfirmedActor())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("ConfirmedActor Exist"));
@@ -94,7 +94,7 @@ void UHPGA_SendEventToDetectedActor::OnInputPressed(float TimeHeld)
 					return;
 				}
 				SendTargetDataToServer(TargetDataHandle);
-				EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, false, false);
+				//EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, false, false);
    
 			}
 			else
@@ -157,7 +157,16 @@ void UHPGA_SendEventToDetectedActor::OnServerReceiveTargetData(const FGameplayAb
 			if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
 			{
 				if (ASC->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Using_Ult))
+				{
+					EndAbility(
+						CurrentSpecHandle,
+						CurrentActorInfo,
+						CurrentActivationInfo,
+						true,
+						true
+					);
 					return;
+				}
 			}
 			if (UltTagEffect)
 			{
@@ -172,18 +181,44 @@ void UHPGA_SendEventToDetectedActor::OnServerReceiveTargetData(const FGameplayAb
 			}
 		}
 		UE_LOG(LogTemp, Warning, TEXT("Confirmed Actor: %s"),*ConfirmedActor->GetName());
-		FGameplayEventData Payload;
-		Payload.EventTag = EventTag;
-		Payload.Instigator = GetAvatarActorFromActorInfo();
-		Payload.Target = ConfirmedActor;
-
+		
+		
 		if (AHPPlayerCharacter_UsingDC* HPDCCharacter = Cast<AHPPlayerCharacter_UsingDC>(GetAvatarActorFromActorInfo()))
 		{
-			HPDCCharacter->Client_OnSkillActivate();
+			UAbilityTask_PlayMontageAndWait* MontageTask =
+			UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+			this,
+			NAME_None,
+			FireMontage,
+			1.f,
+			NAME_None,
+			false   
+			);
+
+			MontageTask->ReadyForActivation();
+
+			HPDCCharacter->Client_OnSkillActivate(ConfirmedActor->GetActorLocation());
+
+			FGameplayEventData Payload;
+			Payload.EventTag = EventTag;
+			Payload.Instigator = GetAvatarActorFromActorInfo();
+			Payload.Target = ConfirmedActor;
+
+			if (HPDCCharacter->Implements<UCombatInterface>())
+			{
+				FGameplayCueParameters CueParams;
+				FGameplayEffectContextHandle CueEffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
+				FHitResult BeamVFXHitResult;
+				BeamVFXHitResult.Location = HPDCCharacter->Execute_GetUltMuzzleSocketLocation(HPDCCharacter);
+				BeamVFXHitResult.ImpactPoint = ConfirmedActor->GetActorLocation();
+				CueEffectContext.AddHitResult(BeamVFXHitResult);
+				CueParams.EffectContext = CueEffectContext;
+				GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(BeamGameplayCueTag, CueParams);
+			}
+			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(ConfirmedActor, EventTag, Payload);
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 		}
-		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(ConfirmedActor, EventTag, Payload);
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-		return;
+		
 	}
 }
 

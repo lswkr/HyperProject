@@ -37,6 +37,9 @@ public:
 	FVector GetWeaponSocketLocation() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	FVector GetUltMuzzleSocketLocation() const;
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FVector GetHitImpactPoint() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)

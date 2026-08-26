@@ -111,7 +111,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	USpringArmComponent* SpringArm;
 
-	/* Death And Reswpawn Begin */
+	/* Death And Respawn Begin */
 	UFUNCTION()
 	void DeathTagUpdated(FGameplayTag GameplayTag, int TagCount);
 
@@ -179,7 +179,7 @@ private:
 	UPROPERTY(EditDefaultsOnly,Category = "Reload")
 	UAnimMontage* ReloadAnimMontage;
 	/* Reload End */
-
+	virtual FVector GetUltMuzzleSocketLocation_Implementation() const override;
 	virtual FVector GetWeaponSocketLocation_Implementation() const override;
 	virtual FVector GetThrowingHandSocketLocation_Implementation() const override;
 	virtual FVector GetHitImpactPoint_Implementation() const override;

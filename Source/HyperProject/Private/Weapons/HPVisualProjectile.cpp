@@ -3,6 +3,7 @@
 
 #include "Weapons/HPVisualProjectile.h"
 
+#include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -36,11 +37,20 @@ AHPVisualProjectile::AHPVisualProjectile()
 	BulletMesh->SetupAttachment(GetRootComponent());
 	
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovementComponent");
+	
 }
 
 void AHPVisualProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	if (AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(GetInstigator()))
+	{
+		if (HPPlayerCharacter->IsLocallyControlled())
+		{
+			BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			BulletMesh->SetVisibility(false);
+		}
+	}
 }
 
 

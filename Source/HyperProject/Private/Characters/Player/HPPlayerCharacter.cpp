@@ -28,6 +28,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/HUD/HPHUD.h"
+#include "UI/Widget/HPOverheadWidget.h"
 #include "UI/Widget/HPUserWidget.h"
 #include "Weapons/HPWeaponBase.h"
 
@@ -248,10 +249,6 @@ void AHPPlayerCharacter::BeginPlay()
 	
 	SpawnWeapon(0);
 	ConfigureOverHeadWidget();
-	UE_LOG(LogTemp ,Warning ,TEXT("Widget Relative: %s/ World: %s"),
-		*OverHeadWidgetComponent->GetRelativeLocation().ToString(),
-		*OverHeadWidgetComponent->GetComponentLocation().ToString());
-	
 }
 
 void AHPPlayerCharacter::PostInitializeComponents()
@@ -338,7 +335,7 @@ void AHPPlayerCharacter::ShowOverHeadWidget()
 		FRotator CameraRotation = FRotator::ZeroRotator;
 				
 		PC->GetPlayerViewPoint(CameraLocation,CameraRotation);
-			
+		
 		FVector Direction = CameraLocation - OverHeadWidgetComponent->GetComponentLocation();
 		OverHeadWidgetComponent->SetWorldRotation(Direction.Rotation());
 	}	
@@ -352,6 +349,11 @@ UAnimMontage* AHPPlayerCharacter::GetMeleeHitAnimMontage_Implementation() const
 UAnimMontage* AHPPlayerCharacter::GetReloadAnimMontage_Implementation() const
 {
 	return ReloadAnimMontage;
+}
+
+FVector AHPPlayerCharacter::GetUltMuzzleSocketLocation_Implementation() const
+{
+	return GetMesh()->GetSocketLocation(TEXT("MuzzleSocket_Ult"));
 }
 
 FVector AHPPlayerCharacter::GetWeaponSocketLocation_Implementation() const
@@ -799,15 +801,26 @@ void AHPPlayerCharacter::ConfigureOverHeadWidget()
 		OverHeadWidgetComponent->SetHiddenInGame(true);
 		return;
 	}
+
+	APawn* LocalPlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
 	
-	if (UHPUserWidget* HPUserWidget = Cast<UHPUserWidget>(OverHeadWidgetComponent->GetUserWidgetObject()))
+	if (UHPOverheadWidget* HPOverheadUserWidget = Cast<UHPOverheadWidget>(OverHeadWidgetComponent->GetUserWidgetObject()))
 	{
 		BindCallbacksToDependencies();
-		HPUserWidget->SetWidgetController(this);
+		HPOverheadUserWidget->SetWidgetController(this);
 		BroadcastInitialValues();
 		OverHeadWidgetComponent->SetHiddenInGame(false);
 		OverHeadWidgetComponent->SetTwoSided(true);
-		
+		ETeamAttitude::Type OpponentAttitude = FGenericTeamId::GetAttitude(this, LocalPlayerPawn);
+		if (OpponentAttitude == ETeamAttitude::Hostile)
+		{
+			HPOverheadUserWidget->SetColorDependingOnAttitude(false);
+		}
+		else
+		{
+			HPOverheadUserWidget->SetColorDependingOnAttitude(true);
+		}
+
 		GetWorldTimerManager().ClearTimer(OverHeadWidgetTimerHandle);
 		GetWorldTimerManager().SetTimer(OverHeadWidgetTimerHandle, this, &AHPPlayerCharacter::UpdateOverHeadWidgetVisibility, OverHeadWidgetVisibilityPeriod, true);
 	}

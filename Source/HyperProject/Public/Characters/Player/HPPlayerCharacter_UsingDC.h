@@ -10,7 +10,7 @@
  * 
  */
 class UDetectComponent;
-
+class UNiagaraSystem;
 UCLASS()
 class HYPERPROJECT_API AHPPlayerCharacter_UsingDC : public AHPPlayerCharacter
 {
@@ -22,11 +22,18 @@ public:
 	UDetectComponent* GetDetectComponent() const { return DetectComponent; }
 
 	UFUNCTION(Client, Reliable)
-	void Client_OnSkillActivate();
+	void Client_OnSkillActivate(FVector_NetQuantize100 TargetLocation);
+
 protected:
 	virtual void ClientSideInit() override;
 
 private:
 	UPROPERTY(EditDefaultsOnly)
 	UDetectComponent* DetectComponent;
+	
+	UPROPERTY(EditDefaultsOnly)
+	UNiagaraSystem* BeamSystem;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* ClientAnimMontage;
 };

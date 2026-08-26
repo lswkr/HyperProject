@@ -57,7 +57,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FVector GetMuzzleSocketLocation();
-	
+
 	void CaptureAimStartTime();
 	void CaptureAimEndTime();
 	void ClearAimTimes();
