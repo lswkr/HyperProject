@@ -67,7 +67,6 @@ AHPPlayerCharacter::AHPPlayerCharacter()
 	GetCharacterMovement()->bCanWalkOffLedgesWhenCrouching = true;
 	/* Server Side Rewind*/
 	LagCompensationComponent = CreateDefaultSubobject<ULagCompensationComponent>("LagCompensationComponent");
-	
 
 	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
 	head->SetupAttachment(GetMesh(), FName("head"));
@@ -249,6 +248,8 @@ void AHPPlayerCharacter::BeginPlay()
 	
 	SpawnWeapon(0);
 	ConfigureOverHeadWidget();
+
+	CachedMaxWalkSpeed = GetMovementComponent()->GetMaxSpeed();
 }
 
 void AHPPlayerCharacter::PostInitializeComponents()
@@ -384,6 +385,11 @@ void AHPPlayerCharacter::HandleMove(const FInputActionValue& InputActionValue)
 {
 	FVector2D InputValue = InputActionValue.Get<FVector2D>();
 
+	bool bIsAiming = false;
+	if (HPAbilitySystemComponent->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Combat_Aiming))
+	{
+		bIsAiming=true;
+	}
 	InputValue.Normalize();
 
 	if (InputValue.X != 0)
@@ -400,6 +406,8 @@ void AHPPlayerCharacter::HandleMove(const FInputActionValue& InputActionValue)
 		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X));
 		AddMovementInput(Direction, InputValue.Y);
 	}
+	
+	bIsAiming ? GetCharacterMovement()->MaxWalkSpeed*= 1/2 : GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
 }
 
 void AHPPlayerCharacter::HandleLook(const FInputActionValue& InputActionValue)
@@ -439,7 +447,7 @@ void AHPPlayerCharacter::HandleCrouch(const FInputActionValue& InputActionValue)
 			UnCrouch();
 		}
 	}
-	//bIsCrouched ? GetCharacterMovement()->MaxWalkSpeed = 300 : GetCharacterMovement()->MaxWalkSpeed = 600;
+	bIsCrouched ? GetCharacterMovement()->MaxWalkSpeed = 1/2 : GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
 }
 
 void AHPPlayerCharacter::HandleAbilityInputPressed(const FInputActionValue& InputActionValue, EHPAbilityInputID InputID)

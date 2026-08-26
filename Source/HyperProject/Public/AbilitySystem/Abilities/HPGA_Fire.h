@@ -23,42 +23,51 @@ protected:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 private:
-	UFUNCTION()
-	void OnInputReleased(float TimeHeld);
-
-	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
-	void FireOneShot();
-	
-	// UPROPERTY()
-	// UGameplayEffect* ApplyEffect; //힐, 딜 등 적용시킬 이펙트 달라 ApplyEffect로 이름 지음
-
-	UPROPERTY(EditDefaultsOnly)
+	/* HPGameplayAbility Settings Begin */
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
 	UAnimMontage* FireMontage;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
+	UAnimMontage* AimingFireMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
 	UAnimMontage* ReloadMontage;
 
-	UPROPERTY(EditDefaultsOnly)
-	float FireInterval = 0.3f;
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility")
+	bool DoesContainAiming = false;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility")
+	float FireInterval = 0.3f;
+	/* HPGameplayAbility Settings End */
+
+	/* FX Begin */
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
 	FGameplayTag BeamGameplayCueTag;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
 	FGameplayTag HitVFXCueTag;
 
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag HitSoundCueTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag LocalBodyHitSoundCueTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag LocalHeadHitSoundCueTag;
-
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
 	UParticleSystem* LocalHitParticle;
 	
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag HitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag LocalBodyHitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag LocalHeadHitSoundCueTag;
+	/* FX End */
+	
+	/* Server-Client Logic Begin */
+	UFUNCTION()
+	void OnInputReleased(float TimeHeld);
+	
+	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
+	
+	void FireOneShot();
+
 	FDelegateHandle TargetDataDelegateHandle;
 
 	void OnServerReceiveTargetData (const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
@@ -68,4 +77,6 @@ private:
 	UFUNCTION()
 	void OnFireDelayFinished();
 	void StartFireDelay();
+	/* Server-Client Logic End */
+	
 };

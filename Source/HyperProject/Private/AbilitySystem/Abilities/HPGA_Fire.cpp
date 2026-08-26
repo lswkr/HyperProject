@@ -259,7 +259,28 @@ void UHPGA_Fire::OnServerReceiveTargetData(const FGameplayAbilityTargetDataHandl
 
 	if (!IsLocallyControlled())
 	{
-		ASC->PlayMontage(this, CurrentActivationInfo, FireMontage,2.0f);
+		if (!DoesContainAiming)
+		{
+			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage,2.0f);
+		}
+		else
+		{
+			const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
+			const FGameplayAbilityTargetData_HPCustom* TargetData = nullptr ;
+			
+			if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_HPCustom::StaticStruct())
+			{
+				TargetData = static_cast<const FGameplayAbilityTargetData_HPCustom*>(BaseData);
+				if (TargetData->IsAiming())
+				{
+					if (AimingFireMontage)
+					{
+						ASC->PlayMontage(this, CurrentActivationInfo, AimingFireMontage,2.0f);
+					}
+				}
+			}
+		}
+	
 	}
 
 	const FGameplayAbilityTargetData* Data = TargetDataHandle.Get(0);

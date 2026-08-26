@@ -25,48 +25,61 @@ protected:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 private:
+	/* HPGameplayAbility Settings Begin */
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
+	UAnimMontage* FireMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
+	UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
+	UAnimMontage* AimingFireMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility")
+	float PrimaryFireInterval = 0.3f;
+	
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility")
+	float SecondaryFireInterval = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
+	bool bIsForBoth = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
+	bool DoesContainAiming = false;
+
+	bool IsAiming() const;
+	/* HPGameplayAbility Settings End */
+	
+	/* FX Begin */
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
+	FGameplayTag BeamGameplayCueTag;
+	
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
+	FGameplayTag HitVFXCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
+	UParticleSystem* LocalHitParticle;
+	
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag HitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag LocalBodyHitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag LocalHeadHitSoundCueTag;
+	/* FX End */
+
+	/* Server-Client Logic Begin */
 	UFUNCTION()
 	void OnInputReleased(float TimeHeld);
 
 	bool MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
 	bool MakeTargetData_Projectile(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const;
+
 	void FireOneShot();
-	
 	void Fire_HitScan();
 	void Fire_Projectile();
-	
-	UPROPERTY()
-	UGameplayEffect* ApplyEffect;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* FireMontage;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* ReloadMontage;
-
-	UPROPERTY(EditDefaultsOnly)
-	float PrimaryFireInterval = 0.3f;
-
-	UPROPERTY(EditDefaultsOnly)
-	float SecondaryFireInterval = 1.f;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag BeamGameplayCueTag;
-	
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag HitVFXCueTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	UParticleSystem* LocalHitParticle;
-	
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag HitSoundCueTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag LocalBodyHitSoundCueTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag LocalHeadHitSoundCueTag;
 	
 	FDelegateHandle TargetDataDelegateHandle_Projectile;
 	FDelegateHandle TargetDataDelegateHandle_HitScan;
@@ -81,34 +94,33 @@ private:
 	UFUNCTION()
 	void OnFireDelayFinished();
 	void StartFireDelay();
+	/* Server-Client Logic End */
 
-	bool IsAiming() const;
-
-	UPROPERTY(EditDefaultsOnly)
-	bool bIsForBoth = false;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	/* Gameplay Effect Begin */
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
 	TSubclassOf<UGameplayEffect> PrimaryEffectClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
 	TSubclassOf<UGameplayEffect> SecondaryEffectClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
 	FScalableFloat PrimaryValue;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
 	FScalableFloat SecondaryValue;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	/* Gameplay Effect End */
+
+	/* Projectile Begin */
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	TSubclassOf<AHPProjectileBase> ProjectileClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	EProjectileSpawnSocketType SpawnSocketType = EProjectileSpawnSocketType::Weapon;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	TSubclassOf<AHPProjectileBase> ServerSideRewindProjectileClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	TSubclassOf<AHPVisualProjectile> VisualProjectileClass;
-
+	/* Projectile End */
 };

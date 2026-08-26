@@ -18,9 +18,9 @@ class HYPERPROJECT_API UHPDamageAbility : public UHPGameplayAbility
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
 	FScalableFloat Damage;
 };

@@ -166,7 +166,7 @@ private:
 	
 	FName MeleeHitBoxSocketName;
 
-
+	float CachedMaxWalkSpeed = 600.f;
 	
 	UPROPERTY(EditDefaultsOnly,Category = "MeleeHit")
 	UAnimMontage* MeleeHitAnimMontage;
@@ -255,8 +255,7 @@ private:
 	FRotator ProxyRotation;
 	float ProxyYaw;
 	float TurnThreshold = .5f;
-
-	bool bIsAiming = false;
+	
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	bool bCanSetMine = false;

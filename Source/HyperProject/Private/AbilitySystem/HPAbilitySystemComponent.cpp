@@ -10,11 +10,11 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Weapons/HPWeaponBase.h"
 
-UHPAbilitySystemComponent::UHPAbilitySystemComponent()
-{
+//UHPAbilitySystemComponent::UHPAbilitySystemComponent()
+//{
 	//GetGameplayAttributeValueChangeDelegate(UHPAttributeSet::GetHealthAttribute()).AddUObject(this, &UHPAbilitySystemComponent::OnHealthUpdate);
 	//GetGameplayAttributeValueChangeDelegate(UHPAttributeSet::GetUltAttribute()).AddUObject(this, &UHPAbilitySystemComponent::OnUltUpdate);
-}
+//}
 
 void UHPAbilitySystemComponent::InitializeBaseAttributes()
 {
@@ -30,14 +30,12 @@ void UHPAbilitySystemComponent::InitializeBaseAttributes()
 		HeroBaseStats = BaseStatDataTable->FindRow<FHPHeroBaseStats>(DataPair.Key,"");
 		if (HeroBaseStats && HeroBaseStats->Class == GetOwner()->GetClass())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s is Selected"),*HeroBaseStats->Class->GetName());
 			break;
 		}
 	}
 	
 	if (HeroBaseStats)
 	{
-		//NEXTTHINGTODO: HeroBaseStats살펴보고 더 채워넣기
 		SetNumericAttributeBase(UHPAttributeSet::GetMaxHealthAttribute(), HeroBaseStats->BaseMaxHealth);
 		SetNumericAttributeBase(UHPAttributeSet::GetMoveSpeedAttribute(), HeroBaseStats->BaseMoveSpeed);
 		SetNumericAttributeBase(UHPAttributeSet::GetMaxUltAttribute(), HeroBaseStats->BaseMaxUlt);

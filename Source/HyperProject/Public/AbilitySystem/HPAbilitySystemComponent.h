@@ -24,18 +24,15 @@ class HYPERPROJECT_API UHPAbilitySystemComponent : public UAbilitySystemComponen
 	GENERATED_BODY()
 
 public:
-	UHPAbilitySystemComponent();
-
+	void ServerSideInit();
+	
 	void InitializeBaseAttributes();
 	void ApplyFullStatEffect();
-	
-	void ServerSideInit();
-
 	void OnEquipWeapon(const AHPWeaponBase& NewWeapon);
+	
+	bool AbilitiesGiven = false;
 
 	ECombatState GetCombatState() const;
-
-	bool AbilitiesGiven = false;
 
 	virtual void OnRep_ActivateAbilities() override;
 
@@ -54,19 +51,20 @@ private:
 	void AuthApplyGameplayEffect(const TSubclassOf<UGameplayEffect>& GameplayEffect, int32 Level = 1);
 	void ApplyInitialEffects();
 	void GiveInitialAbilities();
+	
 	//void OnHealthUpdate(const FOnAttributeChangeData& ChangedData);
 	//void OnUltUpdate(const FOnAttributeChangeData& ChangedData);
 
-	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Abilities")
 	TMap<EHPAbilityInputID, TSubclassOf<UGameplayAbility>> Abilities;
 
-	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Abilities")
 	TMap<EHPAbilityInputID, TSubclassOf<UGameplayAbility>> BasicAbilities;
 
-	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> BasicAbilitiesWithNoKey;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "GAS")
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Abilities")
 	UHPAbilitySystemDataAsset* HPAbilitySystemDataAsset;
 
 	TArray<FGameplayAbilitySpecHandle> GrantedWeaponAbilityHandles;

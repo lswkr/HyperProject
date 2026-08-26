@@ -24,37 +24,28 @@ class HYPERPROJECT_API UHPGA_Fire_Projectile : public UHPGameplayAbility
 
 public:
 	UHPGA_Fire_Projectile();
+	
 protected:
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+private:
+	/* Server-Client Logic Begin */
 	UFUNCTION()
 	void OnInputReleased(float TimeHeld);
-	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
-	void SendTargetDataToServer(const FGameplayAbilityTargetDataHandle& TargetDataHandle);
+
+	void FireOneShot();
+
 	UFUNCTION()
 	void OnFireDelayFinished();
 	void StartFireDelay();
-	void FireOneShot();
-	void OnServerReceiveTargetData(const FGameplayAbilityTargetDataHandle& GameplayAbilityTargetDataHandle, FGameplayTag GameplayTag);
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
-
-private:
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	TSubclassOf<AHPProjectileBase> ProjectileClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	TSubclassOf<AHPProjectileBase> ServerSideRewindProjectileClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	TSubclassOf<AHPVisualProjectile> VisualProjectileClass;
-
-	// UFUNCTION(BlueprintCallable, Category = "Projectile")
-	// void SpawnProjectile();
-
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	EProjectileSpawnSocketType SpawnSocketType;
 
 	FDelegateHandle TargetDataDelegateHandle;
+	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
+	void SendTargetDataToServer(const FGameplayAbilityTargetDataHandle& TargetDataHandle);
+	void OnServerReceiveTargetData(const FGameplayAbilityTargetDataHandle& GameplayAbilityTargetDataHandle, FGameplayTag GameplayTag);
+	/* Server-Client Logic End */
 
+	/* HPGameplayAbility Settings Begin */ 
 	UPROPERTY(EditDefaultsOnly)
 	UAnimMontage* FireMontage;
 
@@ -66,7 +57,21 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly)
 	bool bNeedCooldown = false;
-	//
-	// UPROPERTY(EditDefaultsOnly)
-	// bool bHasBoundedSpawnedActor = false;
+	/* HPGameplayAbility Settings End */
+	
+	/* Projectile Begin */
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
+	TSubclassOf<AHPProjectileBase> ProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
+	TSubclassOf<AHPProjectileBase> ServerSideRewindProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
+	TSubclassOf<AHPVisualProjectile> VisualProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
+	EProjectileSpawnSocketType SpawnSocketType;
+	/* Projectile End */
+	
+	
 };

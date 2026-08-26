@@ -414,7 +414,7 @@ void UHPGA_HybridFire::Fire_Projectile()
 				return;
 			}
 		
-			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
+			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 2.0f);
 
 			if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
 			{
@@ -444,7 +444,7 @@ void UHPGA_HybridFire::Fire_Projectile()
 				return;
 			}
 		
-			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
+			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage, 2.0f);
 		
 			
 
@@ -497,7 +497,27 @@ void UHPGA_HybridFire::OnServerReceiveTargetData_HitScan(const FGameplayAbilityT
 	
 	if (!IsLocallyControlled())
 	{
-		ASC->PlayMontage(this, CurrentActivationInfo, FireMontage,2.0f);
+		if (!DoesContainAiming)
+		{
+			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage,2.0f);
+		}
+		else
+		{
+			const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
+			const FGameplayAbilityTargetData_HPCustom* TargetData = nullptr ;
+			
+			if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_HPCustom::StaticStruct())
+			{
+				TargetData = static_cast<const FGameplayAbilityTargetData_HPCustom*>(BaseData);
+				if (TargetData->IsAiming())
+				{
+					if (AimingFireMontage) //Belica는 Aiming상태에서의 FireMontage가 따로 없음
+					{
+						ASC->PlayMontage(this, CurrentActivationInfo, AimingFireMontage,1.0f);
+					}
+				}
+			}
+		}
 	}
 
 	const FGameplayAbilityTargetData* Data = TargetDataHandle.Get(0);

@@ -34,10 +34,11 @@ private:
 protected:
 	FProjectileParams MakeProjectileParams();
 
-	UPROPERTY(EditDefaultsOnly)
+	
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
 	bool bIsUlt = false;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
 	TSubclassOf<UGameplayEffect> UltTagEffect;
 	
 };

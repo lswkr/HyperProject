@@ -22,22 +22,25 @@ protected:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 private:
-	UFUNCTION()
-	void OnInputPressed(float TimeHeld);
-
-	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle, AActor* ConfirmedActor) const;
-	
-	UPROPERTY(EditDefaultsOnly)
+	/* HPGameplayAbility Settings Begin */
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Montage")
 	UAnimMontage* FireMontage;
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|VFX")
 	FGameplayTag BeamGameplayCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
+	FGameplayTag EventTag;
+	/* HPGameplayAbility Settings End */
+	
+	/* Server-Client Logic Begin */
+	UFUNCTION()
+	void OnInputPressed(float TimeHeld);
 	
 	FDelegateHandle TargetDataDelegateHandle;
-
+	bool MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataHandle, AActor* ConfirmedActor) const;
 	void OnServerReceiveTargetData (const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
 	void SendTargetDataToServer(const FGameplayAbilityTargetDataHandle& TargetDataHandle) const;
+	/* Server-Client Logic End */
 
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag EventTag;
 };
