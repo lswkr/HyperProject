@@ -776,6 +776,14 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 			bIsHeadShot = SSRResult.bHeadShot;
 			bIsShotConfirmed = SSRResult.bHitConfirmed;
 		}
+		else
+		{
+			FGameplayCueParameters GameplayCueParams;
+			GameplayCueParams.Location = HitResult->ImpactPoint;
+			GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(HitVFXCueTag, GameplayCueParams);
+			return;
+		}
+		
 		float Multiplier = 1.f;
 		
 		if (bIsShotConfirmed)

@@ -14,6 +14,7 @@
 class AHPControlPointHUD;
 class AHPControlPoint;
 class AHPHUD;
+class UMatchResultWidget;
 
 struct FHPControlPointData;
 
@@ -122,12 +123,22 @@ protected:
 
 	float TimeSyncRunningTime = 0.f;
 	void CheckTimeSync(float DeltaTime);
-
-	
-
 	/* Ping End */
-	
 
+
+	/* Match Widget Begin */
+public:
+	UFUNCTION(Client, Reliable)
+	void Client_ShowResultWidget(uint8 TeamNum);
+
+private:
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> VictoryWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> DefeatWidgetClass;
+
+	/* Match Widget End */
 };
 
 

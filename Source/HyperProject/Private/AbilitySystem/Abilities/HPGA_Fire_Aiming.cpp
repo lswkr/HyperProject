@@ -109,8 +109,10 @@ void UHPGA_Fire_Aiming::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 				CombatComponent->SetAiming(false);
 			}
 		}
-
-		ScopeWidget->ZoomOut();
+		if (ScopeWidget)
+		{
+			ScopeWidget->ZoomOut();
+		}
 	}
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

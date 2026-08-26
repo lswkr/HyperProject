@@ -199,6 +199,18 @@ void AHPPlayerCharacter::ServerSideInit()
 			PlayerStart->SetOccupied(false);
 		}	
 	}
+	HPAbilitySystemComponent->RegisterGameplayTagEvent(FHPGameplayTags::Get().State_Combat_Aiming, EGameplayTagEventType::NewOrRemoved).
+	AddLambda([this](const FGameplayTag Tag, int32 NewCount)
+	{
+		if (NewCount>=1)
+		{
+			GetCharacterMovement()->MaxWalkSpeed= CachedMaxWalkSpeed/2;
+		}
+		else
+		{
+			GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
+		}
+	});
 	//BroadcastInitialValues();
 }
 
@@ -249,7 +261,7 @@ void AHPPlayerCharacter::BeginPlay()
 	SpawnWeapon(0);
 	ConfigureOverHeadWidget();
 
-	CachedMaxWalkSpeed = GetMovementComponent()->GetMaxSpeed();
+	CachedMaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 }
 
 void AHPPlayerCharacter::PostInitializeComponents()
@@ -384,13 +396,13 @@ void AHPPlayerCharacter::ClearMeleeHitSet_Implementation()
 void AHPPlayerCharacter::HandleMove(const FInputActionValue& InputActionValue)
 {
 	FVector2D InputValue = InputActionValue.Get<FVector2D>();
-
-	bool bIsAiming = false;
-	if (HPAbilitySystemComponent->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Combat_Aiming))
-	{
-		bIsAiming=true;
-	}
+	
+	// if (HPAbilitySystemComponent->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Combat_Aiming))
+	// {
+	// 	bIsAiming=true;
+	// }
 	InputValue.Normalize();
+	//bIsAiming ? GetCharacterMovement()->MaxWalkSpeed= CachedMaxWalkSpeed/2 : GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
 
 	if (InputValue.X != 0)
 	{
@@ -407,7 +419,6 @@ void AHPPlayerCharacter::HandleMove(const FInputActionValue& InputActionValue)
 		AddMovementInput(Direction, InputValue.Y);
 	}
 	
-	bIsAiming ? GetCharacterMovement()->MaxWalkSpeed*= 1/2 : GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
 }
 
 void AHPPlayerCharacter::HandleLook(const FInputActionValue& InputActionValue)
@@ -430,7 +441,6 @@ void AHPPlayerCharacter::HandleLook(const FInputActionValue& InputActionValue)
 
 void AHPPlayerCharacter::HandleCrouch(const FInputActionValue& InputActionValue)
 {
-	//NEXTTHINGTODO: 웅크리기 시 점프 불가->필요 시 수정하기
 	bool InputValue = InputActionValue.Get<bool>();
 
 	if (InputValue)
@@ -447,7 +457,7 @@ void AHPPlayerCharacter::HandleCrouch(const FInputActionValue& InputActionValue)
 			UnCrouch();
 		}
 	}
-	bIsCrouched ? GetCharacterMovement()->MaxWalkSpeed = 1/2 : GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
+	bIsCrouched ? GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed/2 : GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
 }
 
 void AHPPlayerCharacter::HandleAbilityInputPressed(const FInputActionValue& InputActionValue, EHPAbilityInputID InputID)
@@ -544,6 +554,19 @@ void AHPPlayerCharacter::ClientSideInit()
 			HPHUD->InitOverlay(CurrentPlayerController, HPAbilitySystemComponent, HPAttributeSet, CombatComponent);
 		}
 	}
+
+	HPAbilitySystemComponent->RegisterGameplayTagEvent(FHPGameplayTags::Get().State_Combat_Aiming, EGameplayTagEventType::NewOrRemoved).
+	AddLambda([this](const FGameplayTag Tag, int32 NewCount)
+	{
+		if (NewCount>=1)
+		{
+			GetCharacterMovement()->MaxWalkSpeed= CachedMaxWalkSpeed/2;
+		}
+		else
+		{
+			GetCharacterMovement()->MaxWalkSpeed = CachedMaxWalkSpeed;
+		}
+	});
 
 
 }
@@ -855,6 +878,7 @@ void AHPPlayerCharacter::BindCallbacksToDependencies()
 	HPAbilitySystemComponent->RegisterGameplayTagEvent(GameplayTags.State_Debuff_HealBan, EGameplayTagEventType::NewOrRemoved).
 	AddUObject(this, &AHPPlayerCharacter::OnHealBanTagChanged);
 
+	
 	HPAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(HPAttributeSet->GetHealthAttribute()).
 	AddLambda([this](const FOnAttributeChangeData& Data)
 	{

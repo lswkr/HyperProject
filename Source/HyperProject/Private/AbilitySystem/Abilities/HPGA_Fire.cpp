@@ -369,6 +369,13 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 			bIsHeadShot = SSRResult.bHeadShot;
 			bIsShotConfirmed = SSRResult.bHitConfirmed;
 		}
+		else
+		{
+			FGameplayCueParameters GameplayCueParams;
+			GameplayCueParams.Location = HitResult->ImpactPoint;
+			GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(HitVFXCueTag, GameplayCueParams);
+			return;
+		}
 	
 		if (bIsShotConfirmed)
 		{
@@ -378,7 +385,6 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 			
 			if (bIsHeadShot)
 			{
-				//NEXTTHINGTODO: 헤드샷 위젯 표시
 				UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
 				FinalDamage*=2;
 			}
@@ -429,6 +435,7 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 			}
 		
 		}
+	
 	}
 }
 

@@ -4,12 +4,14 @@
 #include "Controller/HPPlayerController.h"
 
 #include "Actors/HPControlPoint.h"
+#include "Blueprint/UserWidget.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/HPCombatComponent.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/HUD/HPControlPointHUD.h"
 #include "UI/HUD/HPHUD.h"
+#include "UI/Widget/MatchResultWidget.h"
 
 void AHPPlayerController::Tick(float DeltaTime)
 {
@@ -176,6 +178,22 @@ void AHPPlayerController::CheckTimeSync(float DeltaTime)
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 		TimeSyncRunningTime = 0.f;
+	}
+}
+
+void AHPPlayerController::Client_ShowResultWidget_Implementation(uint8 TeamNum)
+{
+	if (TeamNum == GetGenericTeamId().GetId())
+	{
+		UUserWidget* VictoryWidget = CreateWidget<UUserWidget> (this, VictoryWidgetClass);
+		//VictoryWidget->SetResult();
+		VictoryWidget->AddToViewport();		
+	}
+	else
+	{
+		UUserWidget* DefeatWidget = CreateWidget<UUserWidget> (this, DefeatWidgetClass);
+		//DefeatWidget->SetResult();
+		DefeatWidget->AddToViewport();
 	}
 }
 

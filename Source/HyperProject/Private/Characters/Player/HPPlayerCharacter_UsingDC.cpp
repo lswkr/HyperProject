@@ -18,7 +18,7 @@ AHPPlayerCharacter_UsingDC::AHPPlayerCharacter_UsingDC()
 void AHPPlayerCharacter_UsingDC::Client_OnSkillActivate_Implementation(FVector_NetQuantize100 TargetLocation)
 {
 	DetectComponent->EraseTargetLockWidget();
-
+	
 	if (ClientAnimMontage && BeamSystem)
 	{
 		
@@ -32,10 +32,10 @@ void AHPPlayerCharacter_UsingDC::Client_OnSkillActivate_Implementation(FVector_N
 			FVector BeamEnd = TargetLocation;
 			
 			UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, BeamSystem, BeamStart);
-
+	
 			if (!NiagaraComponent)
 				return;
-
+	
 			NiagaraComponent->SetVectorParameter(FName("Beam End"),BeamEnd);
 		}
 	}

@@ -182,6 +182,18 @@ void AControlPointGameMode::BeforePointActivateLeftTimeCheck()
 	CPGameState->SetTimeCount(LeftTimeBeforeActivateLeftTimeCheck);
 }
 
+void AControlPointGameMode::OnGameEnd(uint8 TeamNum)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		AHPPlayerController* HPPC= Cast<AHPPlayerController>(It->Get());
+		if (HPPC)
+		{
+			HPPC->Client_ShowResultWidget(TeamNum);
+		}
+	}
+}
+
 void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedControlPoint, int32 TeamID)
 {
 	//NEXTTHINGTODO:
@@ -206,12 +218,15 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 		UE_LOG(LogTemp, Warning,TEXT("Team 1 Win"));
 		ControlPointGameModeState=EControlPointGameModeState::GameComplete;
 		ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
+		OnGameEnd(0);
+		
 	}
 	else if (CurrentTeam2Point==VictoryPoint)
 	{
 		UE_LOG(LogTemp, Warning,TEXT("Team 2 Win"));
 		ControlPointGameModeState=EControlPointGameModeState::GameComplete;
 		ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
+		OnGameEnd(1);
 	}
 	
 	if (ControlPointGameModeState==EControlPointGameModeState::GameComplete)

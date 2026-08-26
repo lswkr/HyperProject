@@ -241,7 +241,7 @@ private:
 	void HideDesignatedBones();
 	
 	
-	
+	bool bIsAiming = false;
 	/*Rotation and TurnInPlace*/
 	bool bIsCrouching;
 	void AimOffset(float DeltaSeconds);

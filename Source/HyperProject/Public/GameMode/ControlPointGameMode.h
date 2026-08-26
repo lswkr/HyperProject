@@ -50,7 +50,8 @@ private:
 	void OnGameStart();
 	void BeforeGameLeftTimeCheck();
 	void BeforePointActivateLeftTimeCheck();
-
+	void OnGameEnd(uint8 TeamNum);
+	
 	int32 CurrentTeam1Point = 0;
 	int32 CurrentTeam2Point = 0;
 	UPROPERTY(EditDefaultsOnly,Category = "ControlPointGameMode")
