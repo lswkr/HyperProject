@@ -26,9 +26,10 @@ void UHPGameInstance::LoadLevelAndListen(TSoftObjectPtr<UWorld> Level)
 
 	if (LevelURL != "")
 	{
-		FString TraverStr = FString::Printf(TEXT("%s?listen?port=%d"),*LevelURL.ToString(), SessionServerPort);
-		UE_LOG(LogTemp, Warning, TEXT("Server Traveling to: %s"), *TraverStr);
-		GetWorld()->ServerTravel(TraverStr);
+		//NEXTTHINGTODO: LISTEN빼기
+		FString TravelStr = FString::Printf(TEXT("%s?listen?port=%d"),*LevelURL.ToString(), SessionServerPort);
+		UE_LOG(LogTemp, Warning, TEXT("Server Traveling to: %s"), *TravelStr);
+		GetWorld()->ServerTravel(TravelStr);
 	}
 }
 
@@ -71,7 +72,7 @@ void UHPGameInstance::ClientLogin(const FString& Type, const FString& Id, const 
 {
 	if (IOnlineIdentityPtr IdentityPtr= UHPNetStatics::GetIdentityPtr())
 	{
-		if (LoggingInDelegateHandle.IsValid())
+		if (LoggingInDelegateHandle.IsValid()) //핸들에 델리게이트 등록 전 이전 델리게이트 다 지우기
 		{
 			IdentityPtr->OnLoginCompleteDelegates->Remove(LoggingInDelegateHandle);
 			LoggingInDelegateHandle.Reset();
@@ -79,7 +80,7 @@ void UHPGameInstance::ClientLogin(const FString& Type, const FString& Id, const 
 		
 		LoggingInDelegateHandle = IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &UHPGameInstance::LoginCompleted);
 
-		if (!IdentityPtr->Login(0, FOnlineAccountCredentials(Type,Id,Token)))
+		if (!IdentityPtr->Login(0, FOnlineAccountCredentials(Type,Id,Token))) 
 		{
 			UE_LOG(LogTemp, Warning,TEXT("Login Failed Right Away"));
 
@@ -105,9 +106,9 @@ void UHPGameInstance::LoginCompleted(int NumOfLocalPlayer, bool bWasSuccessful, 
 		}
 
 		FString PlayerNickName = "";
-		if (bWasSuccessful)
+		if (bWasSuccessful) //로그인 성공 시
 		{
-			PlayerNickName = IdentityPtr->GetPlayerNickname(UserId);
+			PlayerNickName = IdentityPtr->GetPlayerNickname(UserId); //닉네임
 			UE_LOG(LogTemp, Warning, TEXT("Logged In Successfully as: %s"), *PlayerNickName);
 		}
 		else
@@ -115,7 +116,7 @@ void UHPGameInstance::LoginCompleted(int NumOfLocalPlayer, bool bWasSuccessful, 
 			UE_LOG(LogTemp, Warning, TEXT("Logged In Failed: %s"), *ErrorMsg);
 		}
 
-		OnLoginCompleted.Broadcast(bWasSuccessful, PlayerNickName, ErrorMsg);
+		OnLoginCompleted.Broadcast(bWasSuccessful, PlayerNickName, ErrorMsg); //UMainMenuWidget::LoginCompleted에 브로드캐스트
 	}
 	else
 	{
@@ -123,7 +124,7 @@ void UHPGameInstance::LoginCompleted(int NumOfLocalPlayer, bool bWasSuccessful, 
 	}
 }
 
-void UHPGameInstance::RequestCreateAndJoinSession(const FName& NewSessionName)
+void UHPGameInstance::RequestCreateAndJoinSession(const FName& NewSessionName) //UMainMenuWidget::CreateSessionButtonClicked
 {
 	UE_LOG(LogTemp, Warning,TEXT("Request Create And Join Session: %s"), *NewSessionName.ToString());
 	FHttpRequestRef Request =  FHttpModule::Get().CreateRequest();
@@ -157,7 +158,7 @@ void UHPGameInstance::RequestCreateAndJoinSession(const FName& NewSessionName)
 	}
 }
 
-void UHPGameInstance::CancelSessionCreation()
+void UHPGameInstance::CancelSessionCreation() //UMainMenuWidget::CancelSessionCreation-세션 찾던 중 Cancel버튼 누른 경우
 {
 	UE_LOG(LogTemp, Warning, TEXT("Canceling Session Creation"));
 	StopAllSessionFindings();
@@ -199,13 +200,13 @@ bool UHPGameInstance::JoinSessionWithId(const FString& SessionIdStr)
 }
 
 void UHPGameInstance::SessionCreationRequestCompleted(FHttpRequestPtr Request, FHttpResponsePtr Response,
-                                                      bool bConnectedSuccessfully, FGuid SessionSearchId)
+                                                      bool bConnectedSuccessfully, FGuid SessionSearchId) //세션 리퀘스트 완료되면 콜백되는 함수
 {
 	if (!bConnectedSuccessfully)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Connection Responded with connection was not successful"));
 	}
-	else
+	else //성공적으로 Coordinator에 연결된 경우
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Connection to Coordinator Successful"));
 
@@ -241,9 +242,10 @@ void UHPGameInstance::StartFindingCreatedSession(const FGuid& SessionSearchId)
 		UE_LOG(LogTemp, Warning, TEXT("Session Search Id is invalid, can't start finding"));
 		return;
 	}
-	StopAllSessionFindings();
+	StopAllSessionFindings(); //기존 세션 찾기 중단
 	UE_LOG(LogTemp, Warning, TEXT("Start Finding Created Session with Id: %s"), *SessionSearchId.ToString());
 
+	//FindCreatedSessionSearchInterval마다 세션 찾기
 	GetWorld()->GetTimerManager().SetTimer(
 		FindCreatedSessionTimerHandle,
 		FTimerDelegate::CreateUObject(this, &UHPGameInstance::FindCreatedSession, SessionSearchId),
@@ -252,6 +254,7 @@ void UHPGameInstance::StartFindingCreatedSession(const FGuid& SessionSearchId)
 		0.f
 		);
 
+	//FindCreatedSessionTimeoutDuration동안 없으면 중단
 	GetWorld()->GetTimerManager().SetTimer(
 	FindCreatedSessionTimeoutTimerHandle,
 	this,
@@ -271,9 +274,11 @@ void UHPGameInstance::StopFindingCreatedSession()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Stop Finding Created Session"))
 
+	//세션 찾던 타이머, 타임아웃 타이머 모두 Clear
 	GetWorld()->GetTimerManager().ClearTimer(FindCreatedSessionTimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(FindCreatedSessionTimeoutTimerHandle);
 
+	//델리게이트 정리
 	if (IOnlineSessionPtr SessionPtr = UHPNetStatics::GetSessionPtr())
 	{
 		SessionPtr->OnFindSessionsCompleteDelegates.RemoveAll(this);
@@ -306,7 +311,7 @@ void UHPGameInstance::FindGlobalSessions()
 
 	if (!SessionPtr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Can't find session interface, wait for the next hlobal session search"));
+		UE_LOG(LogTemp, Warning, TEXT("Can't find session interface, wait for the next global session search"));
 		return;
 	}
 

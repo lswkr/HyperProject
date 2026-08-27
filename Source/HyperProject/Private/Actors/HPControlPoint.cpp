@@ -5,26 +5,33 @@
 
 #include "GenericTeamAgentInterface.h"
 #include "Characters/Player/HPPlayerCharacter.h"
-#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Controller/HPPlayerController.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/Widget/ControlPointWidget.h"
 
 
 AHPControlPoint::AHPControlPoint()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
-	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	SetRootComponent(BoxComponent);
-	BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &AHPControlPoint::OnBoxBeginOverlap);
-	BoxComponent->OnComponentEndOverlap.AddDynamic(this, &AHPControlPoint::OnBoxEndOverlap);
-	BoxComponent->SetBoxExtent(BoxExtent);
+	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("BoxComponent"));
+	SetRootComponent(SphereComponent);
+	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &AHPControlPoint::OnSphereBeginOverlap);
+	SphereComponent->OnComponentEndOverlap.AddDynamic(this, &AHPControlPoint::OnSphereEndOverlap);
+	SphereComponent->SetSphereRadius(SphereRadius);
 
 	OnControlPointCaptured = FOnControlPointCaptured(false, false);
-	bReplicates = true;
+
+	ControlPointWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("ControlPointWidgetComponent"));
+	ControlPointWidgetComponent->SetupAttachment(GetRootComponent());
+
+	ControlPointWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
 }
 
-void AHPControlPoint::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void AHPControlPoint::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(OtherActor))
@@ -42,7 +49,7 @@ void AHPControlPoint::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent
 }
 
 
-void AHPControlPoint::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void AHPControlPoint::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(OtherActor))
@@ -64,6 +71,10 @@ void AHPControlPoint::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 
 	DOREPLIFETIME_CONDITION_NOTIFY(AHPControlPoint, ControlPointData, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(AHPControlPoint, OnControlPointCaptured, COND_None, REPNOTIFY_Always);
+
+	DOREPLIFETIME_CONDITION_NOTIFY(AHPControlPoint, IsActivating, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(AHPControlPoint, ControlPointType, COND_None, REPNOTIFY_Always);
+	
 }
 
 void AHPControlPoint::OnRep_ControlPointUpdate()
@@ -85,22 +96,42 @@ void AHPControlPoint::BindPlayerControllerToControlPoint(AHPPlayerController* Pl
 void AHPControlPoint::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	ControlPointWidgetComponent->SetVisibility(false);
 }
 
 void AHPControlPoint::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!HasAuthority())
-	{
-		return;
-	}
 	if (!IsActivating)
 	{
 		return;
 	}
-	DrawDebugBox(GetWorld(), GetActorLocation(), BoxExtent/2, FColor::Green, false);
+	
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		FVector CameraLocation = FVector::ZeroVector;
+		FRotator CameraRotation = FRotator::ZeroRotator;
+				
+		PC->GetPlayerViewPoint(CameraLocation,CameraRotation);
+
+		if (ControlPointWidget && PC->GetPawn())
+		{
+			FVector Direction = CameraLocation-ControlPointWidgetComponent->GetComponentLocation();
+			ControlPointWidgetComponent->SetWorldRotation(Direction.Rotation());
+			float Dist = FVector::Dist2D(GetActorLocation(),PC->GetPawn()->GetActorLocation());
+			
+			Dist-=SphereRadius;
+			ControlPointWidget->UpdateDistance(FMath::Max(0,Dist)/100);
+		}
+	}
+	
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	DrawDebugSphere(GetWorld(), GetActorLocation(), SphereRadius, 12, FColor::Green);
 
 	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentState != Team1Captured) //팀1 탈환중(점령 전)
 	{
@@ -215,13 +246,24 @@ void AHPControlPoint::Tick(float DeltaTime)
 
 void AHPControlPoint::ActivateControlPoint(bool TurnOn)
 {
-	BoxComponent->SetCollisionEnabled(TurnOn?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
+	SphereComponent->SetCollisionEnabled(TurnOn?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
 	IsActivating = TurnOn;
-	/*NEXTTHINGTODO: 위젯 켜기/끄기 */
 }
 
 void AHPControlPoint::BroadcastWhatTeamCompleteControlPoint(EControlPointType InControlPointType, int32 CompleteTeamID)
 {
 	ControlPointCompletedDelegate.ExecuteIfBound(InControlPointType, CompleteTeamID);
+}
+
+
+
+void AHPControlPoint::OnRep_ControlPointActivated()
+{
+	uint8 ControlPointTypeInt = static_cast<uint8>(ControlPointType);
+	ControlPointWidget = Cast<UControlPointWidget>(ControlPointWidgetComponent->GetUserWidgetObject());
+	ControlPointWidget -> SetControlPointText(FText::FromString(FString::Chr('A' + ControlPointTypeInt)));
+	
+	ControlPointWidgetComponent->SetVisibility(IsActivating);
+	
 }
 

@@ -54,7 +54,7 @@ def CreateServerLocalTest(sessionName ,sessionSearchId):
     global nextAvailablePort
     subprocess.Popen([
             "E:/UnrealSrc/UnrealEngine/Engine/Binaries/Win64/UnrealEditor.exe",
-    " E:/DevelopingGames/HyperProject/HyperProject.uproject",
+    "E:/DevelopingGames/HyperProject/HyperProject.uproject",
     "-server",
     "-log",
     '-epicapp="ServerClient"',

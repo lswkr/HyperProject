@@ -120,7 +120,7 @@ FOnlineSessionSettings UHPNetStatics::GenerateOnlineSessionSettings(const FName&
 	OnlineSessionSettings.bIsLANMatch = false;
 	OnlineSessionSettings.NumPublicConnections = GetPlayerCountPerTeam() * 2;
 	OnlineSessionSettings.bShouldAdvertise = true;
-	OnlineSessionSettings.bUsesPresence = false;//서버라서 false
+	OnlineSessionSettings.bUsesPresence = false;
 	OnlineSessionSettings.bAllowJoinViaPresence = false;
 	OnlineSessionSettings.bAllowJoinViaPresenceFriendsOnly = false;
 	OnlineSessionSettings.bAllowInvites = true;

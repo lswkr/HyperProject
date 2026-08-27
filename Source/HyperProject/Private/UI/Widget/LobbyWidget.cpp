@@ -131,7 +131,9 @@ void ULobbyWidget::UpdatePlayerSelectionDisplay(const TArray<FPlayerSelection>& 
 
 		UCharacterEntryWidget* SelectedEntry = CharacterSelectionTileView->GetEntryWidgetFromItem<UCharacterEntryWidget>(PlayerSelection.GetCharacterDefinition());
 
-		if (SelectedEntry)
+		bool bIsSameTeam = IsSameTeam(PlayerSelection.GetPlayerSlot());
+
+		if (SelectedEntry && bIsSameTeam)
 		{
 			SelectedEntry->SetSelected(true);
 		}
@@ -232,4 +234,24 @@ void ULobbyWidget::StartMatchButtonClicked()
 	{
 		LobbyPlayerController->Server_RequestStartMatch();
 	}
+}
+
+bool ULobbyWidget::IsSameTeam(uint8 SelectedTeamSlot)
+{
+	bool bIsMyTeam = true;
+	if (LobbyPlayerController)
+	{
+		uint8 MySelectionSlot = LobbyPlayerController->GetSelectedSlotId();
+		if ((SelectedTeamSlot >= 0 && SelectedTeamSlot < UHPNetStatics::GetPlayerCountPerTeam())&&
+			(MySelectionSlot >= UHPNetStatics::GetPlayerCountPerTeam()))
+		{
+			bIsMyTeam = false;
+		}
+		else if ((SelectedTeamSlot >= UHPNetStatics::GetPlayerCountPerTeam())
+			&&	(MySelectionSlot >= 0 && MySelectionSlot < UHPNetStatics::GetPlayerCountPerTeam()))
+		{
+			bIsMyTeam = false;
+		}
+	}
+	return bIsMyTeam;
 }

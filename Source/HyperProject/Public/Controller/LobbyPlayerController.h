@@ -31,5 +31,14 @@ public:
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_RequestStartMatch();
+
+	FORCEINLINE uint8 GetSelectedSlotId() const {return SelectedSlotID; }
+	
+private:
+	UFUNCTION(Client,Reliable)
+	void Client_SetSelectionSlot(uint8 NewSlotID);
+
+	uint8 SelectedSlotID = -1;
+
 	
 };

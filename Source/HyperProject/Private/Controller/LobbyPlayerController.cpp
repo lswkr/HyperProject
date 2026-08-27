@@ -15,6 +15,7 @@ void ALobbyPlayerController::Server_RequestSlotSelectionChange_Implementation(ui
 		return;
 
 	HPGameState->RequestPlayerSelectionChange(GetPlayerState<APlayerState>(), NewSlotID);
+	Client_SetSelectionSlot(NewSlotID);
 }
 
 bool ALobbyPlayerController::Server_RequestSlotSelectionChange_Validate(uint8 NewSlotID)
@@ -53,6 +54,11 @@ void ALobbyPlayerController::Client_StartHeroSelection_Implementation()
 ALobbyPlayerController::ALobbyPlayerController()
 {
 	bAutoManageActiveCameraTarget = false; //바로 카메라에 캐릭터가 잡히지 않도록
+}
+
+void ALobbyPlayerController::Client_SetSelectionSlot_Implementation(uint8 NewSlotID)
+{
+	SelectedSlotID = NewSlotID;
 }
 
 void ALobbyPlayerController::Server_RequestStartMatch_Implementation()

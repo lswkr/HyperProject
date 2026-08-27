@@ -196,10 +196,6 @@ void AControlPointGameMode::OnGameEnd(uint8 TeamNum)
 
 void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedControlPoint, int32 TeamID)
 {
-	//NEXTTHINGTODO:
-	//GameState에 값 넣기
-
-	
 	switch (TeamID)
 	{
 	case 0:
@@ -209,8 +205,6 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 		CurrentTeam2Point++;
 		break;
 	}
-
-	CPGameState->OnTeamCompletePoint(CurrentTeam1Point, CurrentTeam2Point);
 	
 	UE_LOG(LogTemp, Warning, TEXT("Team1: %d vs Team2: %d"), CurrentTeam1Point, CurrentTeam2Point);
 	if (CurrentTeam1Point==VictoryPoint)
@@ -228,16 +222,19 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 		ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
 		OnGameEnd(1);
 	}
-	
-	if (ControlPointGameModeState==EControlPointGameModeState::GameComplete)
-	{
-		return;
-	}
+
 	
 	CurrentTargetPointIdx = static_cast<int32>(CompletedControlPoint);
 	
 	ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
 	CurrentTargetPointIdx++;
+	CPGameState->OnTeamCompletePoint(CurrentTeam1Point, CurrentTeam2Point, CurrentTargetPointIdx);
+
+	if (ControlPointGameModeState==EControlPointGameModeState::GameComplete)
+	{
+		return;
+	}
+	
 	TurnOnWaitToTurnOnNextPointTimerHandle(ActivateNextPointTime);
 }
 

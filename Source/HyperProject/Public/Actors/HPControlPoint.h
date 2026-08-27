@@ -9,8 +9,10 @@
 
 
 
-class UBoxComponent;
+class USphereComponent;
 class AHPPlayerController;
+class UWidgetComponent;
+class UControlPointWidget;
 
 USTRUCT(BlueprintType)
 struct FOnControlPointCaptured
@@ -56,10 +58,10 @@ public:
 	AHPControlPoint();
 
 	UFUNCTION()
-	void OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -89,7 +91,7 @@ public:
 	 */
 private:
 	UPROPERTY(EditDefaultsOnly)
-	FVector BoxExtent;
+	float SphereRadius;
 
 	UPROPERTY()
 	TSet<AActor*> OverlappedTeamOne;
@@ -98,7 +100,7 @@ private:
 	TSet<AActor*> OverlappedTeamTwo;
 
 	UPROPERTY(EditDefaultsOnly)
-	UBoxComponent* BoxComponent;
+	USphereComponent* SphereComponent;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ControlPointUpdate)
 	FHPControlPointData ControlPointData;
@@ -127,8 +129,19 @@ private:
 
 	EControlPointState CurrentState;
 
+	UPROPERTY(Replicated)
 	EControlPointType ControlPointType;
+	
+	UPROPERTY(EditDefaultsOnly)
+	UWidgetComponent* ControlPointWidgetComponent;
 
+	UPROPERTY()
+	UControlPointWidget* ControlPointWidget;
 
+	UPROPERTY(ReplicatedUsing = OnRep_ControlPointActivated)
 	bool IsActivating = false;
+
+	UFUNCTION()
+	void OnRep_ControlPointActivated();
+	
 };

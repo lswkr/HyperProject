@@ -7,13 +7,10 @@
 #include "GameFramework/GameSession.h"
 #include "Net/UnrealNetwork.h"
 
-void AControlPointGameState::OnTeamCompletePoint(int32 TeamNumber, int32 InNextPoint)
+void AControlPointGameState::OnTeamCompletePoint(int32 Team1Point, int32 Team2Point, int32 InNextPoint)
 {
-	if (TeamNumber==0)
-		TeamOnePoint++;
-
-	else if (TeamNumber==1)
-		TeamTwoPoint++;
+	TeamOnePoint=Team1Point;
+	TeamTwoPoint=Team2Point;
 
 	NextPoint = FString::Chr(TEXT('A') + InNextPoint);
 }

@@ -96,6 +96,8 @@ private:
 
 	UFUNCTION()
 	void StartMatchButtonClicked();
+
+	bool IsSameTeam(uint8 SelectedTeamSlot);
 };
 
 

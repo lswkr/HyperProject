@@ -26,7 +26,7 @@ class HYPERPROJECT_API AControlPointGameState : public AGameStateBase
 	GENERATED_BODY()
 
 public:
-	void OnTeamCompletePoint(int32 TeamNumber, int32 InNextPoint);
+	void OnTeamCompletePoint(int32 Team1Point, int32 Team2Point, int32 InNextPoint);
 	void SetTimeCount(int32 InTimeRemaining);
 	void SetControlPointGameModeState(EControlPointGameModeState InControlPointGameModeState);
 	
