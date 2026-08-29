@@ -217,7 +217,6 @@ void UHPGA_Fire_Projectile::FireOneShot()
 			if (IGenericTeamAgentInterface* TeamAgentInterface= Cast<IGenericTeamAgentInterface>(InstigatorPawn))
 			{
 				ServerSideRewindProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());
-				
 			}
 			ServerSideRewindProjectile->SetTraceStart(ProjectileSpawnPoint);
 			ServerSideRewindProjectile->SetInitialVelocity(ServerSideRewindProjectile->GetInitialSpeed()*ServerSideRewindProjectile->GetActorForwardVector());

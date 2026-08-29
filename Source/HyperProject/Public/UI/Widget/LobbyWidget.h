@@ -98,6 +98,9 @@ private:
 	void StartMatchButtonClicked();
 
 	bool IsSameTeam(uint8 SelectedTeamSlot);
+
+	UPROPERTY()
+	const UPDA_CharacterDefinition* CachedCharacterDefinition = nullptr;
 };
 
 

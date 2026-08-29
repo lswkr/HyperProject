@@ -36,6 +36,9 @@ protected:
 
 	
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
+	bool bIsForBoth = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
 	bool bIsUlt = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")

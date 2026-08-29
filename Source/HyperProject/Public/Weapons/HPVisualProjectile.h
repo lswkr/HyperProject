@@ -8,6 +8,8 @@
 
 class UProjectileMovementComponent;
 class UBoxComponent;
+class AHPPlayerCharacter;
+
 UCLASS()
 class HYPERPROJECT_API AHPVisualProjectile : public AActor
 {
@@ -16,6 +18,7 @@ class HYPERPROJECT_API AHPVisualProjectile : public AActor
 public:
 	AHPVisualProjectile();
 
+	void SetPlayerCharactersToIgnore(TArray<AHPPlayerCharacter*> PlayerCharactersToIgnore);
 protected:
 	virtual void BeginPlay() override;
 	

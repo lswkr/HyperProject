@@ -4,6 +4,7 @@
 #include "AbilitySystem/HPAbilitySystemLibrary.h"
 
 #include "AbilitySystemComponent.h"
+#include "EngineUtils.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/HUD/HPHUD.h"
@@ -44,4 +45,28 @@ UHPCombatComponent* UHPAbilitySystemLibrary::GetCombatComponent(const AActor* In
 		return HPCharacter->GetCombatComponent();
 	}
 	return nullptr;
+}
+
+TArray<AHPPlayerCharacter*> UHPAbilitySystemLibrary::GetSameTeamCharactersToIgnore(const UObject* WorldContextObject,
+	AHPPlayerCharacter* CurrentPlayer)
+{
+	UWorld* World = WorldContextObject->GetWorld();
+	TArray<AHPPlayerCharacter*> ResultArray = TArray<AHPPlayerCharacter*>();
+	
+	if (!World)
+		return ResultArray;
+	
+	for (TActorIterator<AHPPlayerCharacter> It(World); It; ++It)
+	{
+		AHPPlayerCharacter* IteratedCharacter = *It;
+
+		if (!IteratedCharacter)
+			continue;
+
+		if (CurrentPlayer->GetGenericTeamId() == IteratedCharacter->GetGenericTeamId())
+		{
+			ResultArray.Add(IteratedCharacter);
+		}
+	}
+	return ResultArray;
 }

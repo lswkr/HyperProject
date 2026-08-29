@@ -40,6 +40,20 @@ void AHPPlayerController::AcknowledgePossession(APawn* InPawn)
 {
 	Super::AcknowledgePossession(InPawn);
 
+	if (IsLocalController())
+	{
+		FInputModeGameOnly InputMode;
+		SetInputMode(InputMode);
+
+		SetShowMouseCursor(false);
+
+		SetIgnoreMoveInput(false);
+		SetIgnoreLookInput(false);
+
+		bEnableClickEvents = false;
+		bEnableMouseOverEvents = false;
+	}
+	
 	HPPlayerCharacter = Cast<AHPPlayerCharacter>(InPawn);
 
 	if (HPPlayerCharacter)

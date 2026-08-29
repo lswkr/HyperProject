@@ -32,11 +32,14 @@ class HYPERPROJECT_API AControlPointGameMode : public AGameModeBase
 	GENERATED_BODY()
 
 public:
-
+	AControlPointGameMode();
 	virtual void StartPlay() override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
+	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
+	
 private:
 	UPROPERTY(EditDefaultsOnly,Category = "ControlPointGameMode")
 	TSubclassOf<AHPControlPoint> ControlPointClass;
@@ -93,7 +96,7 @@ public:
 
 	ARespawnPlayerStart* GetRespawnPlayerStart(AHPPlayerCharacter* RespawningCharacter);
 private:
-	FGenericTeamId GetTeamIDForPlayer(const APlayerController* PlayerController) const;
+	FGenericTeamId GetTeamIDForPlayer(const AController* PlayerController) const;
 
 	AActor* FindNextStartSpotForTeam(const FGenericTeamId& TeamID) const;
 
@@ -107,4 +110,6 @@ private:
 	 * HPGameMode End
 	 */
 
+	UPROPERTY(EditDefaultsOnly, Category = "Team")
+	TSubclassOf<APawn> BackupPawn;
 };

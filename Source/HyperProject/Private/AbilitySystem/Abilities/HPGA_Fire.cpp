@@ -9,6 +9,7 @@
 #include "HPGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
+#include "AbilitySystem/HPAbilitySystemLibrary.h"
 #include "AbilitySystem/HPAttributeSet.h"
 
 #include "Characters/HPCharacterBase.h"
@@ -105,13 +106,32 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 
 	FVector End = MuzzleLocation + (EndLocation - MuzzleLocation)*1.25f;
 
+	TArray<AActor*> IgnoredTargets;
+	
+	if (!bIsForBoth)
+	{
+		TArray<AHPPlayerCharacter*> IgnoredPlayerCharacters =
+			UHPAbilitySystemLibrary::GetSameTeamCharactersToIgnore(GetHPPlayerCharacterFromActorInfo(),GetHPPlayerCharacterFromActorInfo());
+
+		for (AHPPlayerCharacter* IgnoredPlayerCharacter : IgnoredPlayerCharacters)
+		{
+			IgnoredTargets.Add(IgnoredPlayerCharacter);
+		}
+	}
+	IgnoredTargets.Add(GetAvatarActorFromActorInfo());
+	
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.AddIgnoredActors(IgnoredTargets);
+	
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		MuzzleLocation,
 		End,
-		ECollisionChannel::ECC_Visibility
+		ECollisionChannel::ECC_Visibility,
+		CollisionParams
 	);
+
 	
 	if (!HitResult.bBlockingHit)
 	{

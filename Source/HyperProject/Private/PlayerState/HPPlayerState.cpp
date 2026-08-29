@@ -39,10 +39,17 @@ void AHPPlayerState::CopyProperties(APlayerState* PlayerState)
 {
 	Super::CopyProperties(PlayerState);
 
+	UE_LOG(LogTemp, Error,
+		TEXT("CopyProperties CALLED - Selection=%s"),
+		*PlayerSelection.GetCharacterDefinition()->GetName());
+	
 	AHPPlayerState* NewPlayerState = Cast<AHPPlayerState>(PlayerState);
 	if (NewPlayerState)
 	{
 		NewPlayerState->PlayerSelection = PlayerSelection;
+		UE_LOG(LogTemp, Error,
+		TEXT("NewPlayerState CopyProperties CALLED - Selection=%s"),
+		*PlayerSelection.GetCharacterDefinition()->GetName());
 	}
 
 }
@@ -64,22 +71,22 @@ FGenericTeamId AHPPlayerState::GetTeamIdBasedOnSlot() const
 void AHPPlayerState::Server_SetSelectedCharacterDefinition_Implementation(
 	const UPDA_CharacterDefinition* NewCharacterDefinition)
 {
-	if (!HPGameState)
-		return;
-
 	if (!NewCharacterDefinition)
 		return;
 	
-	if (HPGameState->IsDefinitionSelected(NewCharacterDefinition))
+	if (!HPGameState)
 		return;
 
-	if (PlayerSelection.GetCharacterDefinition() != nullptr)
+	if (HPGameState->IsDefinitionSelected(NewCharacterDefinition, PlayerSelection.GetPlayerSlot())) //우리팀이 선택 안 했을 경우 진행되도록
+		return;
+
+	if (PlayerSelection.GetCharacterDefinition() != nullptr) //이미 뭔가 골랐다면
 	{
-		HPGameState->SetCharacterDeselected(PlayerSelection.GetCharacterDefinition());
+		HPGameState->SetCharacterDeselected(PlayerSelection.GetCharacterDefinition(), PlayerSelection.GetPlayerSlot()); //비우기
 	}
 
-	PlayerSelection.SetCharacterDefinition(NewCharacterDefinition);
-	HPGameState->SetCharacterSelected(this, NewCharacterDefinition);
+	PlayerSelection.SetCharacterDefinition(NewCharacterDefinition); //새로 선택
+	HPGameState->SetCharacterSelected(this, NewCharacterDefinition,  PlayerSelection.GetPlayerSlot()); 
 }
 
 bool AHPPlayerState::Server_SetSelectedCharacterDefinition_Validate(
@@ -95,6 +102,7 @@ void AHPPlayerState::PlayerSelectionUpdated(const TArray<FPlayerSelection>& NewP
 		if (NewPlayerSelection.IsForPlayer(this))
 		{
 			PlayerSelection = NewPlayerSelection;
+			return;
 		}
 	}
 }

@@ -19,9 +19,13 @@ class HYPERPROJECT_API UHPAbilitySystemLibrary : public UBlueprintFunctionLibrar
 {
 	GENERATED_BODY()
 
+public:
 	UFUNCTION(BlueprintPure, Category="WidgetController", meta = (DefaultToSelf = "WorldContextObject"))
 	static bool MakeWidgetControllerParams(const UObject* WorldContextObject, FWidgetControllerParams& OutWidgetControllerParams, AHPHUD*& OutHPHUD);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	static UHPCombatComponent* GetCombatComponent(const AActor* InActor); 
+	static UHPCombatComponent* GetCombatComponent(const AActor* InActor);
+
+	UFUNCTION(BlueprintPure, Category="Combat", meta = (DefaultToSelf = "WorldContextObject"))
+	static TArray<AHPPlayerCharacter*> GetSameTeamCharactersToIgnore(const UObject* WorldContextObject, AHPPlayerCharacter* CurrentPlayer); //상대
 };

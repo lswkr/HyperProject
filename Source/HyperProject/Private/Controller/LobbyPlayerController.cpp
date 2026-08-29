@@ -5,6 +5,7 @@
 #include "GameMode/HPGameState.h"
 #include "GameFramework/PlayerState.h"
 #include "GameMode/HPGameInstance.h"
+#include "Net/UnrealNetwork.h"
 
 void ALobbyPlayerController::Server_RequestSlotSelectionChange_Implementation(uint8 NewSlotID)
 {
@@ -14,8 +15,7 @@ void ALobbyPlayerController::Server_RequestSlotSelectionChange_Implementation(ui
 	if (!HPGameState)
 		return;
 
-	HPGameState->RequestPlayerSelectionChange(GetPlayerState<APlayerState>(), NewSlotID);
-	Client_SetSelectionSlot(NewSlotID);
+	HPGameState->RequestPlayerSelectionChange(GetPlayerState<APlayerState>(), this, NewSlotID);
 }
 
 bool ALobbyPlayerController::Server_RequestSlotSelectionChange_Validate(uint8 NewSlotID)
@@ -54,6 +54,13 @@ void ALobbyPlayerController::Client_StartHeroSelection_Implementation()
 ALobbyPlayerController::ALobbyPlayerController()
 {
 	bAutoManageActiveCameraTarget = false; //바로 카메라에 캐릭터가 잡히지 않도록
+}
+
+void ALobbyPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ALobbyPlayerController, SelectedSlotID, COND_None);
 }
 
 void ALobbyPlayerController::Client_SetSelectionSlot_Implementation(uint8 NewSlotID)

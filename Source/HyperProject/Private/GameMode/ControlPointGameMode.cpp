@@ -12,6 +12,8 @@
 #include "GameFramework/PlayerStart.h"
 #include "GameMode/ControlPointGameState.h"
 #include "Kismet/GameplayStatics.h"
+#include "Network/HPGameSession.h"
+#include "PlayerState/HPPlayerState.h"
 
 APlayerController* AControlPointGameMode::SpawnPlayerController(ENetRole InRemoteRole, const FString& Options)
 {
@@ -62,6 +64,11 @@ ARespawnPlayerStart* AControlPointGameMode::GetRespawnPlayerStart(AHPPlayerChara
 		}
 	}
 	return nullptr;
+}
+
+AControlPointGameMode::AControlPointGameMode()
+{
+	GameSessionClass = AHPGameSession::StaticClass();
 }
 
 void AControlPointGameMode::StartPlay()
@@ -128,6 +135,36 @@ void AControlPointGameMode::PostLogin(APlayerController* NewPlayer)
 		CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
 	}
 
+}
+
+UClass* AControlPointGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
+{
+	AHPPlayerState* HPPlayerState = Controller->GetPlayerState<AHPPlayerState>();
+
+	if (HPPlayerState && HPPlayerState->GetSelectedCharacterClass())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Selected Character: %s"), *HPPlayerState->GetSelectedCharacterClass()->GetName() );
+		return HPPlayerState->GetSelectedCharacterClass();
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Selected Character: nullptr"));
+	return BackupPawn;
+}
+
+APawn* AControlPointGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
+{
+	IGenericTeamAgentInterface* NewPlayerTeamInterface = Cast<IGenericTeamAgentInterface>(NewPlayer);
+
+	FGenericTeamId TeamId = GetTeamIDForPlayer(NewPlayer);
+	if (NewPlayerTeamInterface)
+	{
+		NewPlayerTeamInterface->SetGenericTeamId(TeamId);
+	}
+
+	StartSpot = FindNextStartSpotForTeam(TeamId);
+	NewPlayer->StartSpot = StartSpot;
+	
+	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
 }
 
 void AControlPointGameMode::BindControllerToControlPoints()
@@ -204,6 +241,9 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 	case 1:
 		CurrentTeam2Point++;
 		break;
+		
+	default:
+		break;
 	}
 	
 	UE_LOG(LogTemp, Warning, TEXT("Team1: %d vs Team2: %d"), CurrentTeam1Point, CurrentTeam2Point);
@@ -269,8 +309,15 @@ void AControlPointGameMode::AfterWaitingTimeToActivateNextPoint()
 	CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
 }
 
-FGenericTeamId AControlPointGameMode::GetTeamIDForPlayer(const APlayerController* PlayerController) const
+FGenericTeamId AControlPointGameMode::GetTeamIDForPlayer(const AController* PlayerController) const
 {
+	AHPPlayerState* HPPlayerState = PlayerController->GetPlayerState<AHPPlayerState>();
+
+	if (HPPlayerState && HPPlayerState->GetSelectedCharacterClass())
+	{
+		return HPPlayerState->GetTeamIdBasedOnSlot();
+	}
+	
 	static int PlayerCount = 0;
 	++PlayerCount;
 	return FGenericTeamId(PlayerCount % 2);

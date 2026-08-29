@@ -7,6 +7,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "HPGameplayTags.h"
+#include "AbilitySystem/HPAbilitySystemLibrary.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/BoxComponent.h"
 #include "Components/HPCombatComponent.h"
@@ -528,7 +529,7 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FF
 	PathParams.ProjectileRadius = ProjectileParams.FrontSideWidth;
 	PathParams.TraceChannel = ECC_HitBox; 
 	PathParams.ActorsToIgnore.Add(GetOwner());
-
+	
 	FFramePackage CurrentFrame;
 	CacheBoxPositions(HitCharacter, CurrentFrame);
 	MoveBoxes(HitCharacter, Package);

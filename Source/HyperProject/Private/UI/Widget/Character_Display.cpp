@@ -23,7 +23,7 @@ void ACharacter_Display::ConfigureWithCharacterDefinition(const UPDA_CharacterDe
 {
 	if (!CharacterDefinition)
 		return;
-
+	
 	MeshComponent->SetSkeletalMesh(CharacterDefinition->LoadDisplaySkeletalMesh());
 	MeshComponent->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 	MeshComponent->SetAnimInstanceClass(CharacterDefinition->LoadDisplayAnimInstance());

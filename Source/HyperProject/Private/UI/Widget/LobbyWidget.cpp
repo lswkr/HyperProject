@@ -224,8 +224,12 @@ void ULobbyWidget::UpdateCharacterDisplay(const FPlayerSelection& PlayerSelectio
 {
 	if (!PlayerSelection.GetCharacterDefinition())
 		return;
-
+	if (PlayerSelection.GetCharacterDefinition() == CachedCharacterDefinition)
+		return;
+	if (LobbyPlayerController->GetSelectedSlotId() != PlayerSelection.GetPlayerSlot())
+		return;
 	CharacterDisplay->ConfigureWithCharacterDefinition(PlayerSelection.GetCharacterDefinition());
+	CachedCharacterDefinition = PlayerSelection.GetCharacterDefinition();
 }
 
 void ULobbyWidget::StartMatchButtonClicked()
@@ -242,15 +246,9 @@ bool ULobbyWidget::IsSameTeam(uint8 SelectedTeamSlot)
 	if (LobbyPlayerController)
 	{
 		uint8 MySelectionSlot = LobbyPlayerController->GetSelectedSlotId();
-		if ((SelectedTeamSlot >= 0 && SelectedTeamSlot < UHPNetStatics::GetPlayerCountPerTeam())&&
-			(MySelectionSlot >= UHPNetStatics::GetPlayerCountPerTeam()))
+		if (MySelectionSlot != ALobbyPlayerController::INITIAL_SLOT_NUM)
 		{
-			bIsMyTeam = false;
-		}
-		else if ((SelectedTeamSlot >= UHPNetStatics::GetPlayerCountPerTeam())
-			&&	(MySelectionSlot >= 0 && MySelectionSlot < UHPNetStatics::GetPlayerCountPerTeam()))
-		{
-			bIsMyTeam = false;
+			bIsMyTeam = MySelectionSlot/UHPNetStatics::GetPlayerCountPerTeam() == SelectedTeamSlot/UHPNetStatics::GetPlayerCountPerTeam();
 		}
 	}
 	return bIsMyTeam;

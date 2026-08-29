@@ -30,7 +30,6 @@ public:
 	void SetTimeCount(int32 InTimeRemaining);
 	void SetControlPointGameModeState(EControlPointGameModeState InControlPointGameModeState);
 	
-	//NEXTTHINGTODO: 게임 모드 거점활성화, 게임 시작 전 표시하는 위젯 연결하도록 하나 뭐 만들기
 	UFUNCTION()
 	void OnRep_TimeRemaining();
 

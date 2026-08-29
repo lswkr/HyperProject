@@ -3,9 +3,11 @@
 
 #include "GameMode/HPGameState.h"
 
+#include "Controller/LobbyPlayerController.h"
 #include "Net/UnrealNetwork.h"
+#include "Network/HPNetStatics.h"
 
-void AHPGameState::RequestPlayerSelectionChange(const APlayerState* RequestingPlayer, uint8 DesiredSlot)
+void AHPGameState::RequestPlayerSelectionChange(const APlayerState* RequestingPlayer, ALobbyPlayerController* LobbyPlayerController, uint8 DesiredSlot)
 {
 	if (!HasAuthority() || IsSlotOccupied(DesiredSlot))
 		return;
@@ -25,13 +27,14 @@ void AHPGameState::RequestPlayerSelectionChange(const APlayerState* RequestingPl
 		PlayerSelectionArray.Add(FPlayerSelection(DesiredSlot, RequestingPlayer));
 	}
 
+	LobbyPlayerController->SetSelectedSlotId(DesiredSlot);
 	OnPlayerSelectionUpdatedDelegate.Broadcast(PlayerSelectionArray);
 }
 
 void AHPGameState::SetCharacterSelected(const APlayerState* SelectingPlayer,
-	const UPDA_CharacterDefinition* SelectedDefinition)
+	const UPDA_CharacterDefinition* SelectedDefinition, uint8 MySelectionSlot)
 {
-	if (IsDefinitionSelected(SelectedDefinition))
+	if (IsDefinitionSelected(SelectedDefinition, MySelectionSlot))
 		return;
 	FPlayerSelection* FoundPlayerSelection = PlayerSelectionArray.FindByPredicate(
 		[&](const FPlayerSelection& PlayerSelection)
@@ -81,24 +84,24 @@ bool AHPGameState::IsSlotOccupied(uint8 SlotId) const
 	return false;
 }
 
-bool AHPGameState::IsDefinitionSelected(const UPDA_CharacterDefinition* CharacterDefinition) const
+bool AHPGameState::IsDefinitionSelected(const UPDA_CharacterDefinition* CharacterDefinition, uint8 MySelectionSlot) const
 {
 	const FPlayerSelection* FoundPlayerSelection = PlayerSelectionArray.FindByPredicate(
 		[&] (const FPlayerSelection& PlayerSelection)
 		{
-			return PlayerSelection.GetCharacterDefinition() == CharacterDefinition;	
+			return PlayerSelection.GetCharacterDefinition() == CharacterDefinition && PlayerSelection.GetPlayerSlot()/UHPNetStatics::GetPlayerCountPerTeam() == MySelectionSlot/UHPNetStatics::GetPlayerCountPerTeam();	
 		}
 		);
 
 	return FoundPlayerSelection != nullptr;
 }
 
-void AHPGameState::SetCharacterDeselected(const UPDA_CharacterDefinition* CharacterDefinitionToDeselect)
+void AHPGameState::SetCharacterDeselected(const UPDA_CharacterDefinition* CharacterDefinitionToDeselect, uint8 MySelectionSlot)
 {
 	FPlayerSelection* FoundPlayerSelection = PlayerSelectionArray.FindByPredicate(
 		[&](const FPlayerSelection& PlayerSelection)
 		{
-			return PlayerSelection.GetCharacterDefinition() == CharacterDefinitionToDeselect;
+			return PlayerSelection.GetCharacterDefinition() == CharacterDefinitionToDeselect && PlayerSelection.GetPlayerSlot()/UHPNetStatics::GetPlayerCountPerTeam() == MySelectionSlot/UHPNetStatics::GetPlayerCountPerTeam();	
 		}
 		);
 	

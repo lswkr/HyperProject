@@ -25,6 +25,9 @@ public:
 	AHPProjectileBase();
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
+	void SetPlayerCharactersToIgnore(TArray<AHPPlayerCharacter*> PlayerCharactersToIgnore);
+	
 protected:
 	virtual void BeginPlay() override;
 

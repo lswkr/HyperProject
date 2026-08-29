@@ -46,6 +46,14 @@ void AHPProjectileBase::GetLifetimeReplicatedProps(TArray<class FLifetimePropert
 	DOREPLIFETIME(AHPProjectileBase, TeamID)
 }
 
+void AHPProjectileBase::SetPlayerCharactersToIgnore(TArray<AHPPlayerCharacter*> PlayerCharactersToIgnore)
+{
+	for (AHPPlayerCharacter* PlayerCharacter : PlayerCharactersToIgnore)
+	{
+		BoxComponent->IgnoreActorWhenMoving(PlayerCharacter,true);
+	}
+}
+
 void AHPProjectileBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -131,4 +139,5 @@ void AHPProjectileBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
 	
 }
 #endif
+
 

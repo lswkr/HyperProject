@@ -40,6 +40,15 @@ AHPVisualProjectile::AHPVisualProjectile()
 	
 }
 
+void AHPVisualProjectile::SetPlayerCharactersToIgnore(TArray<AHPPlayerCharacter*> PlayerCharactersToIgnore)
+{
+	for (AHPPlayerCharacter* PlayerCharacter : PlayerCharactersToIgnore)
+	{
+		if (!PlayerCharacter) continue;
+		BoxComponent->IgnoreActorWhenMoving(PlayerCharacter,true);	
+	}
+}
+
 void AHPVisualProjectile::BeginPlay()
 {
 	Super::BeginPlay();

@@ -42,9 +42,6 @@ private:
 	float SecondaryFireInterval = 1.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
-	bool bIsForBoth = false;
-
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
 	bool DoesContainAiming = false;
 
 	bool IsAiming() const;

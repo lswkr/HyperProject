@@ -17,6 +17,7 @@ class HYPERPROJECT_API ALobbyPlayerController : public AMenuPlayerController
 	GENERATED_BODY()
 
 public:
+	static const uint8 INITIAL_SLOT_NUM = 101;
 	ALobbyPlayerController();
 	
 	FOnSwitchToHeroSelectionDelegate OnSwitchToHeroSelectionDelegate;
@@ -33,12 +34,15 @@ public:
 	void Server_RequestStartMatch();
 
 	FORCEINLINE uint8 GetSelectedSlotId() const {return SelectedSlotID; }
-	
+	FORCEINLINE void SetSelectedSlotId(uint8 DesiredSlotId) { SelectedSlotID = DesiredSlotId;}
+
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 private:
 	UFUNCTION(Client,Reliable)
 	void Client_SetSelectionSlot(uint8 NewSlotID);
 
-	uint8 SelectedSlotID = -1;
+	UPROPERTY(Replicated)
+	uint8 SelectedSlotID = INITIAL_SLOT_NUM;
 
 	
 };

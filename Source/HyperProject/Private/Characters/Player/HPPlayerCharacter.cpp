@@ -232,6 +232,9 @@ void AHPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	UE_LOG(LogTemp, Error, TEXT("SetupPlayerInputComponent %s Local=%d"),
+		*GetName(),
+		IsLocallyControlled());
 	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EnhancedInputComponent)
 	{

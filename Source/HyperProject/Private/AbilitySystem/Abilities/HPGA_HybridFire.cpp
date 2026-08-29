@@ -8,6 +8,7 @@
 #include "HPGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
+#include "AbilitySystem/HPAbilitySystemLibrary.h"
 #include "AbilitySystem/HPAttributeSet.h"
 #include "AbilitySystem/Abilities/HPGA_Fire_Projectile.h"
 #include "Characters/HPCharacterBase.h"
@@ -118,12 +119,30 @@ bool UHPGA_HybridFire::MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& 
 
 	FVector End = MuzzleLocation + (EndLocation - MuzzleLocation)*1.25f;
 
+	TArray<AActor*> IgnoredTargets;
+	
+	if (!bIsForBoth)
+	{
+		TArray<AHPPlayerCharacter*> IgnoredPlayerCharacters =
+			UHPAbilitySystemLibrary::GetSameTeamCharactersToIgnore(GetHPPlayerCharacterFromActorInfo(),GetHPPlayerCharacterFromActorInfo());
+
+		for (AHPPlayerCharacter* IgnoredPlayerCharacter : IgnoredPlayerCharacters)
+		{
+			IgnoredTargets.Add(IgnoredPlayerCharacter);
+		}
+	}
+	IgnoredTargets.Add(GetAvatarActorFromActorInfo());
+	
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.AddIgnoredActors(IgnoredTargets);
+	
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		MuzzleLocation,
 		End,
-		ECollisionChannel::ECC_Visibility
+		ECollisionChannel::ECC_Visibility,
+		CollisionParams
 	);
 	
 	if (!HitResult.bBlockingHit)
@@ -384,12 +403,23 @@ void UHPGA_HybridFire::Fire_Projectile()
 		GetOwningActorFromActorInfo(),
 			InstigatorPawn,
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+			if (!bIsForBoth)
+			{
+				TArray<AHPPlayerCharacter*> TeamPlayers =  UHPAbilitySystemLibrary::GetSameTeamCharactersToIgnore(GetAvatarActorFromActorInfo(), GetHPPlayerCharacterFromActorInfo());
+				ServerSideRewindProjectile->SetPlayerCharactersToIgnore(TeamPlayers);
+			}
+			else
+			{
+				TArray<AHPPlayerCharacter*> MyCharacter;
+				MyCharacter.Add(GetHPPlayerCharacterFromActorInfo());
+				ServerSideRewindProjectile->SetPlayerCharactersToIgnore(MyCharacter);
+			}
 			
 			ServerSideRewindProjectile->SetProjectileParams(MakeProjectileParams());
 			if (IGenericTeamAgentInterface* TeamAgentInterface= Cast<IGenericTeamAgentInterface>(InstigatorPawn))
 			{
 				ServerSideRewindProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());
-				
 			}
 			ServerSideRewindProjectile->SetTraceStart(ProjectileSpawnPoint);
 			ServerSideRewindProjectile->SetInitialVelocity(ServerSideRewindProjectile->GetInitialSpeed()*ServerSideRewindProjectile->GetActorForwardVector());
@@ -641,11 +671,24 @@ void UHPGA_HybridFire::OnServerReceiveTargetData_Projectile(const FGameplayAbili
 		SpawnParams.Instigator = Cast<APawn>(GetAvatarActorFromActorInfo());
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+		
 		AHPVisualProjectile* VisualProjectile = GetWorld()->SpawnActor<AHPVisualProjectile>(
 		VisualProjectileClass,
 		SourceLocation,
 		SpawnRotation,
 		SpawnParams);
+		
+		if (!bIsForBoth)
+		{
+			TArray<AHPPlayerCharacter*> TeamPlayers =  UHPAbilitySystemLibrary::GetSameTeamCharactersToIgnore(GetAvatarActorFromActorInfo(), GetHPPlayerCharacterFromActorInfo());
+			VisualProjectile->SetPlayerCharactersToIgnore(TeamPlayers);
+		}
+		else
+		{
+			TArray<AHPPlayerCharacter*> MyCharacter;
+			MyCharacter.Add(GetHPPlayerCharacterFromActorInfo());
+			VisualProjectile->SetPlayerCharactersToIgnore(MyCharacter);
+		}
 		//NEXTTHINGTODO: 비주얼 용 액터 생성
 
 	}
@@ -825,7 +868,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 					
 					UE_LOG(LogTemp ,Warning,TEXT("Deal"));
 					HitCharacter->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());					
-					//ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
+					
 				}
 
 				else if (bIsForBoth)

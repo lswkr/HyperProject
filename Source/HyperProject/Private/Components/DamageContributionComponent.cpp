@@ -28,8 +28,6 @@ void UDamageContributionComponent::BeginPlay()
 
 void UDamageContributionComponent::AddDamageContributionData(const FDamageContributionData& InData)
 {
-	UE_LOG(LogTemp,Warning, TEXT("Hit"));
-	
 	if (DamageContributions.IsEmpty())//아무 원소가 없다면
 	{
 		//힐이 들어올 경우 그냥 return;
@@ -171,7 +169,7 @@ void UDamageContributionComponent::SpreadKillLogs(float MaxHealth)
 
 		if (KillerPC)
 		{
-			KillerPC->Client_OnReceiveEnemyEliminationInfo("Belica",FMath::Min(ContributionData.Value,MaxHealth)/MaxHealth);
+			KillerPC->Client_OnReceiveEnemyEliminationInfo(FName(ContributionData.Key->GetPlayerName()),FMath::Min(ContributionData.Value,MaxHealth)/MaxHealth);
 		}
 	}
 }

@@ -71,9 +71,19 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	TArray<FOverlapResult> OverlapResults;
 
 	FCollisionQueryParams BoxParams(SCENE_QUERY_STAT(ApplyRadialDamage),  false, GetOwner());
+	FCollisionObjectQueryParams ObjectParams(ECC_Pawn);
 	
-	GetWorld()->OverlapMultiByChannel(OverlapResults, BoxCenter, ViewRotation.Quaternion(),ECC_Pawn,FCollisionShape::MakeBox(DetectingBoxExtent/2), BoxParams);
-	ShowDebugBox(BoxCenter);
+	GetWorld()->OverlapMultiByObjectType
+	(
+	OverlapResults, 
+	BoxCenter, 
+	ViewRotation.Quaternion(),
+	ObjectParams,
+	FCollisionShape::MakeBox(DetectingBoxExtent/2), 
+	BoxParams
+	);
+	
+	//ShowDebugBox(BoxCenter);
 	TArray<AActor*> TargetCandidates;
 	
 	for (FOverlapResult& OverlapResult : OverlapResults)
@@ -102,7 +112,6 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 	float MaxLengthSquared = 0.0f;
 	AActor* TargetActor = nullptr;
-	UE_LOG(LogTemp, Warning,TEXT("OVERLAPPED"));
 	for (AActor* TargetCandidate:TargetCandidates)
 	{
 		float DistSquared = FVector::DistSquared(ViewLocation, TargetCandidate->GetActorLocation());
@@ -111,8 +120,6 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			TargetActor = TargetCandidate;
 		}
 	}
-
-	
 	
 	//지정된 액터가 비어있으면 새로 지정
 	if (ConfirmedActor == nullptr)
@@ -127,7 +134,6 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			ConfirmedActor = TargetActor;
 		}
 	}
-	UE_LOG(LogTemp, Warning,TEXT("ACTOR CONFIRMED"));
 	DrawTargetLockWidget();
 	SetTargetLockWidgetPosition();
 	
