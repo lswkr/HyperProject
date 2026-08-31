@@ -148,8 +148,9 @@ void AHPPlayerCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	RotateInPlace(DeltaSeconds);
+	//RotateInPlace(DeltaSeconds);
 
+	AimOffset(DeltaSeconds);
 	ShowOverHeadWidget();
 }
 
@@ -178,12 +179,12 @@ void AHPPlayerCharacter::PawnClientRestart()
 	}
 }
 
-void AHPPlayerCharacter::OnRep_ReplicatedMovement()
-{
-	Super::OnRep_ReplicatedMovement();
-	SimulatedProxiesTurn();
-	TimeSinceLastMovementReplication = 0.f;
-}
+// void AHPPlayerCharacter::OnRep_ReplicatedMovement()
+// {
+// 	Super::OnRep_ReplicatedMovement();
+// 	SimulatedProxiesTurn();
+// 	TimeSinceLastMovementReplication = 0.f;
+// }
 
 void AHPPlayerCharacter::ServerSideInit()
 {
@@ -690,20 +691,20 @@ void AHPPlayerCharacter::RotateInPlace(float DeltaSeconds)
 	// 	TurningInPlace = ETurningInPlace::_NotTurning;
 	// 	return;
 	// }
-	
-	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
-	{
-		AimOffset(DeltaSeconds);
-	}
-	else
-	{
-		TimeSinceLastMovementReplication += DeltaSeconds;
-		if (TimeSinceLastMovementReplication > 0.25f)
-		{
-			OnRep_ReplicatedMovement();
-		}
-		CalculateAO_Pitch();
-	}
+	AimOffset(DeltaSeconds);
+	// if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
+	// {
+	// 	AimOffset(DeltaSeconds);
+	// }
+	// else
+	// {
+	// 	TimeSinceLastMovementReplication += DeltaSeconds;
+	// 	if (TimeSinceLastMovementReplication > 0.25f)
+	// 	{
+	// 		OnRep_ReplicatedMovement();
+	// 	}
+	// 	CalculateAO_Pitch();
+	// }
 }
 
 float AHPPlayerCharacter::CalculateXYSpeed() const
@@ -777,7 +778,7 @@ void AHPPlayerCharacter::AimOffset(float DeltaSeconds)
 
 	if (Speed == 0.f && !bIsInAir) //멈춤 && 땅
 	{
-		bRotateRootBone = true;
+		//bRotateRootBone = true;
 		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
 		AO_Yaw = DeltaAimRotation.Yaw;
@@ -792,7 +793,7 @@ void AHPPlayerCharacter::AimOffset(float DeltaSeconds)
 	}
 	if (Speed > 0.f || bIsInAir) // 뛰거나 점프
 	{
-		bRotateRootBone = false;
+		//bRotateRootBone = false;
 		StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		AO_Yaw = 0.f;
 		bUseControllerRotationYaw = true;

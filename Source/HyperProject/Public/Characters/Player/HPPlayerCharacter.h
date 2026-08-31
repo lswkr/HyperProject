@@ -44,7 +44,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void PawnClientRestart() override;
-	virtual void OnRep_ReplicatedMovement() override;
+	//virtual void OnRep_ReplicatedMovement() override;
 	virtual void ServerSideInit() override;
 	
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
