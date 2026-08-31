@@ -305,11 +305,6 @@ void UHPGA_Fire_Projectile::FireOneShot()
 void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 	const FGameplayAbilityTargetDataHandle& GameplayAbilityTargetDataHandle, FGameplayTag GameplayTag)
 {
-	if (!CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
-	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-		return;
-	}
 	const FGameplayAbilityTargetData* Data = GameplayAbilityTargetDataHandle.Get(0);
 
 	if (!Data)
@@ -324,7 +319,8 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 			return;
 		}
-
+		GetAbilitySystemComponentFromActorInfo()->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
+		
 		// FGameplayTagContainer Tags;
 		// Tags.AddTag(FHPGameplayTags::Get().State_Ult_Full);
 		// GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithGrantedTags(Tags);
@@ -366,7 +362,6 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 				}
 			}
 		}
-		//NEXTTHINGTODO: 비주얼용 투사체 꾸미기
 		
 	}
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);

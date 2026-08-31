@@ -117,8 +117,8 @@ void AHPControlPoint::Tick(float DeltaTime)
 
 		if (ControlPointWidget && PC->GetPawn())
 		{
-			FVector Direction = CameraLocation-ControlPointWidgetComponent->GetComponentLocation();
-			ControlPointWidgetComponent->SetWorldRotation(Direction.Rotation());
+			//FVector Direction = CameraLocation-ControlPointWidgetComponent->GetComponentLocation();
+			//ControlPointWidgetComponent->SetWorldRotation(Direction.Rotation());
 			float Dist = FVector::Dist2D(GetActorLocation(),PC->GetPawn()->GetActorLocation());
 			
 			Dist-=SphereRadius;

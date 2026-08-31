@@ -671,6 +671,7 @@ void UHPGA_HybridFire::OnServerReceiveTargetData_Projectile(const FGameplayAbili
 		SpawnParams.Instigator = Cast<APawn>(GetAvatarActorFromActorInfo());
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+		GetAbilitySystemComponentFromActorInfo()->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
 		
 		AHPVisualProjectile* VisualProjectile = GetWorld()->SpawnActor<AHPVisualProjectile>(
 		VisualProjectileClass,
