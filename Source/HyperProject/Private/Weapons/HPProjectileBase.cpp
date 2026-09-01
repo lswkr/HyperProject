@@ -9,6 +9,7 @@
 #include "Components/LagCompensationComponent.h"
 #include "Controller/HPPlayerController.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 AHPProjectileBase::AHPProjectileBase()
@@ -109,6 +110,14 @@ void AHPProjectileBase::MakeProjectileEffectParams(FProjectileApplyEffectParams&
 void AHPProjectileBase::OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                           UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+		this,
+		HitSound,
+		GetActorLocation()
+		);
+	}
 	Destroy();
 }
 

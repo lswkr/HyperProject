@@ -19,8 +19,15 @@ void AHPVisualProjectile::OnBoxHit(UPrimitiveComponent* HitComponent, AActor* Ot
     					Hit.ImpactPoint,
     			Hit.ImpactNormal.Rotation());
 	}
-	
-				
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+		this,
+		HitSound,
+		GetActorLocation()
+		);
+	}
+	Destroy();
 }
 
 AHPVisualProjectile::AHPVisualProjectile()
@@ -37,7 +44,6 @@ AHPVisualProjectile::AHPVisualProjectile()
 	BulletMesh->SetupAttachment(GetRootComponent());
 	
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovementComponent");
-	
 }
 
 void AHPVisualProjectile::SetPlayerCharactersToIgnore(TArray<AHPPlayerCharacter*> PlayerCharactersToIgnore)
@@ -52,10 +58,13 @@ void AHPVisualProjectile::SetPlayerCharactersToIgnore(TArray<AHPPlayerCharacter*
 void AHPVisualProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	SetLifeSpan(ProjectileLifeSpan);
+	
 	if (AHPPlayerCharacter* HPPlayerCharacter = Cast<AHPPlayerCharacter>(GetInstigator()))
 	{
-		if (HPPlayerCharacter->IsLocallyControlled())
+		if (HPPlayerCharacter->IsLocallyControlled()) //내 클라이언트에서는 안 보이도록
 		{
+			SetLifeSpan(0.1f);//바로 Destroy하기 좀 그래서 LifeSpan은 0.1초로
 			BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			BulletMesh->SetVisibility(false);
 		}

@@ -47,6 +47,10 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	UParticleSystem* LocalParticleEffect;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	USoundBase* HitSound;
 
-
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	float ProjectileLifeSpan = 3.f;
 };

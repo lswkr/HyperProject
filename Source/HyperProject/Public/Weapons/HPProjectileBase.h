@@ -142,4 +142,10 @@ protected:
 	bool bServerSideRewind = true;
 	FVector TraceStart;
 	FVector InitialVelocity;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	USoundBase* HitSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
+	float ProjectileLifeSpan = 3.f;
 };

@@ -189,8 +189,7 @@ void AHPRadialEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompon
 		}
 		
 	}
-	Destroy();
-		
+	Super::OnBoxComponentHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);	
 }
 //NextThingTODO: SSR아닐 때 판정 구현하기
 void AHPRadialEffectProjectile::ExplodeProjectile()
