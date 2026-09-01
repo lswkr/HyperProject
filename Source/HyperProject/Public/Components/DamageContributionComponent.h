@@ -59,4 +59,5 @@ private:
 	TDoubleLinkedList<FDamageContributionData> DamageContributions;
 
 	const int32 CONTRIBUTION_MAX_SIZE = 500;
+	const float CONTRIBUTION_TIME_LIMIT = 30.f;
 };

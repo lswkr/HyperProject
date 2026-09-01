@@ -277,32 +277,29 @@ void UHPGA_Fire::OnServerReceiveTargetData(const FGameplayAbilityTargetDataHandl
 		return;
 	}
 
-	if (!IsLocallyControlled())
+
+	if (!DoesContainAiming)
 	{
-		if (!DoesContainAiming)
+		ASC->PlayMontage(this, CurrentActivationInfo, FireMontage,2.0f);
+	}
+	else
+	{
+		const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
+		const FGameplayAbilityTargetData_HPCustom* TargetData = nullptr ;
+		
+		if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_HPCustom::StaticStruct())
 		{
-			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage,2.0f);
-		}
-		else
-		{
-			const FGameplayAbilityTargetData* BaseData = TargetDataHandle.Get(0);
-			const FGameplayAbilityTargetData_HPCustom* TargetData = nullptr ;
-			
-			if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_HPCustom::StaticStruct())
+			TargetData = static_cast<const FGameplayAbilityTargetData_HPCustom*>(BaseData);
+			if (TargetData->IsAiming())
 			{
-				TargetData = static_cast<const FGameplayAbilityTargetData_HPCustom*>(BaseData);
-				if (TargetData->IsAiming())
+				if (AimingFireMontage)
 				{
-					if (AimingFireMontage)
-					{
-						ASC->PlayMontage(this, CurrentActivationInfo, AimingFireMontage,2.0f);
-					}
+					ASC->PlayMontage(this, CurrentActivationInfo, AimingFireMontage,2.0f);
 				}
 			}
 		}
-	
 	}
-
+	
 	const FGameplayAbilityTargetData* Data = TargetDataHandle.Get(0);
 	
 	FGameplayEffectContextHandle ContextHandle =  ASC->MakeEffectContext();
@@ -402,10 +399,8 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 			if (!HitResult->bBlockingHit)
 				return;
 
-			
 			if (bIsHeadShot)
 			{
-				UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
 				FinalDamage*=2;
 			}
 
@@ -445,8 +440,6 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 						
 						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitVFXCueTag, GameplayCueParams);
 						HitCharacter->GetAbilitySystemComponent()->ExecuteGameplayCue(HitSoundCueTag,GameplayCueParams);
-
-						
 					}
 
 					HPCharacter->Client_HitConfirm(bIsHeadShot);

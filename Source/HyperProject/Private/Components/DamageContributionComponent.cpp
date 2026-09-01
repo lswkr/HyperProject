@@ -44,7 +44,7 @@ void UDamageContributionComponent::AddDamageContributionData(const FDamageContri
 	{
 		if (InData.AppliedDamage < 0) //힐 들어올 경우 처음부터 시작해 기록 상쇄
 		{
-			float RemainingHeal = InData.AppliedDamage;
+			float RemainingHeal = InData.AppliedDamage*(-1);
 
 			while (RemainingHeal > KINDA_SMALL_NUMBER && !DamageContributions.IsEmpty())
 			{
@@ -103,8 +103,36 @@ void UDamageContributionComponent::BindAbilitySystemComponent(UHPAbilitySystemCo
 				return;
 			FDamageContributionData DCData;
 			DCData.AppliedDamage = Data.NewValue;
+			DCData.DamagedTime = GetWorld()->GetTimeSeconds();
 			const FGameplayEffectContextHandle& Context = Data.GEModData->EffectSpec.GetContext();
 			
+			
+			UAbilitySystemComponent* SourceASC = Context.GetOriginalInstigatorAbilitySystemComponent();
+
+			if (!SourceASC)
+			{
+				return;
+			}
+
+			APawn* SourcePawn = Cast<APawn>(SourceASC->GetAvatarActor());
+			UE_LOG(LogTemp, Warning, TEXT("Source Character: %s"), *SourcePawn->GetActorNameOrLabel());
+			APlayerState* SourcePlayerState = SourcePawn ? SourcePawn->GetPlayerState() : nullptr;
+			DCData.ContributorPS = SourcePlayerState;
+
+			AddDamageContributionData(DCData);
+		}
+	);
+
+	ASC->GetGameplayAttributeValueChangeDelegate(UHPAttributeSet::GetIncomingHealAttribute()).AddLambda(
+		[this](const FOnAttributeChangeData& Data)
+		{
+			if (Data.NewValue==0.f)
+				return;
+			
+			FDamageContributionData DCData;
+			DCData.AppliedDamage = Data.NewValue* (-1);
+			DCData.DamagedTime = GetWorld()->GetTimeSeconds();
+			const FGameplayEffectContextHandle& Context = Data.GEModData->EffectSpec.GetContext();
 			
 			UAbilitySystemComponent* SourceASC = Context.GetOriginalInstigatorAbilitySystemComponent();
 
@@ -144,12 +172,17 @@ void UDamageContributionComponent::SpreadKillLogs(float MaxHealth)
 	
 	TMap<TWeakObjectPtr<APlayerState>,float> CalculatingContributionMap;
 
-	//NEXTTHINGTODO: 시간 캡처
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	
 	for (const FDamageContributionData& ContributionData : DamageContributions)
 	{
 		if (!ContributionData.ContributorPS.IsValid())
 			continue;
-		//NEXTTHINGTODO: 시간 계산해서 범위 벗어나면 반영 안 되도록 if문
+
+		if (CurrentTime - ContributionData.DamagedTime > CONTRIBUTION_TIME_LIMIT) //시간 차이를 초과했을 경우
+			continue;
+
+		//한 캐릭터의 기여도를 한 줄의 로그로 출력하기 위해 Map에 저장
 		if (CalculatingContributionMap.Contains(ContributionData.ContributorPS))
 		{
 			CalculatingContributionMap[ContributionData.ContributorPS]+=ContributionData.AppliedDamage;
@@ -159,7 +192,7 @@ void UDamageContributionComponent::SpreadKillLogs(float MaxHealth)
 			CalculatingContributionMap.Add(ContributionData.ContributorPS,ContributionData.AppliedDamage);
 		}
 	}
-
+	
 	for (TPair<TWeakObjectPtr<APlayerState>,float> ContributionData: CalculatingContributionMap)
 	{
 		if (!ContributionData.Key.IsValid())

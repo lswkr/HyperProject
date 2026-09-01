@@ -199,9 +199,7 @@ void UHPGA_Fire_Projectile::FireOneShot()
 				SpawnedProjectile->SetInitialVelocity(SpawnedProjectile->GetInitialSpeed()*SpawnedProjectile->GetActorForwardVector());
 				SpawnedProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());
 			}*/
-			
-			//NEXTTHINGTODO: TargetData보내서 시각화 전용, replicates=true인 시각화전용 투사체 만드는 코드
-
+	
 			FTransform SpawnTransform;
 			SpawnTransform.SetLocation(ProjectileSpawnPoint);
 			SpawnTransform.SetRotation(TargetRotation.Quaternion());

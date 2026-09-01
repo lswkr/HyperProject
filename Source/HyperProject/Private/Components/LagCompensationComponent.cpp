@@ -21,7 +21,10 @@ ULagCompensationComponent::ULagCompensationComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
-
+	//캐릭터 또는 뭔가에 닿았다-> 폭발
+	//->반복문 돌려서 거리 안에 들어오는 OverlappedCharacters 다 데미지 먹이기
+	//캐릭터에 닿았으면 -> 캐릭터에 닿은 용
+	//뭔가에 닿았으면 -> 뭔가 용
 
 void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implementation(AHPPlayerCharacter* HitCharacter,
 	const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime,
@@ -30,10 +33,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 {
 	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity,ProjectileApplyEffectParams, HitTime);
 
-	//캐릭터 또는 뭔가에 닿았다-> 폭발
-	//->반복문 돌려서 거리 안에 들어오는 OverlappedCharacters 다 데미지 먹이기
-	//캐릭터에 닿았으면 -> 캐릭터에 닿은 용
-	//뭔가에 닿았으면 -> 뭔가 용
+
 
 	if (!HPCharacter)
 	{

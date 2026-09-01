@@ -577,11 +577,9 @@ void AHPPlayerCharacter::ClientSideInit()
 
 void AHPPlayerCharacter::HandleRespawn()
 {
-	//NextThingTODO: Basic Ability(ListenForEvent같은거)는 다시 시작하기
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	//NextThingTODO: 빼야할 위젯 정해서 WidgetController에서 위젯 켜기
-
 	GetMesh()->GetAnimInstance()->StopAllMontages(0.f);
+	
 	if (HasAuthority())
 	{
 		HPAbilitySystemComponent->InitAbilityAndEffectAtRespawn();
@@ -593,7 +591,6 @@ void AHPPlayerCharacter::HandleRespawn()
 			{
 				SetActorLocation(RespawnPlayerStart->GetActorLocation());
 				RespawnPlayerStart->SetOccupied(false);
-				UE_LOG(LogTemp, Warning,TEXT("Respawn at PlayerStart"));
 				return;
 			}
 		}
@@ -609,15 +606,15 @@ void AHPPlayerCharacter::HandleRespawn()
 
 void AHPPlayerCharacter::HandleDeath()
 {
-	UE_LOG(LogTemp, Warning, TEXT("HandleDeath"));
 	DamageContributionComponent->SpreadKillLogs(HPAttributeSet->GetMaxHealth());
+	DamageContributionComponent->ResetDamageContributionData();
+	
 	PlayDeadAnimation();
+	
 	if (HPAbilitySystemComponent)
 	{
 		HPAbilitySystemComponent->CancelAllAbilities();
 	}
-	//NextThingTODO: 빼야할 위젯 정해서 WidgetController에서 처리하기
-
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 

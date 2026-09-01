@@ -103,21 +103,22 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	
 		if (FGameplayAbilitySpec* AbilitySpec =  AbilitySystemComponent->FindAbilitySpecFromHandle(AbilitySpecHandle))
 		{
-			if (!AbilitySpec->IsActive())
+			if (AbilitySpec->IsActive())
 				AbilitySystemComponent->CancelAbilityHandle(AbilitySpecHandle);
 		}
 		
 		return;
 	}
 
-	float MaxLengthSquared = 0.0f;
+	float MinLengthSquared = FLT_MAX;
 	AActor* TargetActor = nullptr;
 	for (AActor* TargetCandidate:TargetCandidates)
 	{
 		float DistSquared = FVector::DistSquared(ViewLocation, TargetCandidate->GetActorLocation());
-		if (MaxLengthSquared < DistSquared)
+		if (MinLengthSquared > DistSquared)
 		{
 			TargetActor = TargetCandidate;
+			MinLengthSquared = DistSquared;
 		}
 	}
 	
