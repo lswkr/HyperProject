@@ -4,6 +4,8 @@
 #include "Weapons/HPProjectileBase.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "HPGameplayTags.h"
 #include "Characters/Player/HPPlayerCharacter.h"
 #include "Components/BoxComponent.h"
 #include "Components/LagCompensationComponent.h"
@@ -92,6 +94,11 @@ void AHPProjectileBase::MakeProjectileEffectParams(FProjectileApplyEffectParams&
 	ProjectileApplyEffectParams.AdditionalTeamEffectClasses = AdditionalTeamEffectClasses;
 	
 	ProjectileApplyEffectParams.bCanHeadShot = bCanHeadShot;
+	if(ProjectileApplyEffectParams.SourceASC)
+	{
+		ProjectileApplyEffectParams.bNanoBoosted = ProjectileApplyEffectParams.SourceASC->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Combat_NanoBoosted);
+	}
+	
 	ProjectileApplyEffectParams.FrontSideWidth = FrontSideWidth;
 	ProjectileApplyEffectParams.EffectApplyTargetPolicy = EffectApplyTargetPolicy;
 

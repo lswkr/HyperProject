@@ -14,6 +14,7 @@
 #include "HyperProject/HyperProject.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/GameplayStaticsTypes.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Weapons/AbilitySpawnableActor.h"
 #include "Weapons/HPProjectileBase.h"
 
@@ -32,8 +33,6 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 	const TArray<AHPPlayerCharacter*>& OverlappedCharacters)
 {
 	FServerSideRewindResult Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity,ProjectileApplyEffectParams, HitTime);
-
-
 
 	if (!HPCharacter)
 	{
@@ -75,6 +74,10 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
 							FinalHeal *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
 						}
+						if (ProjectileApplyEffectParams.bNanoBoosted)
+                        {
+							FinalHeal*= 1.3f;
+                        }
 	
 						if (ProjectileApplyEffectParams.TeamEffectClass)
 						{
@@ -126,7 +129,11 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 							FinalDamage *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
 							PushPower/=(ProjectileApplyEffectParams.OuterRadius/1000);
 						}
-	
+
+						if (ProjectileApplyEffectParams.bNanoBoosted)
+						{
+							FinalDamage*= 1.3f;
+						}
 						if (ProjectileApplyEffectParams.EnemyEffectClass)
 						{
 							FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
@@ -222,6 +229,10 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 							float DistSquared = FVector::DistSquared(ProjectileApplyEffectParams.OriginLocation,HitLocation);
 							FinalHeal *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
 						}
+						if (ProjectileApplyEffectParams.bNanoBoosted)
+						{
+							FinalHeal*= 1.3f;
+						}
 	
 						if (ProjectileApplyEffectParams.TeamEffectClass)
 						{
@@ -276,7 +287,12 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 							FinalDamage *= (1 - DistSquared/(ProjectileApplyEffectParams.OuterRadius*ProjectileApplyEffectParams.OuterRadius));
 							PushPower/=(ProjectileApplyEffectParams.OuterRadius/1000);
 						}
-	
+
+						if (ProjectileApplyEffectParams.bNanoBoosted)
+						{
+							FinalDamage*= 1.3f;
+						}
+						
 						if (ProjectileApplyEffectParams.EnemyEffectClass)
 						{
 							UE_LOG(LogTemp, Warning,TEXT("EnemyEffectClass Exist"));
@@ -339,8 +355,10 @@ void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_HitCharact
 		if (ProjectileApplyEffectParams.SpawnableActorClass)
 		{
 			FTransform SpawnTransform;
-			SpawnTransform.SetLocation(ProjectileApplyEffectParams.OriginLocation);
-			SpawnTransform.SetRotation(FRotator::ZeroRotator.Quaternion());
+			SpawnTransform.SetLocation(ProjectileApplyEffectParams.HitImpactPoint);
+			FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromZ(ProjectileApplyEffectParams.HitImpactNormal.GetSafeNormal());
+			SpawnTransform.SetRotation(SpawnRotation.Quaternion());
+
 			AAbilitySpawnableActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AAbilitySpawnableActor>(
 				ProjectileApplyEffectParams.SpawnableActorClass,
 				SpawnTransform,
@@ -372,8 +390,11 @@ void ULagCompensationComponent::SpawningProjectileServerApplyValidHit_HitObject_
 		if (ProjectileApplyEffectParams.SpawnableActorClass)
 		{
 			FTransform SpawnTransform;
-			SpawnTransform.SetLocation(ProjectileApplyEffectParams.OriginLocation);
-			SpawnTransform.SetRotation(FRotator::ZeroRotator.Quaternion());
+			SpawnTransform.SetLocation(ProjectileApplyEffectParams.HitImpactPoint);
+			
+			FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromZ(ProjectileApplyEffectParams.HitImpactNormal.GetSafeNormal());
+			SpawnTransform.SetRotation(SpawnRotation.Quaternion());
+
 			AAbilitySpawnableActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AAbilitySpawnableActor>(
 				ProjectileApplyEffectParams.SpawnableActorClass,
 				SpawnTransform,
@@ -631,17 +652,17 @@ FServerSideRewindResult ULagCompensationComponent::ExplosionConfirmHit(const FFr
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_HitBox));
-	DrawDebugSphere(
-			GetWorld(),
-			OriginLocation,   // 중심
-			OuterRadius,   // 반지름
-			32,                // Segments
-			FColor::Red,
-			false,             // PersistentLines
-			2.f,               // LifeTime
-			0,
-				2.f                // Thickness
-			);
+	// DrawDebugSphere(
+	// 		GetWorld(),
+	// 		OriginLocation,   // 중심
+	// 		OuterRadius,   // 반지름
+	// 		32,                // Segments
+	// 		FColor::Red,
+	// 		false,             // PersistentLines
+	// 		2.f,               // LifeTime
+	// 		0,
+	// 			2.f                // Thickness
+	// 		);
 	const bool bOverlapped =
 		UKismetSystemLibrary::SphereOverlapComponents(
 			GetWorld(),
@@ -662,20 +683,20 @@ FServerSideRewindResult ULagCompensationComponent::ExplosionConfirmHit(const FFr
 		HitLocation = OverlapBox->GetComponentLocation();
 		break;
 	}
-	if (bHitConfirmed)
-	{
-		DrawDebugSphere(
-			GetWorld(),
-			OriginLocation,   // 중심
-			OuterRadius,   // 반지름
-			32,                // Segments
-			FColor::Red,
-			false,             // PersistentLines
-			2.f,               // LifeTime
-			0,
-				2.f                // Thickness
-			);
-	}
+	// if (bHitConfirmed)
+	// {
+	// 	DrawDebugSphere(
+	// 		GetWorld(),
+	// 		OriginLocation,   // 중심
+	// 		OuterRadius,   // 반지름
+	// 		32,                // Segments
+	// 		FColor::Red,
+	// 		false,             // PersistentLines
+	// 		2.f,               // LifeTime
+	// 		0,
+	// 			2.f                // Thickness
+	// 		);
+	// }
 		
 	ResetHitBoxes(HitCharacter, CurrentFrame);
 	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
@@ -959,14 +980,12 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 			{
 				if (ProjectileApplyEffectParams.EffectApplyTargetPolicy == EEffectApplyTargetPolicy::TeamOnly)
 					return;
-
-				bool bIsNanoBoosted = SourceASC->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Combat_NanoBoosted);
-
+				
 				float FinalDamage= ProjectileApplyEffectParams.EnemyEffectValue;
 				
 				if (ProjectileApplyEffectParams.EnemyEffectClass)
 				{
-					if (bIsNanoBoosted)
+					if (ProjectileApplyEffectParams.bNanoBoosted)
 					{
 						FinalDamage*=1.3;
 					}
@@ -1014,6 +1033,10 @@ void ULagCompensationComponent::ProjectileServerApplyValidHit_Implementation(AHP
 
 				float FinalHeal= ProjectileApplyEffectParams.TeamEffectValue;
 				
+				if (ProjectileApplyEffectParams.bNanoBoosted)
+				{
+					FinalHeal*=1.3;
+				}
 				if (ProjectileApplyEffectParams.TeamEffectClass)
 				{
 					FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();

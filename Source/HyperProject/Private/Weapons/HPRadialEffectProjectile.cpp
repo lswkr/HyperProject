@@ -62,7 +62,7 @@ void AHPRadialEffectProjectile::OnBoxComponentHit(UPrimitiveComponent* HitCompon
 
 		TArray<FOverlapResult> Overlaps;
 
-		DrawDebugSphere(GetWorld(),GetActorLocation(), ExplosionOuterRadius, 16, FColor::Green,false, 5, 0,1 );
+		//DrawDebugSphere(GetWorld(),GetActorLocation(), ExplosionOuterRadius, 16, FColor::Green,false, 5, 0,1 );
 
 		if (UWorld* World = GEngine->GetWorldFromContextObject(this, EGetWorldErrorMode::LogAndReturnNull))
 		{

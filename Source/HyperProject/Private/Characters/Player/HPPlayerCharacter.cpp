@@ -897,7 +897,7 @@ void AHPPlayerCharacter::BindCallbacksToDependencies()
 
 void AHPPlayerCharacter::BroadcastInitialValues()
 {
-	UE_LOG(LogTemp,Warning,TEXT("AHPPlayerCharacter::BroadcastInitialValues"));
+	//UE_LOG(LogTemp,Warning,TEXT("AHPPlayerCharacter::BroadcastInitialValues"));
 	OnMaxHealthChangedDelegate.Broadcast(HPAttributeSet->GetMaxHealth());
 	OnHealthChangedDelegate.Broadcast(HPAttributeSet->GetHealth());
 	OnHealBanTagChangedDelegate.Broadcast(HPAbilitySystemComponent->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Debuff_HealBan));

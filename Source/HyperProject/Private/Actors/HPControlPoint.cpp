@@ -131,7 +131,7 @@ void AHPControlPoint::Tick(float DeltaTime)
 		return;
 	}
 
-	DrawDebugSphere(GetWorld(), GetActorLocation(), SphereRadius, 12, FColor::Green);
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), SphereRadius, 12, FColor::Green);
 
 	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentState != Team1Captured) //팀1 탈환중(점령 전)
 	{

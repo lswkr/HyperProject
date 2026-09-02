@@ -83,7 +83,7 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	BoxParams
 	);
 	
-	//ShowDebugBox(BoxCenter);
+	ShowDebugBox(BoxCenter);
 	TArray<AActor*> TargetCandidates;
 	
 	for (FOverlapResult& OverlapResult : OverlapResults)

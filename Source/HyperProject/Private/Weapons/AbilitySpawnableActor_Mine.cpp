@@ -35,7 +35,7 @@ void AAbilitySpawnableActor_Mine::SetAbilitySystem(UAbilitySystemComponent* InAS
  
  void AAbilitySpawnableActor_Mine::OnTagChanged(FGameplayTag GameplayTag, int TagCount)
  {
- 	if (TagCount == 0)
+ 	if (TagCount == 1)
  	{
  		Destroy_Normal();	
  	}
@@ -62,14 +62,14 @@ void AAbilitySpawnableActor_Mine::Destroy_WithExplosion()
 void AAbilitySpawnableActor_Mine::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning,TEXT("Mine OVERLAPPED"));
 	if (HasAuthority())
 	{
-		
+	
 		IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(GetInstigator());
 
 		if (OwnerTeamInterface)
 		{
+			BoxComponent->SetSimulatePhysics(true);
 			ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*OtherActor);
 			if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
 			{
@@ -101,7 +101,7 @@ void AAbilitySpawnableActor_Mine::Explosion()
 		FCollisionQueryParams SphereParams(SCENE_QUERY_STAT(ApplyRadialDamage),  false, this);
 		Multicast_Explosion();
 		TArray<FOverlapResult> Overlaps;
-		DrawDebugSphere(GetWorld(),GetActorLocation(), ExplosionOuterRadius, 16, FColor::Green,false, 5, 0,1 );
+		//DebugSphere(GetWorld(),GetActorLocation(), ExplosionOuterRadius, 16, FColor::Green,false, 5, 0,1 );
 		if (UWorld* World = GEngine->GetWorldFromContextObject(this, EGetWorldErrorMode::LogAndReturnNull))
 		{
 			World->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity, FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllDynamicObjects), FCollisionShape::MakeSphere(ExplosionOuterRadius), SphereParams);
@@ -173,4 +173,10 @@ void AAbilitySpawnableActor_Mine::Multicast_Explosion_Implementation()
 			FRotator::ZeroRotator,
 			true
 			);
+
+	UGameplayStatics::PlaySoundAtLocation(
+        this,
+        ExplosionSound,
+        GetActorLocation()
+    );
 }

@@ -61,4 +61,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Mine")
 	float PushPower= 3000.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Mine")
+	USoundBase* ExplosionSound = nullptr;
+	
 };
+

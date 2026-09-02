@@ -208,6 +208,12 @@ struct FProjectileApplyEffectParams
 	
 	UPROPERTY()
 	FVector OriginLocation = FVector::ZeroVector;
+
+	UPROPERTY()
+	FVector HitImpactPoint = FVector::ZeroVector;
+
+	UPROPERTY()
+	FVector HitImpactNormal = FVector::ZeroVector;
 	
 	UPROPERTY()
 	float EnemyEffectValue = 0.f;
@@ -220,7 +226,9 @@ struct FProjectileApplyEffectParams
 
 	UPROPERTY()
 	bool bCanPush = false;
-
+	
+	UPROPERTY()
+	bool bNanoBoosted = false;
 	// UPROPERTY()
 	// bool bIsBounded = false;
 	

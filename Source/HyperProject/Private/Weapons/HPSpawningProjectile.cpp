@@ -25,7 +25,7 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 		if (!HasAuthority())
 			return;
 		FTransform SpawnTransform;
-		SpawnTransform.SetLocation(Hit.ImpactPoint);
+		SpawnTransform.SetLocation(GetActorLocation());
 		SpawnTransform.SetRotation(Hit.ImpactNormal.ToOrientationQuat());
 		SpawnTransform.SetScale3D(FVector::OneVector);
 	
@@ -73,8 +73,9 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 					MakeProjectileEffectParams(ProjectileApplyEffectParams);
 					ProjectileApplyEffectParams.TargetCharacter = HitCharacter;
 					ProjectileApplyEffectParams.TargetASC=TargetASC;
-					ProjectileApplyEffectParams.OriginLocation = Hit.ImpactPoint;
-					
+					ProjectileApplyEffectParams.OriginLocation = GetActorLocation();
+					ProjectileApplyEffectParams.HitImpactPoint = Hit.ImpactPoint;
+					ProjectileApplyEffectParams.HitImpactNormal = Hit.ImpactNormal; 
 					OwnerCharacter->GetLagCompensationComponent()->SpawningProjectileServerApplyValidHit_HitCharacter
 					(	HitCharacter,
 						TraceStart,
@@ -88,8 +89,9 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 					FProjectileApplyEffectParams ProjectileApplyEffectParams;
 
 					MakeProjectileEffectParams(ProjectileApplyEffectParams);
-					ProjectileApplyEffectParams.OriginLocation = Hit.ImpactPoint;
-					
+					ProjectileApplyEffectParams.OriginLocation = GetActorLocation();
+					ProjectileApplyEffectParams.HitImpactPoint = Hit.ImpactPoint;
+					ProjectileApplyEffectParams.HitImpactNormal = Hit.ImpactNormal; 
 					OwnerCharacter->GetLagCompensationComponent()->SpawningProjectileServerApplyValidHit_HitObject(
 						TraceStart,
 						InitialVelocity,
