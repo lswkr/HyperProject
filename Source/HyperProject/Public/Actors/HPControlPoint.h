@@ -31,10 +31,15 @@ enum EControlPointState
 {
 	Team1Capturing,
 	Team2Capturing,
-	Team1Captured,
-	Team2Captured,
 	BeforeCapturing,
 	FightingAtPoint
+};
+
+enum EWhatTeamCaptured
+{
+	None,
+	Team1Captured,
+	Team2Captured
 };
 
 UENUM(BlueprintType)
@@ -128,7 +133,8 @@ private:
 	void BroadcastWhatTeamCompleteControlPoint(EControlPointType ControlPointType, int32 CompleteTeamID);
 
 	EControlPointState CurrentState;
-
+	EWhatTeamCaptured CurrentCapturedTeam;
+	
 	UPROPERTY(Replicated)
 	EControlPointType ControlPointType;
 	

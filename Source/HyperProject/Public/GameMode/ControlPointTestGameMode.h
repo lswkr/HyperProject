@@ -3,46 +3,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ControlPointGameMode.h"
 #include "GameFramework/GameModeBase.h"
-#include "GenericTeamAgentInterface.h"
-
-#include "ControlPointGameMode.generated.h"
+#include "ControlPointTestGameMode.generated.h"
 
 /**
  * 
  */
-
-class ARespawnPlayerStart;
-class AControlPointSpawnTargetPoint;
-class AHPControlPoint;
-class AControlPointGameState;
-class AHPPlayerCharacter;
-UENUM(BlueprintType)
-enum class EControlPointGameModeState : uint8
-{
-	BeforeGameStart,	//게임 시작 전(문 열리기 전)
-	WaitToTurnOnNextPoint,	//거점 켜지기 전
-	PointActive,		//거점 활성화
-	GameComplete		//게임 종료
-};
-
 UCLASS()
-class HYPERPROJECT_API AControlPointGameMode : public AGameModeBase
+class HYPERPROJECT_API AControlPointTestGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+	
+	
+	public:
 
-public:
-	AControlPointGameMode();
 	virtual void StartPlay() override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
-	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* Controller) override;
-	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
-
-	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
-
-	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 private:
 	UPROPERTY(EditDefaultsOnly,Category = "ControlPointGameMode")
 	TSubclassOf<AHPControlPoint> ControlPointClass;
@@ -56,8 +35,7 @@ private:
 	void OnGameStart();
 	void BeforeGameLeftTimeCheck();
 	void BeforePointActivateLeftTimeCheck();
-	void OnGameEnd(uint8 TeamNum);
-	
+
 	int32 CurrentTeam1Point = 0;
 	int32 CurrentTeam2Point = 0;
 	UPROPERTY(EditDefaultsOnly,Category = "ControlPointGameMode")
@@ -99,9 +77,9 @@ public:
 
 	ARespawnPlayerStart* GetRespawnPlayerStart(AHPPlayerCharacter* RespawningCharacter);
 private:
-	FGenericTeamId GetTeamIDForPlayer(const AController* PlayerController) const;
+	FGenericTeamId GetTeamIDForPlayer(const APlayerController* PlayerController) const;
 
-	AActor* FindNextStartSpotForTeam(const FGenericTeamId& TeamID);
+	AActor* FindNextStartSpotForTeam(const FGenericTeamId& TeamID) const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Team")
 	
@@ -113,6 +91,5 @@ private:
 	 * HPGameMode End
 	 */
 
-	UPROPERTY(EditDefaultsOnly, Category = "Team")
-	TSubclassOf<APawn> BackupPawn;
+	
 };

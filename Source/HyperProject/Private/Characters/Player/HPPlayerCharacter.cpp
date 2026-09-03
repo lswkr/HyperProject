@@ -22,6 +22,7 @@
 #include "Components/LagCompensationComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameMode/ControlPointGameMode.h"
+#include "GameMode/ControlPointTestGameMode.h"
 #include "HyperProject/HyperProject.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -583,23 +584,24 @@ void AHPPlayerCharacter::HandleRespawn()
 	if (HasAuthority())
 	{
 		HPAbilitySystemComponent->InitAbilityAndEffectAtRespawn();
-		if (AControlPointGameMode* CPGameMode = Cast<AControlPointGameMode>(GetWorld()->GetAuthGameMode()))
+		if (AControlPointTestGameMode* CPGameMode = Cast<AControlPointTestGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			//현재 거점 상태에 따라 특정 위치에서 생성
 			ARespawnPlayerStart* RespawnPlayerStart = CPGameMode->GetRespawnPlayerStart(this);
 			if (RespawnPlayerStart)
 			{
+				UE_LOG(LogTemp, Warning, TEXT("Respawning player success"));
 				SetActorLocation(RespawnPlayerStart->GetActorLocation());
 				RespawnPlayerStart->SetOccupied(false);
 				return;
 			}
 		}
 		
-			TWeakObjectPtr<AActor> StartSpot =  GetController()->StartSpot;
-			if (StartSpot.IsValid())
-			{
-				SetActorLocation(StartSpot->GetActorLocation());
-			}
+		TWeakObjectPtr<AActor> StartSpot =  GetController()->StartSpot;
+		if (StartSpot.IsValid())
+		{
+			SetActorLocation(StartSpot->GetActorLocation());
+		}
 		
 	}
 }

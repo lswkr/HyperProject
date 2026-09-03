@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "GameMode/ControlPointGameMode.h"
+#include "GameMode/ControlPointTestGameMode.h"
 
 #include "EngineUtils.h"
 #include "Actors/ControlPointSpawnTargetPoint.h"
@@ -12,21 +12,16 @@
 #include "GameFramework/PlayerStart.h"
 #include "GameMode/ControlPointGameState.h"
 #include "Kismet/GameplayStatics.h"
-#include "Network/HPGameSession.h"
-#include "PlayerState/HPPlayerState.h"
 
-APlayerController* AControlPointGameMode::SpawnPlayerController(ENetRole InRemoteRole, const FString& Options)
+APlayerController* AControlPointTestGameMode::SpawnPlayerController(ENetRole InRemoteRole, const FString& Options)
 {
-	UE_LOG(LogTemp, Warning,TEXT("SpawnPlayerController"));
 	if (RespawnPlayerStarts.Num()==0)
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Adding RespawnPlayerStarts"));
 		TArray<AActor*> CurrentPlayerStarts;
 		UGameplayStatics::GetAllActorsOfClass(
 		this,
 		ARespawnPlayerStart::StaticClass(),
 		CurrentPlayerStarts);
-		
 		for (AActor* PlayerStartActor : CurrentPlayerStarts)
 		{
 			if (ARespawnPlayerStart* RespawnPlayerStart = Cast<ARespawnPlayerStart>(PlayerStartActor))
@@ -35,7 +30,7 @@ APlayerController* AControlPointGameMode::SpawnPlayerController(ENetRole InRemot
 			}
 		}
 	}
-	
+
 	APlayerController* NewPlayerController = Super::SpawnPlayerController(InRemoteRole, Options);
 	IGenericTeamAgentInterface* NewPlayerTeamInterface = Cast<IGenericTeamAgentInterface>(NewPlayerController);
 	FGenericTeamId TeamId = GetTeamIDForPlayer(NewPlayerController);
@@ -48,7 +43,7 @@ APlayerController* AControlPointGameMode::SpawnPlayerController(ENetRole InRemot
 	return NewPlayerController;
 }
 
-ARespawnPlayerStart* AControlPointGameMode::GetRespawnPlayerStart(AHPPlayerCharacter* RespawningCharacter)
+ARespawnPlayerStart* AControlPointTestGameMode::GetRespawnPlayerStart(AHPPlayerCharacter* RespawningCharacter)
 {
 	const FName* StartSpotTag = TeamStartSpotTagMap.Find(RespawningCharacter->GetGenericTeamId());
 
@@ -57,19 +52,18 @@ ARespawnPlayerStart* AControlPointGameMode::GetRespawnPlayerStart(AHPPlayerChara
 	{
 		return nullptr;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("StartSpotTag: %s, CurrentTargetPointIdx: %d, Respawning Character:%s-TeamNum: %d"), *StartSpotTag->ToString(),CurrentTargetPointIdx,
+	
+	for (ARespawnPlayerStart* PlayerStart : RespawnPlayerStarts)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StartSpotTag: %s, CurrentTargetPointIdx: %d, Respawning Character:%s-TeamNum: %d"), *StartSpotTag->ToString(),CurrentTargetPointIdx,
 			*RespawningCharacter->GetName(),
 			RespawningCharacter->GetGenericTeamId().GetId()
 			);
-	UE_LOG(LogTemp, Warning, TEXT("RespawnPlayerStarts Num: %d"), RespawnPlayerStarts.Num());
-	for (ARespawnPlayerStart* PlayerStart : RespawnPlayerStarts)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("PlayerStart Info: StartTag: %s, PlayerStartControlPointNum: %d, IsOccupied?= %d"), *PlayerStart->PlayerStartTag.ToString(), PlayerStart->GetPlayerStartControlPointNum(), PlayerStart->IsOccupied());
 		if (PlayerStart->PlayerStartTag == *StartSpotTag &&
 			PlayerStart->GetPlayerStartControlPointNum() == CurrentTargetPointIdx &&
 			!PlayerStart->IsOccupied())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("RESPAWN!"));
+			UE_LOG(LogTemp, Warning, TEXT("Respawn!"));
 			PlayerStart->SetOccupied(true);
 			return PlayerStart;
 		}
@@ -77,12 +71,7 @@ ARespawnPlayerStart* AControlPointGameMode::GetRespawnPlayerStart(AHPPlayerChara
 	return nullptr;
 }
 
-AControlPointGameMode::AControlPointGameMode()
-{
-	GameSessionClass = AHPGameSession::StaticClass();
-}
-
-void AControlPointGameMode::StartPlay()
+void AControlPointTestGameMode::StartPlay()
 {
 	Super::StartPlay();
 	ControlPoints.SetNum(3);
@@ -109,7 +98,7 @@ void AControlPointGameMode::StartPlay()
 		ControlPoint->SetControlPointState(ControlPointTargetPoint->TargetPointType);
 		ControlPoint->ActivateControlPoint(false);
 		ControlPoints[idx] = ControlPoint;
-		ControlPoint->ControlPointCompletedDelegate.BindDynamic(this, &AControlPointGameMode::OnControlPointCompleted);
+		ControlPoint->ControlPointCompletedDelegate.BindDynamic(this, &AControlPointTestGameMode::OnControlPointCompleted);
 	}
 
 	//게임 시작 전 상태 
@@ -120,7 +109,7 @@ void AControlPointGameMode::StartPlay()
 	GetWorldTimerManager().SetTimer(
 		BeforeGameStartTimerHandle,
 		this,
-		&AControlPointGameMode::OnGameStart,
+		&AControlPointTestGameMode::OnGameStart,
 		10.f,
 		false);
 
@@ -128,14 +117,14 @@ void AControlPointGameMode::StartPlay()
 	GetWorldTimerManager().SetTimer(
 	SendTimeLeftTimerHandle,
 	this,
-	&AControlPointGameMode::BeforeGameLeftTimeCheck,
+	&AControlPointTestGameMode::BeforeGameLeftTimeCheck,
 	0.25f,
 	true
 	);
 
 }
 
-void AControlPointGameMode::PostLogin(APlayerController* NewPlayer)
+void AControlPointTestGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
@@ -148,85 +137,7 @@ void AControlPointGameMode::PostLogin(APlayerController* NewPlayer)
 
 }
 
-UClass* AControlPointGameMode::GetDefaultPawnClassForController_Implementation(AController* Controller)
-{
-	AHPPlayerState* HPPlayerState = Controller->GetPlayerState<AHPPlayerState>();
-
-	if (HPPlayerState && HPPlayerState->GetSelectedCharacterClass())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Selected Character: %s"), *HPPlayerState->GetSelectedCharacterClass()->GetName() );
-		return HPPlayerState->GetSelectedCharacterClass();
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Selected Character: nullptr"));
-	return BackupPawn;
-}
-
-APawn* AControlPointGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
-{
-	IGenericTeamAgentInterface* NewPlayerTeamInterface = Cast<IGenericTeamAgentInterface>(NewPlayer);
-
-	FGenericTeamId TeamId = GetTeamIDForPlayer(NewPlayer);
-	if (NewPlayerTeamInterface)
-	{
-		NewPlayerTeamInterface->SetGenericTeamId(TeamId);
-	}
-
-	StartSpot = FindNextStartSpotForTeam(TeamId);
-	NewPlayer->StartSpot = StartSpot;
-	
-	return Super::SpawnDefaultPawnFor_Implementation(NewPlayer, StartSpot);
-}
-
-void AControlPointGameMode::HandleSeamlessTravelPlayer(AController*& C)
-{
-	Super::HandleSeamlessTravelPlayer(C);
-
-	UE_LOG(LogTemp, Warning,TEXT("HandleSeamlessTravelPlayer"));
-	/*
-	if (RespawnPlayerStarts.Num()==0)
-	{
-		UE_LOG(LogTemp, Warning,TEXT("Adding RespawnPlayerStarts"));
-		TArray<AActor*> CurrentPlayerStarts;
-		UGameplayStatics::GetAllActorsOfClass(
-		this,
-		ARespawnPlayerStart::StaticClass(),
-		CurrentPlayerStarts);
-		
-		for (AActor* PlayerStartActor : CurrentPlayerStarts)
-		{
-			if (ARespawnPlayerStart* RespawnPlayerStart = Cast<ARespawnPlayerStart>(PlayerStartActor))
-			{
-				RespawnPlayerStarts.Add(RespawnPlayerStart);
-			}
-		}
-	}*/
-	
-	APlayerController* NewPlayerController = Cast<APlayerController>(C);
-	
-	IGenericTeamAgentInterface* NewPlayerTeamInterface = Cast<IGenericTeamAgentInterface>(NewPlayerController);
-	FGenericTeamId TeamId = GetTeamIDForPlayer(NewPlayerController);
-	if (NewPlayerTeamInterface)
-	{
-		NewPlayerTeamInterface->SetGenericTeamId(TeamId);
-	}
-
-	//NewPlayerController->StartSpot = FindNextStartSpotForTeam(TeamId);
-}
-
-AActor* AControlPointGameMode::ChoosePlayerStart_Implementation(AController* Player)
-{
-	const FGenericTeamId TeamId = GetTeamIDForPlayer(Player);
-
-	if (AActor* StartSpot = FindNextStartSpotForTeam(TeamId))
-	{
-		return StartSpot;
-	}
-
-	return Super::ChoosePlayerStart_Implementation(Player);
-}
-
-void AControlPointGameMode::BindControllerToControlPoints()
+void AControlPointTestGameMode::BindControllerToControlPoints()
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
@@ -237,7 +148,7 @@ void AControlPointGameMode::BindControllerToControlPoints()
 	}
 }
 
-void AControlPointGameMode::OnGameStart() //게임 시작(문 열리는 시점)
+void AControlPointTestGameMode::OnGameStart() //게임 시작(문 열리는 시점)
 {
 	GetWorldTimerManager().ClearTimer(SendTimeLeftTimerHandle);
 	BindControllerToControlPoints();
@@ -251,7 +162,7 @@ void AControlPointGameMode::OnGameStart() //게임 시작(문 열리는 시점)
 
 }
 
-void AControlPointGameMode::BeforeGameLeftTimeCheck()
+void AControlPointTestGameMode::BeforeGameLeftTimeCheck()
 {
 	if (!CPGameState)
 	{
@@ -265,7 +176,7 @@ void AControlPointGameMode::BeforeGameLeftTimeCheck()
 	CPGameState->SetTimeCount(LeftTimeBeforeGame);
 }
 
-void AControlPointGameMode::BeforePointActivateLeftTimeCheck()
+void AControlPointTestGameMode::BeforePointActivateLeftTimeCheck()
 {
 	if (!CPGameState)
 	{
@@ -278,20 +189,12 @@ void AControlPointGameMode::BeforePointActivateLeftTimeCheck()
 	CPGameState->SetTimeCount(LeftTimeBeforeActivateLeftTimeCheck);
 }
 
-void AControlPointGameMode::OnGameEnd(uint8 TeamNum)
+void AControlPointTestGameMode::OnControlPointCompleted(EControlPointType CompletedControlPoint, int32 TeamID)
 {
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		AHPPlayerController* HPPC= Cast<AHPPlayerController>(It->Get());
-		if (HPPC)
-		{
-			HPPC->Client_ShowResultWidget(TeamNum);
-		}
-	}
-}
+	//NEXTTHINGTODO:
+	//GameState에 값 넣기
 
-void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedControlPoint, int32 TeamID)
-{
+	
 	switch (TeamID)
 	{
 	case 0:
@@ -300,10 +203,9 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 	case 1:
 		CurrentTeam2Point++;
 		break;
-		
-	default:
-		break;
 	}
+
+	CPGameState->OnTeamCompletePoint(CurrentTeam1Point, CurrentTeam2Point,CurrentTargetPointIdx);
 	
 	UE_LOG(LogTemp, Warning, TEXT("Team1: %d vs Team2: %d"), CurrentTeam1Point, CurrentTeam2Point);
 	if (CurrentTeam1Point==VictoryPoint)
@@ -311,33 +213,27 @@ void AControlPointGameMode::OnControlPointCompleted(EControlPointType CompletedC
 		UE_LOG(LogTemp, Warning,TEXT("Team 1 Win"));
 		ControlPointGameModeState=EControlPointGameModeState::GameComplete;
 		ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
-		OnGameEnd(0);
-		
 	}
 	else if (CurrentTeam2Point==VictoryPoint)
 	{
 		UE_LOG(LogTemp, Warning,TEXT("Team 2 Win"));
 		ControlPointGameModeState=EControlPointGameModeState::GameComplete;
 		ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
-		OnGameEnd(1);
 	}
-
 	
-	CurrentTargetPointIdx = static_cast<int32>(CompletedControlPoint);
-	
-	ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
-	CurrentTargetPointIdx++;
-	CPGameState->OnTeamCompletePoint(CurrentTeam1Point, CurrentTeam2Point, CurrentTargetPointIdx);
-
 	if (ControlPointGameModeState==EControlPointGameModeState::GameComplete)
 	{
 		return;
 	}
 	
+	CurrentTargetPointIdx = static_cast<int32>(CompletedControlPoint);
+	
+	ControlPoints[CurrentTargetPointIdx]->ActivateControlPoint(false);
+	CurrentTargetPointIdx++;
 	TurnOnWaitToTurnOnNextPointTimerHandle(ActivateNextPointTime);
 }
 
-void AControlPointGameMode::TurnOnWaitToTurnOnNextPointTimerHandle(float TimerTime)
+void AControlPointTestGameMode::TurnOnWaitToTurnOnNextPointTimerHandle(float TimerTime)
 {
 	GetWorldTimerManager().ClearTimer(WaitToTurnOnNextPointTimerHandle);
 	GetWorldTimerManager().ClearTimer(SendTimeLeftTimerHandle);
@@ -345,20 +241,20 @@ void AControlPointGameMode::TurnOnWaitToTurnOnNextPointTimerHandle(float TimerTi
 	GetWorldTimerManager().SetTimer(
 		WaitToTurnOnNextPointTimerHandle,
 		this,
-		&AControlPointGameMode::AfterWaitingTimeToActivateNextPoint,
+		&AControlPointTestGameMode::AfterWaitingTimeToActivateNextPoint,
 		TimerTime,
 		false);
 	
 	GetWorldTimerManager().SetTimer(
 	SendTimeLeftTimerHandle,
 	this,
-	&AControlPointGameMode::BeforePointActivateLeftTimeCheck,
+	&AControlPointTestGameMode::BeforePointActivateLeftTimeCheck,
 	0.25f,
 	true
 	);
 }
 
-void AControlPointGameMode::AfterWaitingTimeToActivateNextPoint()
+void AControlPointTestGameMode::AfterWaitingTimeToActivateNextPoint()
 {
 	GetWorldTimerManager().ClearTimer(SendTimeLeftTimerHandle);
 
@@ -368,21 +264,14 @@ void AControlPointGameMode::AfterWaitingTimeToActivateNextPoint()
 	CPGameState->SetControlPointGameModeState(ControlPointGameModeState);
 }
 
-FGenericTeamId AControlPointGameMode::GetTeamIDForPlayer(const AController* PlayerController) const
+FGenericTeamId AControlPointTestGameMode::GetTeamIDForPlayer(const APlayerController* PlayerController) const
 {
-	AHPPlayerState* HPPlayerState = PlayerController->GetPlayerState<AHPPlayerState>();
-
-	if (HPPlayerState && HPPlayerState->GetSelectedCharacterClass())
-	{
-		return HPPlayerState->GetTeamIdBasedOnSlot();
-	}
-	
 	static int PlayerCount = 0;
 	++PlayerCount;
 	return FGenericTeamId(PlayerCount % 2);
 }
 
-AActor* AControlPointGameMode::FindNextStartSpotForTeam(const FGenericTeamId& TeamID)
+AActor* AControlPointTestGameMode::FindNextStartSpotForTeam(const FGenericTeamId& TeamID) const
 {
 	const FName* StartSpotTag = TeamStartSpotTagMap.Find(TeamID);
 	
@@ -393,41 +282,16 @@ AActor* AControlPointGameMode::FindNextStartSpotForTeam(const FGenericTeamId& Te
 
 	UWorld* World = GetWorld();
 	
-	if (RespawnPlayerStarts.Num()==0)
+	for (TActorIterator<ARespawnPlayerStart> It(World); It; ++It)
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Adding RespawnPlayerStarts"));
-		// TArray<AActor*> CurrentPlayerStarts;
-		// UGameplayStatics::GetAllActorsOfClass(
-		// this,
-		// ARespawnPlayerStart::StaticClass(),
-		// CurrentPlayerStarts);
-		//
-		// for (AActor* PlayerStartActor : CurrentPlayerStarts)
-		// {
-		// 	if (ARespawnPlayerStart* RespawnPlayerStart = Cast<ARespawnPlayerStart>(PlayerStartActor))
-		// 	{
-		// 		RespawnPlayerStarts.Add(RespawnPlayerStart);
-		// 	}
-		// }
-		for (TActorIterator<ARespawnPlayerStart> It(World); It; ++It)
+		if (It->PlayerStartTag == *StartSpotTag &&
+			It->GetPlayerStartControlPointNum() == CurrentTargetPointIdx &&
+			!It->IsOccupied())
 		{
-			RespawnPlayerStarts.Add(*It);
+			It->SetOccupied(true);
+			return *It;
 		}
 	}
-	
-	// if (RespawnPlayerStarts.Num()==0)
-	// {
-	// 	for (TActorIterator<ARespawnPlayerStart> It(World); It; ++It)
-	// 	{
-	// 		if (It->PlayerStartTag == *StartSpotTag &&
-	// 			It->GetPlayerStartControlPointNum() == CurrentTargetPointIdx &&
-	// 			!It->IsOccupied())
-	// 		{
-	// 			It->SetOccupied(true);
-	// 			return *It;
-	// 		}
-	// 	}
-	// }
 
 	for (ARespawnPlayerStart* PlayerStart:RespawnPlayerStarts)
 	{
@@ -441,3 +305,5 @@ AActor* AControlPointGameMode::FindNextStartSpotForTeam(const FGenericTeamId& Te
 	}
 	return nullptr;
 }
+
+
