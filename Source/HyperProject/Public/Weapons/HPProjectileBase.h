@@ -57,19 +57,26 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	float DestroyTime = 3.f;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	EEffectApplyTargetPolicy EffectApplyTargetPolicy = EEffectApplyTargetPolicy::EnemyOnly;
 	/* Effect Begin*/
 public:
 	void SetProjectileParams(const FProjectileParams& InProjectileParams);
 
-	FORCEINLINE bool CanHeadShot() const { return bCanHeadShot; }
-
 	virtual void MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams);
 	//FORCEINLINE bool IsMine() const { return bIsMine;}
 	//void BindExplosionCallbackFunction(AActor* PlayerCharacter);
-
+	
+	FORCEINLINE TSubclassOf<UGameplayEffect> GetEnemyEffectClass() const { return EnemyEffectClass; }
+	FORCEINLINE TSubclassOf<UGameplayEffect> GetTeamEffectClass() const { return TeamEffectClass; }
+	FORCEINLINE TArray<TSubclassOf<UGameplayEffect>> GetAdditionalEnemyEffectClasses() const { return AdditionalEnemyEffectClasses; }
+	FORCEINLINE TArray<TSubclassOf<UGameplayEffect>> GetAdditionalTeamEffectClasses() const { return AdditionalTeamEffectClasses; }
+	FORCEINLINE float GetEnemyEffectValueAtLevel(float Level) const { return EnemyEffectValue.GetValueAtLevel(Level); } 
+	FORCEINLINE float GetTeamEffectValueAtLevel(float Level) const { return TeamEffectValue.GetValueAtLevel(Level); } 
+	FORCEINLINE bool CanHeadShot() const { return bCanHeadShot; }
+	FORCEINLINE EEffectApplyTargetPolicy GetEffectApplyTargetPolicy() const { return EffectApplyTargetPolicy; }
+	FORCEINLINE float GetFrontSideWidth() const { return FrontSideWidth; }
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	TSubclassOf<UGameplayEffect> EnemyEffectClass;
@@ -98,8 +105,6 @@ protected:
 	// FOnMineExplodeDelegate OnMineExplodeDelegate;
 	//
 	FProjectileParams ProjectileParams;
-
-	EEffectApplyTargetPolicy EffectType = EEffectApplyTargetPolicy::EnemyOnly;
 	/* Effect End*/
 
 	

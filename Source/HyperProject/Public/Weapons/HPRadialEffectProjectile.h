@@ -22,6 +22,13 @@ public:
 	AHPRadialEffectProjectile();
 
 	virtual void MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams) override;
+
+	FORCEINLINE bool IsDistanceFalloff() const { return bDistanceFalloff; }
+	FORCEINLINE bool CanPush() const { return bCanPush; }
+	FORCEINLINE float GetExplosionInnerRadius() const { return ExplosionInnerRadius; }
+	FORCEINLINE float GetExplosionOuterRadius() const { return ExplosionOuterRadius; }
+	FORCEINLINE float GetPushPower() const { return PushPower; }
+	
 protected:
 	virtual void OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 	void ExplodeProjectile();
@@ -46,4 +53,5 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	UParticleSystem* LocalParticleEffect;
+	
 };

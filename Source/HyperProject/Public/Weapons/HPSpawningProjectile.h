@@ -19,6 +19,9 @@ class HYPERPROJECT_API AHPSpawningProjectile : public AHPProjectileBase
 
 public:
 	virtual void MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams) override;
+
+	FORCEINLINE TSubclassOf<AActor> GetSpawnableActorClass() const { return SpawnedActorClass; }
+	
 protected:
 	virtual void OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 	//UPROPERTY(EditDefaultsOnly)

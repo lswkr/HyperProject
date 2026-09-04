@@ -167,6 +167,7 @@ protected:
 	/** 
 	* Projectile
 	*/
+public:
 	FServerSideRewindResult ProjectileConfirmHit(
 		const FFramePackage& Package,
 		AHPPlayerCharacter* HitCharacter,
@@ -176,6 +177,8 @@ protected:
 		float HitTime
 	);
 
+protected:
+	
 	FServerSideRewindResult ProjectileConfirmHit_ForObject(
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize100& InitialVelocity

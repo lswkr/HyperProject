@@ -13,7 +13,6 @@
 void AHPSpawningProjectile::MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams)
 {
 	Super::MakeProjectileEffectParams(ProjectileApplyEffectParams);
-	ProjectileApplyEffectParams.SpawnableActorClass = SpawnedActorClass;
 	//ProjectileApplyEffectParams.bIsBounded = bNeedToBeBounded;
 }
 

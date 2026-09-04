@@ -75,34 +75,14 @@ void AHPProjectileBase::SetProjectileParams(const FProjectileParams& InProjectil
 
 void AHPProjectileBase::MakeProjectileEffectParams(FProjectileApplyEffectParams& ProjectileApplyEffectParams)
 {
-	//공동으로 채워야 할 것->TargetASC, TargetCharacter
-	//Radial Projectile: OriginLocation, bCanPush,PushPower,InnerRadius,OuterRadius, bDistanceFalloff
-	//SpawnableProjectile: SpawnableActorClass
-
 	ProjectileApplyEffectParams.SourceCharacter =  Cast<AHPPlayerCharacter>(GetOwner());
 
 	if (ProjectileApplyEffectParams.SourceCharacter)
 	{
 		ProjectileApplyEffectParams.SourceASC = ProjectileApplyEffectParams.SourceCharacter->GetAbilitySystemComponent();
 	}
-	ProjectileApplyEffectParams.EnemyEffectClass = EnemyEffectClass;
-	ProjectileApplyEffectParams.TeamEffectClass = TeamEffectClass;
 
-	ProjectileApplyEffectParams.EnemyEffectValue = EnemyEffectValue.GetValueAtLevel(1);
-	ProjectileApplyEffectParams.TeamEffectValue =TeamEffectValue.GetValueAtLevel(1);
-	ProjectileApplyEffectParams.AdditionalEnemyEffectClasses = AdditionalEnemyEffectClasses;
-	ProjectileApplyEffectParams.AdditionalTeamEffectClasses = AdditionalTeamEffectClasses;
-	
-	ProjectileApplyEffectParams.bCanHeadShot = bCanHeadShot;
-	if(ProjectileApplyEffectParams.SourceASC)
-	{
-		ProjectileApplyEffectParams.bNanoBoosted = ProjectileApplyEffectParams.SourceASC->HasMatchingGameplayTag(FHPGameplayTags::Get().State_Combat_NanoBoosted);
-	}
-	
-	ProjectileApplyEffectParams.FrontSideWidth = FrontSideWidth;
-	ProjectileApplyEffectParams.EffectApplyTargetPolicy = EffectApplyTargetPolicy;
-
-	ProjectileApplyEffectParams.GenericTeamId = GetGenericTeamId();
+	ProjectileApplyEffectParams.ProjectileClass = GetClass();
 }
 
 // void AHPProjectileBase::BindExplosionCallbackFunction(AActor* InPlayerCharacter)

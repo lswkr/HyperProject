@@ -213,7 +213,7 @@ bool UHPGA_HybridFire::MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& 
 	bool bIsNanoBoosted = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(GameplayTags.State_Combat_NanoBoosted);
 
 	//DrawDebugSphere(GetWorld(),HitResult.ImpactPoint, 10,10, FColor::Yellow, false, 10);
-	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_HPCustom(HitResult,MuzzleLocation,HitTime, AimingDuration, bIsNanoBoosted, bIsAiming));
+	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_HPCustom(HitResult,MuzzleLocation,HitTime, AimingDuration, bIsAiming));
 	return true;
 }
 
@@ -599,41 +599,6 @@ void UHPGA_HybridFire::SendTargetDataToServer_HitScan(const FGameplayAbilityTarg
 void UHPGA_HybridFire::OnServerReceiveTargetData_Projectile(const FGameplayAbilityTargetDataHandle& TargetDataHandle,
 	FGameplayTag ApplicationTag)
 {
-	// if (!ApplicationTag.MatchesTagExact(FHPGameplayTags::Get().ApplicationTag_Normal))
-	// {
-	// 	return;
-	// }
-	// const FGameplayAbilityTargetData* Data = TargetDataHandle.Get(0);
-	// UE_LOG(LogTemp, Warning, TEXT("OnServerReceiveTargetData"));
-	// if (!Data)
-	// {
-	// 	return;
-	// }
-	//
-	// FVector TargetPoint = Data->GetEndPoint();
-	// FVector ProjectileSpawnPoint;
-	// if (GetAvatarActorFromActorInfo()->Implements<UCombatInterface>())
-	// {
-	// 	ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
-	// }
-	// UE_LOG(LogTemp, Warning, TEXT("OnServerReceiveTargetData Rotation"));
-	// FRotator SpawnRotation = (TargetPoint - ProjectileSpawnPoint).Rotation();
-	//
-	// FTransform SpawnTransform;
-	// SpawnTransform.SetLocation(ProjectileSpawnPoint);
-	// SpawnTransform.SetRotation(SpawnRotation.Quaternion());
-	//
-	// AHPProjectileBase* Projectile = GetWorld()->SpawnActorDeferred<AHPProjectileBase>(
-	// 	ProjectileClass,
-	// 	SpawnTransform,
-	// 	GetOwningActorFromActorInfo(),
-	// 	Cast<APawn>(GetOwningActorFromActorInfo()),
-	// 	ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-	//
-	// Projectile->SetProjectileEffectParams(MakeProjectileParams());
-	//
-	// Projectile->FinishSpawning(SpawnTransform);
-
 	if (!ApplicationTag.MatchesTagExact(FHPGameplayTags::Get().ApplicationTag_Normal))
 	{
 		return;
@@ -702,7 +667,6 @@ void UHPGA_HybridFire::SendTargetDataToServer_Projectile(const FGameplayAbilityT
 	{
 		return;
 	}
-	
 
 	ASC->CallServerSetReplicatedTargetData
 	(
@@ -716,71 +680,6 @@ void UHPGA_HybridFire::SendTargetDataToServer_Projectile(const FGameplayAbilityT
 
 void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& TargetDataHandle)
 {
-	// //저격 시에는 SecondaryEffect
-	// if (!HasAuthority(&CurrentActivationInfo) || !SecondaryEffect||!TargetDataHandle.Num())
-	// {
-	// 	return;
-	// }
-	//
-	// FHPGameplayTags GameplayTags = FHPGameplayTags::Get();
-	// UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-	// FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
-	//
-	// AHPCharacterBase* HPCharacter = Cast<AHPCharacterBase>(GetAvatarActorFromActorInfo());
-	//
-	//
-	// float AimingDuration = 0.f;
-	//
-	// UHPCombatComponent* CombatComponent = HPCharacter->GetCombatComponent();
-	//
-	// if (CombatComponent)
-	// {
-	// 	CombatComponent->CaptureAimEndTime();
-	// 	AimingDuration = CombatComponent->GetDurationBetweenAim();
-	// 	CombatComponent->CaptureAimStartTime();
-	// }
-	//
-	// float FinalValue= AppliedValue.GetValueAtLevel(1);
-	//
-	// if (SourceASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("State.Combat.Aiming"))) && AimingDuration>0.f )
-	// {
-	// 	FinalValue*=FMath::Clamp<float>(1+AimingDuration, 1.f, 3.f);	
-	// }
-	//
-	// const FHitResult* HitResult = TargetDataHandle.Get(0)->GetHitResult();
-	// if (HitResult)
-	// {
-	// 	if (!HitResult->bBlockingHit)
-	// 		return;
-	// 	if (HitResult->BoneName.ToString()==FString("head"))
-	// 	{
-	// 		//NEXTTHINGTODO: 헤드샷 위젯 표시
-	// 		UE_LOG(LogTemp,Warning,TEXT("HEADSHOT"));
-	// 		FinalValue*=2;
-	// 	}
-	//
-	// 	FGameplayEffectSpecHandle EffectSpecHandle = SourceASC->MakeOutgoingSpec(SecondaryEffect,1,Context);
-	// 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle, GameplayTags.SetByCaller_IncomingDamage, FinalValue);
-	//
-	// 	if (!EffectSpecHandle.IsValid())
-	// 	{
-	// 		return;
-	// 	}
-	// 	EffectSpecHandle.Data->GetContext().AddHitResult(*HitResult, true);
-	// 	DrawDebugSphere(GetWorld(),HitResult->ImpactPoint, 20,10, FColor::Red, false, 10);
-	//
-	// 		//
-	// 		// if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
-	// 		// {
-	// 		// 	ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitResult->GetActor());
-	// 		// 	if (OtherActorTeamAttitude == ETeamAttitude::Hostile)
-	// 		// 	{
-	// 				ApplyGameplayEffectSpecToTarget(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, EffectSpecHandle, TargetDataHandle);
-	// 		// 	}
-	// 		// }
-	// 	
-	// }
-
 	if (!HasAuthority(&CurrentActivationInfo) || !PrimaryEffectClass||!TargetDataHandle.Num())
 	{
 		return;
@@ -808,7 +707,9 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 		const FHitResult* HitResult = TargetData->GetHitResult();
 		bool bIsHeadShot = false;
 		bool bIsShotConfirmed = false;
-		bool bIsNanoBoosted = TargetData->GetNanoBoosted();
+		bool bIsNanoBoosted = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(
+			FHPGameplayTags::Get().State_Combat_NanoBoosted);
+		/*수정사항 -> TargetData->GetNanoBoosted(); 클라이언트 데이터라 권한 잘못 줌*/
 		bool bIsAiming = TargetData->IsAiming();
 		float AimingDuration = TargetData->GetAimingDuration();
 		AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor());

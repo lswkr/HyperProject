@@ -7,6 +7,7 @@
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "HPGameplayAbilityTypes.generated.h"
 
+class AHPProjectileBase;
 class AAbilitySpawnableActor;
 class AHPPlayerCharacter;
 class UAbilitySystemComponent;
@@ -121,9 +122,9 @@ struct FGameplayAbilityTargetData_HPCustom : public FGameplayAbilityTargetData_S
 	GENERATED_BODY()
 	
 	FGameplayAbilityTargetData_HPCustom(){};
-	FGameplayAbilityTargetData_HPCustom(FHitResult InHitResult, FVector InStartPoint, float InHitTime, float InAimingDuration, bool bInNanoBoosted, bool  bInAiming)
+	FGameplayAbilityTargetData_HPCustom(FHitResult InHitResult, FVector InStartPoint, float InHitTime, float InAimingDuration, bool  bInAiming)
 		:FGameplayAbilityTargetData_SingleTargetHit(InHitResult), StartPoint(InStartPoint), HitTime(InHitTime), AimingDuration(InAimingDuration),
-	bIsNanoBoosted(bInNanoBoosted), bIsAiming(bInAiming){};
+	bIsAiming(bInAiming){};
 	
 	virtual UScriptStruct* GetScriptStruct() const override
 	{
@@ -135,7 +136,6 @@ struct FGameplayAbilityTargetData_HPCustom : public FGameplayAbilityTargetData_S
 	FORCEINLINE FVector GetStartPoint() const { return StartPoint; }
 	FORCEINLINE float GetHitTime() const { return HitTime; }
 	FORCEINLINE float GetAimingDuration() const { return AimingDuration; }
-	FORCEINLINE bool GetNanoBoosted() const { return bIsNanoBoosted; }
 	FORCEINLINE bool IsAiming() const { return bIsAiming; }
 	
 private:
@@ -147,9 +147,6 @@ private:
 
 	UPROPERTY()
 	float AimingDuration = 0.f;
-	
-	UPROPERTY()
-	bool bIsNanoBoosted = false;
 
 	UPROPERTY()
 	bool bIsAiming = false;
@@ -173,14 +170,7 @@ USTRUCT(BlueprintType)
 struct FProjectileApplyEffectParams
 {
 	GENERATED_BODY()
-
-	//변수 활용 시 복사/붙여넣기 위한 변수 목록들
-	//SourceCharacter, TargetCharacter, SourceASC, TargetASC,
-	//EnemyEffectClass, TeamEffectClass, AdditionalEnemyEffectClasses, AdditionalTeamEffectClasses
-	//OriginLocation, EnemyEffectValue, TeamEffectValue
-	//float: PushPower,InnerRadius, OuterRadius, FrontSideWidth
-	//bool:bCanHeadShot, bCanPush, bDistanceFalloff
-	//etc: EffectApplyTargetPolicy, GenericTeamId ,SpawnableActorClass
+	
 	
 	UPROPERTY()
 	AHPPlayerCharacter* SourceCharacter = nullptr;
@@ -193,18 +183,6 @@ struct FProjectileApplyEffectParams
 	
 	UPROPERTY()
 	UAbilitySystemComponent* TargetASC = nullptr;
-
-	UPROPERTY()
-	TSubclassOf<UGameplayEffect> EnemyEffectClass = nullptr;
-
-	UPROPERTY()
-	TSubclassOf<UGameplayEffect> TeamEffectClass = nullptr;
-	
-	UPROPERTY()
-	TArray<TSubclassOf<UGameplayEffect>> AdditionalEnemyEffectClasses = TArray<TSubclassOf<UGameplayEffect>>(); 
-
-	UPROPERTY()
-	TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses = TArray<TSubclassOf<UGameplayEffect>>();
 	
 	UPROPERTY()
 	FVector OriginLocation = FVector::ZeroVector;
@@ -214,47 +192,9 @@ struct FProjectileApplyEffectParams
 
 	UPROPERTY()
 	FVector HitImpactNormal = FVector::ZeroVector;
-	
-	UPROPERTY()
-	float EnemyEffectValue = 0.f;
 
 	UPROPERTY()
-	float TeamEffectValue = 0.f;
-
-	UPROPERTY()
-	bool bCanHeadShot = false;
-
-	UPROPERTY()
-	bool bCanPush = false;
-	
-	UPROPERTY()
-	bool bNanoBoosted = false;
-	// UPROPERTY()
-	// bool bIsBounded = false;
-	
-	UPROPERTY()
-	float FrontSideWidth = 0.f;
-	
-	UPROPERTY()
-	bool bDistanceFalloff = false;
-
-	UPROPERTY()
-	float PushPower = 0.0f;
-	
-	UPROPERTY()
-	float InnerRadius = 0.0f;
-
-	UPROPERTY()
-	float OuterRadius = 0.0f;
-
-	UPROPERTY()
-	EEffectApplyTargetPolicy EffectApplyTargetPolicy = EEffectApplyTargetPolicy::EnemyOnly;
-
-	UPROPERTY()
-	FGenericTeamId GenericTeamId;
-
-	UPROPERTY()
-	TSubclassOf<AAbilitySpawnableActor> SpawnableActorClass;
+	TSubclassOf<AHPProjectileBase> ProjectileClass;
 };
 
 /* STRUCT End */

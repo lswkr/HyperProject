@@ -198,10 +198,10 @@ bool UHPGA_Fire::MakeTargetData(FGameplayAbilityTargetDataHandle& OutTargetDataH
 	}
 	FHPGameplayTags GameplayTags = FHPGameplayTags::Get();
 	bool bIsAiming = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(GameplayTags.State_Combat_Aiming);
-	bool bIsNanoBoosted = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(GameplayTags.State_Combat_NanoBoosted);
+	//bool bIsNanoBoosted = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(GameplayTags.State_Combat_NanoBoosted);
 
 	//DrawDebugSphere(GetWorld(),HitResult.ImpactPoint, 10,10, FColor::Yellow, false, 10);
-	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_HPCustom(HitResult,MuzzleLocation,HitTime, AimingDuration, bIsNanoBoosted, bIsAiming));
+	OutTargetDataHandle.Add(new FGameplayAbilityTargetData_HPCustom(HitResult,MuzzleLocation,HitTime, AimingDuration, bIsAiming));
 	return true;
 }
 
@@ -374,7 +374,8 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 		const FHitResult* HitResult = TargetData->GetHitResult();
 		bool bIsHeadShot = false;
 		bool bIsShotConfirmed = false;
-		bool bIsNanoBoosted = TargetData->GetNanoBoosted();
+		bool bIsNanoBoosted = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(
+			FHPGameplayTags::Get().State_Combat_NanoBoosted);
 		bool bIsAiming = TargetData->IsAiming();
 		
 		AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor());
