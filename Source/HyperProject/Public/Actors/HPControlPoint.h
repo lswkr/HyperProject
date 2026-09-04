@@ -32,7 +32,8 @@ enum EControlPointState
 	Team1Capturing,
 	Team2Capturing,
 	BeforeCapturing,
-	FightingAtPoint
+	FightingAtPoint,
+	PeaceAtPoint
 };
 
 enum EWhatTeamCaptured
@@ -77,6 +78,7 @@ public:
 	void OnRep_ControlPointCaptured();
 	
 	void BindPlayerControllerToControlPoint(AHPPlayerController* PlayerController);
+	void UnbindPlayerControllerToControlPoint();
 
 	FORCEINLINE void SetControlPointState(EControlPointType InControlPointType) {ControlPointType = InControlPointType;}
 	FORCEINLINE EControlPointType GetControlPointType() const {return ControlPointType;}
@@ -149,5 +151,6 @@ private:
 
 	UFUNCTION()
 	void OnRep_ControlPointActivated();
+
 	
 };

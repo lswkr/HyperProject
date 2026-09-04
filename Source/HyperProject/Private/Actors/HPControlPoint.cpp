@@ -34,6 +34,7 @@ AHPControlPoint::AHPControlPoint()
 void AHPControlPoint::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ControlPoint OVERLAPPED"));
 	if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(OtherActor))
 	{
 		if (TeamAgentInterface->GetGenericTeamId().GetId()==0 && !OverlappedTeamOne.Contains(OtherActor))
@@ -93,6 +94,14 @@ void AHPControlPoint::BindPlayerControllerToControlPoint(AHPPlayerController* Pl
 	ControlPointCapturedDelegate.BindDynamic(PlayerController, &AHPPlayerController::UpdateCapturedTeamState);
 }
 
+void AHPControlPoint::UnbindPlayerControllerToControlPoint()
+{
+	ControlPointUpdateDelegate.Unbind();
+	ControlPointCapturedDelegate.Unbind();
+	ControlPointCompletedDelegate.Unbind();
+}
+
+
 void AHPControlPoint::BeginPlay()
 {
 	Super::BeginPlay();
@@ -133,12 +142,19 @@ void AHPControlPoint::Tick(float DeltaTime)
 
 	//DrawDebugSphere(GetWorld(), GetActorLocation(), SphereRadius, 12, FColor::Green);
 
-	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentCapturedTeam != Team1Captured) //팀1 탈환중(점령 전)
+	if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() >= 1) //한타 중
 	{
-		if (CurrentState == EControlPointState::BeforeCapturing || //아무도 거점 점령하지 않았을 때
-			CurrentState == EControlPointState::FightingAtPoint || //한타 끝났을 때
-			CurrentCapturedTeam == EWhatTeamCaptured::Team1Captured)	   //다른 팀이 점령 했으면
+		UE_LOG(LogTemp, Warning, TEXT("Fighting"));
+		CurrentState = EControlPointState::FightingAtPoint;
+	}
+	
+	else if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() == 0 && CurrentCapturedTeam != Team1Captured) //팀1 탈환중(점령 전)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Team1 Capturing"));
+		if (/*CurrentState == EControlPointState::BeforeCapturing ||*/ //아무도 거점 점령하지 않았을 때
+			CurrentState != EControlPointState::FightingAtPoint )	   
 			CurrentState = EControlPointState::Team1Capturing;
+		
 		if (CurrentTeam2FightingGauge >0.f) //남은 팀2게이지 다 버릴 때까지 
 		{
 			CurrentTeam2FightingGauge = FMath::Clamp(CurrentTeam2FightingGauge-DeltaTime * FightingStateFillingSpeed, 0, 100);
@@ -151,6 +167,7 @@ void AHPControlPoint::Tick(float DeltaTime)
 		if (CurrentTeam1FightingGauge >= 100.f)
 		{
 			CurrentCapturedTeam = EWhatTeamCaptured::Team1Captured;
+			CurrentState = EControlPointState::PeaceAtPoint;
 			OnControlPointCaptured = FOnControlPointCaptured(true, false);
 			CurrentTeam1FightingGauge = 0.f;
 			CurrentTeam2FightingGauge = 0.f;
@@ -160,10 +177,9 @@ void AHPControlPoint::Tick(float DeltaTime)
 
 	else if (OverlappedTeamOne.Num() == 0 && OverlappedTeamTwo.Num() >= 1 && CurrentCapturedTeam != Team2Captured) //팀2 점령중
 	{
-	
-		if (CurrentState == EControlPointState::BeforeCapturing ||
-			CurrentState == EControlPointState::FightingAtPoint ||
-			CurrentCapturedTeam == EWhatTeamCaptured::Team2Captured)
+		UE_LOG(LogTemp, Warning, TEXT("Team2 Capturing"));
+		if (/*CurrentState == EControlPointState::BeforeCapturing ||*/
+			CurrentState != EControlPointState::FightingAtPoint)
 			CurrentState = EControlPointState::Team2Capturing;
 
 		if (CurrentTeam1FightingGauge >0.f) //남은 팀1게이지 다 버릴 때까지 
@@ -178,6 +194,7 @@ void AHPControlPoint::Tick(float DeltaTime)
 		if (CurrentTeam2FightingGauge >= 100.f)
 		{
 			CurrentCapturedTeam = EWhatTeamCaptured::Team2Captured;
+			CurrentState = EControlPointState::PeaceAtPoint;
 			//캡처 끝나면 0으로 초기화
 			CurrentTeam1FightingGauge = 0.f;
 			CurrentTeam2FightingGauge = 0.f;
@@ -186,25 +203,31 @@ void AHPControlPoint::Tick(float DeltaTime)
 		}
 	}
 
-	else if (OverlappedTeamOne.Num() >= 1 && OverlappedTeamTwo.Num() >= 1) //한타 중
-	{
-		CurrentState = EControlPointState::FightingAtPoint;
-	}
-
 	else	//아무도 없을 때
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Peace"));
 		CurrentTeam1FightingGauge = FMath::Clamp(CurrentTeam1FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
 		CurrentTeam2FightingGauge = FMath::Clamp(CurrentTeam2FightingGauge-DeltaTime* FightingStateFillingSpeed,0,100.f);
 
 		if (CurrentTeam1CaptureGauge == 0.f && CurrentTeam2CaptureGauge == 0.f) //아무 팀도 거점 못 먹었으면
 		{
 			CurrentState = EControlPointState::BeforeCapturing;
+			CurrentCapturedTeam= EWhatTeamCaptured::None;
+		}
+		else
+		{
+			CurrentState = EControlPointState::PeaceAtPoint;
 		}
 	}
 	
 	if (CurrentCapturedTeam == EWhatTeamCaptured::Team1Captured) //팀1이 거점 먹은 경우
 	{
 		CurrentTeam1CaptureGauge+=DeltaTime * ControlledStateFillingSpeed;
+		
+		if (CurrentTeam1CaptureGauge>=99.f && CurrentState == EControlPointState::FightingAtPoint)
+		{
+			CurrentTeam1CaptureGauge = 99.f;//싸우고 있을 경우 99퍼센트에서 더 진행되지 않도록
+		}
 		if (CurrentTeam1CaptureGauge>=100.f)
 		{
 			//NEXTTHINGTODO: 팀1 승리
@@ -220,6 +243,10 @@ void AHPControlPoint::Tick(float DeltaTime)
 	{
 		CurrentTeam2CaptureGauge+=DeltaTime * ControlledStateFillingSpeed;
 
+		if (CurrentTeam2CaptureGauge>=99.f && CurrentState == EControlPointState::FightingAtPoint)
+		{
+			CurrentTeam2CaptureGauge = 99.f;//싸우고 있을 경우 99퍼센트에서 더 진행되지 않도록
+		}
 		if (CurrentTeam2CaptureGauge>=100.f)
 		{
 			//NEXTTHINGTODO: 팀2 승리
@@ -242,12 +269,18 @@ void AHPControlPoint::Tick(float DeltaTime)
 	CurrentControlPointData.TeamTwoFightingPercent = CurrentTeam2FightingGauge;
 
 	ControlPointData = CurrentControlPointData;
+
+	UE_LOG(LogTemp, Warning, TEXT("current Point State: %d"), CurrentState);
 }
 
 void AHPControlPoint::ActivateControlPoint(bool TurnOn)
 {
 	SphereComponent->SetCollisionEnabled(TurnOn?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
 	IsActivating = TurnOn;
+	if (!TurnOn)
+	{
+		UnbindPlayerControllerToControlPoint();
+	}
 }
 
 void AHPControlPoint::BroadcastWhatTeamCompleteControlPoint(EControlPointType InControlPointType, int32 CompleteTeamID)
@@ -264,6 +297,12 @@ void AHPControlPoint::OnRep_ControlPointActivated()
 	ControlPointWidget -> SetControlPointText(FText::FromString(FString::Chr('A' + ControlPointTypeInt)));
 	
 	ControlPointWidgetComponent->SetVisibility(IsActivating);
+
+	if (!IsActivating)
+	{
+		ControlPointUpdateDelegate.Unbind();
+		ControlPointCapturedDelegate.Unbind();
+	}
 	
 }
 
