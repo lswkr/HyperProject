@@ -9,6 +9,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
 #include "AbilitySystem/HPAttributeSet.h"
 #include "Characters/Player/HPPlayerCharacter.h"
+#include "Components/BoxComponent.h"
 #include "Components/HPCombatComponent.h"
 #include "Interfaces/CombatInterface.h"
 #include "Weapons/HPProjectileBase.h"
@@ -216,6 +217,7 @@ void UHPGA_Fire_Projectile::FireOneShot()
 			{
 				ServerSideRewindProjectile->SetGenericTeamId(TeamAgentInterface->GetGenericTeamId());
 			}
+			ServerSideRewindProjectile->GetBoxComponent()->IgnoreActorWhenMoving(InstigatorPawn, true);
 			ServerSideRewindProjectile->SetTraceStart(ProjectileSpawnPoint);
 			ServerSideRewindProjectile->SetInitialVelocity(ServerSideRewindProjectile->GetInitialSpeed()*ServerSideRewindProjectile->GetActorForwardVector());
 				

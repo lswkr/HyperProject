@@ -98,7 +98,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 	
 						if (RadialProjectileCDO->GetAdditionalTeamEffectClasses().Num()>0)
 						{
-							TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses = RadialProjectileCDO->GetAdditionalEnemyEffectClasses();
+							TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses = RadialProjectileCDO->GetAdditionalTeamEffectClasses();
 							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : AdditionalTeamEffectClasses)
 							{
 								FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
@@ -159,8 +159,8 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitCharacter_Implem
 						
 						if (RadialProjectileCDO->GetAdditionalEnemyEffectClasses().Num()>0)
 						{
-							TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses = RadialProjectileCDO->GetAdditionalEnemyEffectClasses();
-							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : AdditionalTeamEffectClasses)
+							TArray<TSubclassOf<UGameplayEffect>> AdditionalEnemyEffectClasses = RadialProjectileCDO->GetAdditionalEnemyEffectClasses();
+							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : AdditionalEnemyEffectClasses)
 							{
 								FGameplayEffectContextHandle Context = SourceASC->MakeEffectContext();
 					
@@ -257,7 +257,7 @@ void ULagCompensationComponent::ExplosionServerApplyValidHit_HitObject_Implement
 	
 						if (RadialProjectileCDO->GetAdditionalTeamEffectClasses().Num()>0)
 						{
-							TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses = RadialProjectileCDO->GetAdditionalEnemyEffectClasses();
+							TArray<TSubclassOf<UGameplayEffect>> AdditionalTeamEffectClasses = RadialProjectileCDO->GetAdditionalTeamEffectClasses();
 							
 							for (const TSubclassOf<UGameplayEffect>& AdditionalEffectClass : AdditionalTeamEffectClasses)
 							{
@@ -634,7 +634,10 @@ FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit_ForObjec
 	PathParams.StartLocation = TraceStart;
 	PathParams.SimFrequency = 15.f;
 	PathParams.ProjectileRadius = 5.f;
-	PathParams.TraceChannel = ECC_Visibility; //오브젝트의 경우를 확인하기 위해
+	//PathParams.TraceChannel = ECC_Visibility; //오브젝트의 경우를 확인하기 위해
+	PathParams.ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	PathParams.ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+	PathParams.ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 	PathParams.ActorsToIgnore.Add(GetOwner());
 
 	FPredictProjectilePathResult PathResult;

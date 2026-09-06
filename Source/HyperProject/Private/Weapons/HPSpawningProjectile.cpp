@@ -19,8 +19,10 @@ void AHPSpawningProjectile::MakeProjectileEffectParams(FProjectileApplyEffectPar
 void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
                                               UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	UE_LOG(LogTemp, Warning, TEXT("OnBoxComponentHit"));
 	if (!bServerSideRewind)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("NoServerSideRewind"));
 		if (!HasAuthority())
 			return;
 		FTransform SpawnTransform;
@@ -74,7 +76,8 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 					ProjectileApplyEffectParams.TargetASC=TargetASC;
 					ProjectileApplyEffectParams.OriginLocation = GetActorLocation();
 					ProjectileApplyEffectParams.HitImpactPoint = Hit.ImpactPoint;
-					ProjectileApplyEffectParams.HitImpactNormal = Hit.ImpactNormal; 
+					ProjectileApplyEffectParams.HitImpactNormal = Hit.ImpactNormal;
+					UE_LOG(LogTemp, Warning, TEXT("InitialVelocity: %s"),*InitialVelocity.ToString());
 					OwnerCharacter->GetLagCompensationComponent()->SpawningProjectileServerApplyValidHit_HitCharacter
 					(	HitCharacter,
 						TraceStart,
@@ -90,7 +93,8 @@ void AHPSpawningProjectile::OnBoxComponentHit(UPrimitiveComponent* HitComponent,
 					MakeProjectileEffectParams(ProjectileApplyEffectParams);
 					ProjectileApplyEffectParams.OriginLocation = GetActorLocation();
 					ProjectileApplyEffectParams.HitImpactPoint = Hit.ImpactPoint;
-					ProjectileApplyEffectParams.HitImpactNormal = Hit.ImpactNormal; 
+					ProjectileApplyEffectParams.HitImpactNormal = Hit.ImpactNormal;
+					UE_LOG(LogTemp, Warning, TEXT("InitialVelocity: %s"),*InitialVelocity.ToString());
 					OwnerCharacter->GetLagCompensationComponent()->SpawningProjectileServerApplyValidHit_HitObject(
 						TraceStart,
 						InitialVelocity,

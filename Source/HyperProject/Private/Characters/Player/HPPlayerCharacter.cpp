@@ -584,7 +584,7 @@ void AHPPlayerCharacter::HandleRespawn()
 	if (HasAuthority())
 	{
 		HPAbilitySystemComponent->InitAbilityAndEffectAtRespawn();
-		if (AControlPointTestGameMode* CPGameMode = Cast<AControlPointTestGameMode>(GetWorld()->GetAuthGameMode()))
+		if (AControlPointGameMode* CPGameMode = Cast<AControlPointGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			//현재 거점 상태에 따라 특정 위치에서 생성
 			ARespawnPlayerStart* RespawnPlayerStart = CPGameMode->GetRespawnPlayerStart(this);

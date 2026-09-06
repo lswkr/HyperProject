@@ -77,6 +77,9 @@ public:
 	FORCEINLINE bool CanHeadShot() const { return bCanHeadShot; }
 	FORCEINLINE EEffectApplyTargetPolicy GetEffectApplyTargetPolicy() const { return EffectApplyTargetPolicy; }
 	FORCEINLINE float GetFrontSideWidth() const { return FrontSideWidth; }
+
+	FORCEINLINE UBoxComponent* GetBoxComponent() const { return BoxComponent; }
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "HPProjectile")
 	TSubclassOf<UGameplayEffect> EnemyEffectClass;

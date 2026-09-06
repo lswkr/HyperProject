@@ -407,6 +407,7 @@ void UHPGA_Fire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& 
 
 			if (bIsAiming)
 			{
+				AimingDuration = TargetData->GetAimingDuration();
 				FinalDamage*=FMath::Clamp<float>(1+AimingDuration, 1.f, 3.f);	
 			}
 

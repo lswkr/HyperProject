@@ -117,26 +117,25 @@ void AHPControlPoint::Tick(float DeltaTime)
 		return;
 	}
 	
-	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-	{
-		FVector CameraLocation = FVector::ZeroVector;
-		FRotator CameraRotation = FRotator::ZeroRotator;
-				
-		PC->GetPlayerViewPoint(CameraLocation,CameraRotation);
-
-		if (ControlPointWidget && PC->GetPawn())
-		{
-			//FVector Direction = CameraLocation-ControlPointWidgetComponent->GetComponentLocation();
-			//ControlPointWidgetComponent->SetWorldRotation(Direction.Rotation());
-			float Dist = FVector::Dist2D(GetActorLocation(),PC->GetPawn()->GetActorLocation());
-			
-			Dist-=SphereRadius;
-			ControlPointWidget->UpdateDistance(FMath::Max(0,Dist)/100);
-		}
-	}
-	
 	if (!HasAuthority())
 	{
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+		{
+			FVector CameraLocation = FVector::ZeroVector;
+			FRotator CameraRotation = FRotator::ZeroRotator;
+				
+			PC->GetPlayerViewPoint(CameraLocation,CameraRotation);
+
+			if (ControlPointWidget && PC->GetPawn())
+			{
+				//FVector Direction = CameraLocation-ControlPointWidgetComponent->GetComponentLocation();
+				//ControlPointWidgetComponent->SetWorldRotation(Direction.Rotation());
+				float Dist = FVector::Dist2D(GetActorLocation(),PC->GetPawn()->GetActorLocation());
+			
+				Dist-=SphereRadius;
+				ControlPointWidget->UpdateDistance(FMath::Max(0,Dist)/100);
+			}
+		}
 		return;
 	}
 
@@ -279,7 +278,7 @@ void AHPControlPoint::ActivateControlPoint(bool TurnOn)
 	IsActivating = TurnOn;
 	if (!TurnOn)
 	{
-		UnbindPlayerControllerToControlPoint();
+		//UnbindPlayerControllerToControlPoint();
 	}
 }
 
