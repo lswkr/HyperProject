@@ -18,29 +18,31 @@
 
 void UHPAbilitySystemComponent::InitializeBaseAttributes()
 {
-	if (!HPAbilitySystemDataAsset|| !HPAbilitySystemDataAsset->GetBaseStatDataTable()|| !GetOwner())
+	if (!HPAbilitySystemDataAsset|| !HPAbilitySystemDataAsset->GetBaseStatDataTable()|| !GetOwner() || HeroStatRowName.IsNone())
 	{
 		return;
 	}
-	const UDataTable* BaseStatDataTable = HPAbilitySystemDataAsset->GetBaseStatDataTable();
-	const FHPHeroBaseStats* HeroBaseStats = nullptr;
-
-	for (const TPair<FName, uint8*>& DataPair : BaseStatDataTable->GetRowMap())
+	
+	const FHPHeroBaseStats* HeroBaseStats = HPAbilitySystemDataAsset->GetBaseStatDataTable()->FindRow<FHPHeroBaseStats>(HeroStatRowName, "");
+	
+	if (!HeroBaseStats)
 	{
-		HeroBaseStats = BaseStatDataTable->FindRow<FHPHeroBaseStats>(DataPair.Key,"");
-		if (HeroBaseStats && HeroBaseStats->Class == GetOwner()->GetClass())
-		{
-			break;
-		}
+		UE_LOG(LogTemp, Error, TEXT("Please Set Hero Name"));
 	}
 	
-	if (HeroBaseStats)
-	{
-		SetNumericAttributeBase(UHPAttributeSet::GetMaxHealthAttribute(), HeroBaseStats->BaseMaxHealth);
-		SetNumericAttributeBase(UHPAttributeSet::GetMoveSpeedAttribute(), HeroBaseStats->BaseMoveSpeed);
-		SetNumericAttributeBase(UHPAttributeSet::GetMaxUltAttribute(), HeroBaseStats->BaseMaxUlt);
-		
-	}
+	// for (const TPair<FName, uint8*>& DataPair : BaseStatDataTable->GetRowMap())
+	// {
+	// 	HeroBaseStats = BaseStatDataTable->FindRow<FHPHeroBaseStats>(DataPair.Key,"");
+	// 	if (HeroBaseStats && HeroBaseStats->Class == GetOwner()->GetClass())
+	// 	{
+	// 		break;
+	// 	}
+	// }
+
+	SetNumericAttributeBase(UHPAttributeSet::GetMaxHealthAttribute(), HeroBaseStats->BaseMaxHealth);
+	SetNumericAttributeBase(UHPAttributeSet::GetMoveSpeedAttribute(), HeroBaseStats->BaseMoveSpeed);
+	SetNumericAttributeBase(UHPAttributeSet::GetMaxUltAttribute(), HeroBaseStats->BaseMaxUlt);
+	
 }
 
 void UHPAbilitySystemComponent::ServerSideInit()

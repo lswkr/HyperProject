@@ -268,5 +268,5 @@ void AHPPlayerController::Client_OnReceiveEnemyEliminationInfo_Implementation(FN
 	if (!HUD)
 		return;
 
-	HUD->GetOverlayWidgetFloatKillLog(PlayerNickname, ContributionPercent*100);
+	HUD->GetOverlayWidgetFloatKillLog(PlayerNickname, FMath::RoundToInt(ContributionPercent*100));
 }

@@ -3,7 +3,7 @@
 
 #include "AbilitySystem/HPGameplayAbilityTypes.h"
 
-FHPHeroBaseStats::FHPHeroBaseStats():Class(nullptr),BaseMaxHealth(0.f),BaseMoveSpeed(0.f), BaseAttackDamage(0.f)
+FHPHeroBaseStats::FHPHeroBaseStats():/*HeroName(""),*/BaseMaxHealth(0.f),BaseMoveSpeed(0.f), BaseAttackDamage(0.f)
 {}
 
 bool FGameplayAbilityTargetData_HPCustom::NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)

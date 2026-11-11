@@ -68,4 +68,7 @@ private:
 	UHPAbilitySystemDataAsset* HPAbilitySystemDataAsset;
 
 	TArray<FGameplayAbilitySpecHandle> GrantedWeaponAbilityHandles;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Stats")        
+	FName HeroStatRowName;
 };

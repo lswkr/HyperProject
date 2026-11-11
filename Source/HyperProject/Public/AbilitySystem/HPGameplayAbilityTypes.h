@@ -59,9 +59,6 @@ struct FHPHeroBaseStats : public FTableRowBase
 
 public:
 	FHPHeroBaseStats();
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> Class = nullptr;
 	
 	UPROPERTY(EditAnywhere)
 	float BaseMaxHealth = 0.0f;
