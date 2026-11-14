@@ -74,6 +74,9 @@ public:
 	/* ApplicationTag Begin*/
 	FGameplayTag ApplicationTag_Normal;
 	FGameplayTag ApplicationTag_Aiming;
+	
+	FGameplayTag ApplicationTag_HitScan;
+	FGameplayTag ApplicationTag_Projectile;
 	/* ApplicationTag End*/
 
 	/* Cooldown Begin */

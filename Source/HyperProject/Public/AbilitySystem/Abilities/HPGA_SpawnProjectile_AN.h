@@ -42,7 +42,7 @@ private:
 	UAbilityTask_PlayMontageAndWait* PlayFireMontageTask;
 
 	UPROPERTY(EditDefaultsOnly)
-	EProjectileSpawnSocketType SpawnSocketType;
+	EFireSocketType SpawnSocketType;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AHPProjectileBase> ProjectileClass;

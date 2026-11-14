@@ -32,7 +32,7 @@ enum class EHPAbilityInputID : uint8
 };
 
 UENUM(BlueprintType)
-enum class EProjectileSpawnSocketType : uint8
+enum class EFireSocketType : uint8
 {
 	Weapon	UMETA(DisplayName = "Weapon"),
 	Hand	UMETA(DisplayName = "Hand"),

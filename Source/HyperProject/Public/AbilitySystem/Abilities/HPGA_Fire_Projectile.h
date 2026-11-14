@@ -70,7 +70,7 @@ private:
 	TSubclassOf<AHPVisualProjectile> VisualProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
-	EProjectileSpawnSocketType SpawnSocketType;
+	EFireSocketType SpawnSocketType;
 	/* Projectile End */
 	
 	

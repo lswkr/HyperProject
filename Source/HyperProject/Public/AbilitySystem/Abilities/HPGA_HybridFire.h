@@ -8,7 +8,7 @@
 
 class AHPProjectileBase;
 class AHPVisualProjectile;
-enum class EProjectileSpawnSocketType : uint8;
+enum class EFireSocketType : uint8;
 /**
  * 
  */
@@ -36,11 +36,13 @@ private:
 	UAnimMontage* AimingFireMontage;
 	
 	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility")
-	float PrimaryFireInterval = 0.3f;
-	
+	float FireInterval = 0.3f;
+
+	/*
 	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility")
 	float SecondaryFireInterval = 1.f;
-
+	*/
+	
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility")
 	bool DoesContainAiming = false;
 
@@ -112,7 +114,7 @@ private:
 	TSubclassOf<AHPProjectileBase> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
-	EProjectileSpawnSocketType SpawnSocketType = EProjectileSpawnSocketType::Weapon;
+	EFireSocketType SpawnSocketType = EFireSocketType::Weapon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	TSubclassOf<AHPProjectileBase> ServerSideRewindProjectileClass;
@@ -120,4 +122,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	TSubclassOf<AHPVisualProjectile> VisualProjectileClass;
 	/* Projectile End */
+
+	bool bEndReserved = false;
 };

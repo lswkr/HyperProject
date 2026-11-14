@@ -164,7 +164,7 @@ void UHPGA_SpawnProjectile_AN::SpawnProjectile(FGameplayEventData Payload)
 	FVector ProjectileSpawnPoint;
 	if (GetAvatarActorFromActorInfo()->Implements<UCombatInterface>())
 	{
-		ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
+		ProjectileSpawnPoint = SpawnSocketType==EFireSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
 	}
 	UE_LOG(LogTemp, Warning, TEXT("OnServerReceiveTargetData Rotation"));
 	FRotator SpawnRotation = (TargetPoint - ProjectileSpawnPoint).Rotation();

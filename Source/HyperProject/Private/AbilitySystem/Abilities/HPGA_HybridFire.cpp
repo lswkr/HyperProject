@@ -41,6 +41,8 @@ void UHPGA_HybridFire::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
+
+	bEndReserved = false;
 	
 	if (IsForRemoteClient())
 	{
@@ -77,12 +79,14 @@ void UHPGA_HybridFire::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 {
 	UAbilitySystemComponent* ASC = ActorInfo? ActorInfo->AbilitySystemComponent.Get():nullptr;
 
+	//HitScan전용
 	if (ASC && TargetDataDelegateHandle_HitScan.IsValid())
 	{
 		ASC->AbilityTargetDataSetDelegate(Handle, ActivationInfo.GetActivationPredictionKey()).Remove(TargetDataDelegateHandle_HitScan);
 		TargetDataDelegateHandle_HitScan.Reset();
 	}
 
+	//Projectile 전용
 	if (ASC && TargetDataDelegateHandle_Projectile.IsValid())
 	{
 		ASC->AbilityTargetDataSetDelegate(Handle, ActivationInfo.GetActivationPredictionKey()).Remove(TargetDataDelegateHandle_Projectile);
@@ -94,7 +98,11 @@ void UHPGA_HybridFire::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 
 void UHPGA_HybridFire::OnInputReleased(float TimeHeld)
 {
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+	if (!bEndReserved)
+	{
+		bEndReserved = true;
+	}
+	//EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 bool UHPGA_HybridFire::MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) 
@@ -219,35 +227,14 @@ bool UHPGA_HybridFire::MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& 
 
 bool UHPGA_HybridFire::MakeTargetData_Projectile(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const
 {
-	// if (!GetAvatarActorFromActorInfo()->Implements<UCombatInterface>())
-	// return false;
-	//
-	// UE_LOG(LogTemp,Warning,TEXT("MakeTargetData"));
-	// FVector HitImpactPoint = ICombatInterface::Execute_GetHitImpactPoint(GetAvatarActorFromActorInfo());
-	//
-	// FGameplayEffectContextHandle ContextHandle =  GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
-	//
-	//
-	// //GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(BeamGameplayCueTag, CueParams);
-	//
-	// FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
-	//
-	// LocationData->TargetLocation.LocationType =
-	// 	EGameplayAbilityTargetingLocationType::LiteralTransform;
-	//
-	// LocationData->TargetLocation.LiteralTransform = FTransform(FQuat::Identity, HitImpactPoint);
-	//
-	// OutTargetDataHandle.Add(LocationData);
-	// return true;
-
-	FVector ProjectileSpawnPoint = FVector::ZeroVector;
+	FVector FirePoint = FVector::ZeroVector;
 	FVector EndLocation = FVector::ZeroVector;
 	
 	if (AActor* PlayerActor = GetAvatarActorFromActorInfo())
 	{
 		if (PlayerActor->Implements<UCombatInterface>())
 		{
-			ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
+			FirePoint = SpawnSocketType == EFireSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
 			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
 		}
 		else
@@ -259,7 +246,7 @@ bool UHPGA_HybridFire::MakeTargetData_Projectile(FGameplayAbilityTargetDataHandl
 	FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
 
 	LocationData->SourceLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
-	LocationData->SourceLocation.LiteralTransform = FTransform(FRotator::ZeroRotator, ProjectileSpawnPoint);
+	LocationData->SourceLocation.LiteralTransform = FTransform(FRotator::ZeroRotator, FirePoint);
 
 	LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
 	LocationData->TargetLocation.LiteralTransform = FTransform(FRotator::ZeroRotator, EndLocation);
@@ -271,7 +258,7 @@ bool UHPGA_HybridFire::MakeTargetData_Projectile(FGameplayAbilityTargetDataHandl
 
 void UHPGA_HybridFire::FireOneShot()
 {
-	if (IsAiming())
+	if (IsAiming()) //NEXTTHINGTODO: Aiming 지우기
 	{
 		Fire_HitScan();
 	}
@@ -283,8 +270,7 @@ void UHPGA_HybridFire::FireOneShot()
 
 void UHPGA_HybridFire::Fire_HitScan()
 {
-	
-	if (!IsLocallyControlled() || !IsAiming()) //로컬에서 쏘므로
+	if (!IsLocallyControlled()) //로컬에서 쏘므로
 	{
 		return;
 	}
@@ -313,7 +299,6 @@ void UHPGA_HybridFire::Fire_HitScan()
 			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 			return;
 		}
-		
 
 		if (IsPredictingClient()) //현재 Prediction Window로 서버에 전달
 		{
@@ -359,7 +344,7 @@ void UHPGA_HybridFire::Fire_Projectile()
 	{
 		if (PlayerActor->Implements<UCombatInterface>())
 		{
-			ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
+			ProjectileSpawnPoint = SpawnSocketType==EFireSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
 			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
 			bUseServerSideRewind=ICombatInterface::Execute_IsUsingServerRewind(PlayerActor);
 		}
@@ -538,8 +523,9 @@ void UHPGA_HybridFire::OnServerReceiveTargetData_HitScan(const FGameplayAbilityT
 			
 			if (BaseData && BaseData->GetScriptStruct() == FGameplayAbilityTargetData_HPCustom::StaticStruct())
 			{
+				//클라이언트 기준으로 Aiming받았는지 아닌지 확인하기 위해 TargetData활용
 				TargetData = static_cast<const FGameplayAbilityTargetData_HPCustom*>(BaseData);
-				if (TargetData->IsAiming())
+				if (TargetData->IsAiming())  
 				{
 					if (AimingFireMontage) //Belica는 Aiming상태에서의 FireMontage가 따로 없음
 					{
@@ -709,7 +695,7 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 		bool bIsShotConfirmed = false;
 		bool bIsNanoBoosted = GetAbilitySystemComponentFromActorInfo()->HasMatchingGameplayTag(
 			FHPGameplayTags::Get().State_Combat_NanoBoosted);
-		/*수정사항 -> TargetData->GetNanoBoosted(); 클라이언트 데이터라 권한 잘못 줌*/
+		
 		bool bIsAiming = TargetData->IsAiming();
 		float AimingDuration = TargetData->GetAimingDuration();
 		AHPPlayerCharacter* HitCharacter = Cast<AHPPlayerCharacter>(HitResult->GetActor());
@@ -762,7 +748,6 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 			}
 			//DrawDebugSphere(GetWorld(),HitResult->ImpactPoint, 20,10, FColor::Red, false, 10);
 
-			
 			if (IGenericTeamAgentInterface* OwnerTeamInterface = Cast<IGenericTeamAgentInterface>(HPCharacter))
 			{
 				ETeamAttitude::Type OtherActorTeamAttitude = OwnerTeamInterface->GetTeamAttitudeTowards(*HitCharacter);
@@ -814,12 +799,21 @@ void UHPGA_HybridFire::ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHa
 
 void UHPGA_HybridFire::OnFireDelayFinished()
 {
+	if (bEndReserved)
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
 	FireOneShot();
 }
 
 void UHPGA_HybridFire::StartFireDelay()
 {
-	float FireInterval = IsAiming() ? PrimaryFireInterval : SecondaryFireInterval;
+	if (IsAiming()) //조준 시 단발로 하기 위해 종료 예약
+	{
+		bEndReserved = true;
+	}
+	
 	UAbilityTask_WaitDelay* DelayTask = UAbilityTask_WaitDelay::WaitDelay(this, FireInterval);
 
 	DelayTask->OnFinish.AddDynamic(this, &UHPGA_HybridFire::OnFireDelayFinished);

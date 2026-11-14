@@ -15,15 +15,27 @@ void UHPGA_Fire_Aiming::OnInputReleased(float TimeHeld)
 {
 	//if (HasAuthority(&CurrentActivationInfo))
 	//{
-	AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
-	if (HPPlayerCharacter)
+	// AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
+	// if (HPPlayerCharacter)
+	// {
+	// 	if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
+	// 	{
+	// 		CombatComponent->ClearAimTimes();
+	// 	}
+	// }
+	//}
+
+	if (IsLocallyControlled())
 	{
-		if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
+		AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
+		if (HPPlayerCharacter)
 		{
-			CombatComponent->ClearAimTimes();
+			if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
+			{
+				CombatComponent->ClearAimTimes();
+			}
 		}
 	}
-	//}
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
@@ -70,7 +82,6 @@ void UHPGA_Fire_Aiming::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	
 	if (HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo))
 	{
-		
 		UAbilityTask_PlayMontageAndWait* AimStartPlayMontageAndWait = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AimStartMontage);
 		//PlayTornadoMontage->OnBlendOut.AddDynamic(this, &UHPGA_Fire_Aiming::K2_EndAbility);
 		AimStartPlayMontageAndWait->OnCancelled.AddDynamic(this, &UHPGA_Fire_Aiming::K2_EndAbility);
@@ -88,17 +99,17 @@ void UHPGA_Fire_Aiming::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 
-	if (HasAuthority(&CurrentActivationInfo))
-	{
-		AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
-		if (HPPlayerCharacter)
-		{
-			if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
-			{
-				CombatComponent->ClearAimTimes();
-			}
-		}
-	}
+	// if (HasAuthority(&CurrentActivationInfo))
+	// {
+	// 	AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
+	// 	if (HPPlayerCharacter)
+	// 	{
+	// 		if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
+	// 		{
+	// 			CombatComponent->ClearAimTimes();
+	// 		}
+	// 	}
+	// }
 	if (IsLocallyControlled())
 	{
 		AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
@@ -106,6 +117,7 @@ void UHPGA_Fire_Aiming::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 		{
 			if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
 			{
+				CombatComponent->ClearAimTimes();
 				CombatComponent->SetAiming(false);
 			}
 		}
@@ -119,7 +131,19 @@ void UHPGA_Fire_Aiming::EndAbility(const FGameplayAbilitySpecHandle Handle, cons
 
 void UHPGA_Fire_Aiming::CaptureAimStartTime()
 {
-	if (HasAuthority(&CurrentActivationInfo))
+	// if (HasAuthority(&CurrentActivationInfo))
+	// {
+	// 	AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
+	// 	if (HPPlayerCharacter)
+	// 	{
+	// 		if (UHPCombatComponent* CombatComponent = HPPlayerCharacter->GetCombatComponent())
+	// 		{
+	// 			CombatComponent->CaptureAimStartTime();
+	// 		}
+	// 	}
+	// }
+
+	if (IsLocallyControlled())
 	{
 		AHPPlayerCharacter* HPPlayerCharacter = GetHPPlayerCharacterFromActorInfo();
 		if (HPPlayerCharacter)

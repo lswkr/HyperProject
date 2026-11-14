@@ -35,6 +35,15 @@ void UHPGA_Fire_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Han
 		return;
 	}
 
+	if (bNeedCooldown)
+	{
+		if (!CommitAbilityCooldown(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo,false))
+		{
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+			return;
+		}
+	}
+
 	if (IsForRemoteClient()) //서버에 있는 OwningClient 
 	{
 		//데이터가 먼저 도착했을 경우를 대비해 한 번 call
@@ -47,14 +56,6 @@ void UHPGA_Fire_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Han
 			Handle,
 			ActivationInfo.GetActivationPredictionKey()
 			);
-	}
-	if (bNeedCooldown)
-	{
-		if (!CommitAbilityCooldown(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo,false))
-		{
-			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-			return;
-		}
 	}
 	
 	UAbilityTask_WaitInputRelease* ReleaseTask = UAbilityTask_WaitInputRelease::WaitInputRelease(this,true);
@@ -96,7 +97,7 @@ bool UHPGA_Fire_Projectile::MakeTargetData(FGameplayAbilityTargetDataHandle& Out
 	{
 		if (PlayerActor->Implements<UCombatInterface>())
 		{
-			ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
+			ProjectileSpawnPoint = SpawnSocketType==EFireSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
 			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
 		}
 		else
@@ -169,7 +170,7 @@ void UHPGA_Fire_Projectile::FireOneShot()
 	{
 		if (PlayerActor->Implements<UCombatInterface>())
 		{
-			ProjectileSpawnPoint = SpawnSocketType==EProjectileSpawnSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
+			ProjectileSpawnPoint = SpawnSocketType==EFireSocketType::Weapon ? ICombatInterface::Execute_GetWeaponSocketLocation(GetAvatarActorFromActorInfo()): ICombatInterface::Execute_GetThrowingHandSocketLocation(GetAvatarActorFromActorInfo());
 			EndLocation = ICombatInterface::Execute_GetHitImpactPoint(PlayerActor);
 			bUseServerSideRewind=ICombatInterface::Execute_IsUsingServerRewind(PlayerActor);
 		}
@@ -321,10 +322,6 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 		}
 		GetAbilitySystemComponentFromActorInfo()->PlayMontage(this, CurrentActivationInfo, FireMontage, 1.0f);
 		
-		// FGameplayTagContainer Tags;
-		// Tags.AddTag(FHPGameplayTags::Get().State_Ult_Full);
-		// GetAbilitySystemComponentFromActorInfo()->RemoveActiveEffectsWithGrantedTags(Tags);
-		//
 		const FGameplayAbilityTargetData_LocationInfo* LocationData =
 			static_cast<const FGameplayAbilityTargetData_LocationInfo*>(Data);
 
@@ -362,7 +359,6 @@ void UHPGA_Fire_Projectile::OnServerReceiveTargetData(
 				}
 			}
 		}
-		
 	}
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }

@@ -66,7 +66,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ToggleMeleeHitBox(bool TurnOn);
 
-	FORCEINLINE void SetAiming(bool TurnOn) { bIsAiming=TurnOn; }
+	FORCEINLINE void SetAiming(bool TurnOn) { bIsAiming = TurnOn; }
 	
 private:
 	UPROPERTY(EditDefaultsOnly)
