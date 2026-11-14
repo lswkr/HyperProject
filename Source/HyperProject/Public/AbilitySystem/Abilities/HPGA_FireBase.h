@@ -7,8 +7,9 @@
 #include "HPGA_FireBase.generated.h"
 
 /**
- * 
+ *
  */
+
 class UAbilitySystemComponent;
 class AHPVisualProjectile;
 
@@ -28,85 +29,57 @@ class HYPERPROJECT_API UHPGA_FireBase : public UHPGameplayAbility
 public:
 	UHPGA_FireBase();
 
-	
 protected:
+	
+	/* GameplayAbility Override Begin */
+	
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 	
-	/* Gameplay Effect Begin */
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
-	TSubclassOf<UGameplayEffect> TeamEffectClass;
+	/* GameplayAbility Override End */
 
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
-	TSubclassOf<UGameplayEffect> EnemyEffectClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
-	FScalableFloat TeamEffectValue;
-
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
-	FScalableFloat EnemyEffectValue;
-	/* Gameplay Effect End */
-
+	
+	/* Fire Flow Begin */
 	
 	virtual void FireOneShot() {}
 
+	void Fire_HitScan();
+	void Fire_Projectile();
+
+	void StartFireDelay();
+
+	UFUNCTION()
+	void OnFireDelayFinished();
+
+	UFUNCTION()
+	void OnInputReleased(float TimeHeld);
+
+	bool bEndReserved = false;
+
+	/* Fire Flow End */
+
+	
 	/* HitScan Begin */
 
 	void OnServerReceiveTargetData_HitScan(const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
 	void SendTargetDataToServer_HitScan(const FGameplayAbilityTargetDataHandle& TargetDataHandle) const;
 	void ApplyHitGameplayEffect(const FGameplayAbilityTargetDataHandle& TargetDataHandle);
 	bool MakeTargetData_HitScan(FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
-	bool IsAiming() const;
+
 	/* HitScan End */
+
 	
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
-	bool bDoesContainAiming = false;
+	/* Projectile Logic Begin */
 
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
-	EFireType FireType = EFireType::HitScan;
+	bool MakeTargetData_Projectile(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const;
+	void SendTargetDataToServer_Projectile(const FGameplayAbilityTargetDataHandle& TargetDataHandle) const;
+	void OnServerReceiveTargetData_Projectile(const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
 
-	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Montage")
-	bool bDoesNeedCoolDown = false;
+	/* Projectile Logic End */
+
 	
-	bool IsNanoBoosted() const;
-
-	UFUNCTION()
-	void OnInputReleased(float TimeHeld);
-
-	/* FX Begin */
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
-	FGameplayTag BeamGameplayCueTag;
-	
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
-	FGameplayTag HitVFXCueTag;
-
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
-	UParticleSystem* LocalHitParticle;
-	
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
-	FGameplayTag HitSoundCueTag;
-
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
-	FGameplayTag LocalBodyHitSoundCueTag;
-
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
-	FGameplayTag LocalHeadHitSoundCueTag;
-	/* FX End */
-
-	/* Montages Begin */
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
-	UAnimMontage* FireMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|Montage")
-	UAnimMontage* AimingFireMontage;
-	/* Montages End */
-
-	bool bEndReserved = false;
-
-	FDelegateHandle TargetDataDelegateHandle_Projectile;
-	FDelegateHandle TargetDataDelegateHandle_HitScan;
-
 	/* Projectile Begin */
+	
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	TSubclassOf<AHPProjectileBase> ProjectileClass;
 
@@ -118,27 +91,96 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	EFireSocketType FireSocketType = EFireSocketType::Weapon;
+
 	/* Projectile End */
-	
-	bool MakeTargetData_Projectile(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const;
-	void OnServerReceiveTargetData_Projectile(const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
 
-	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility")
+	
+	/* Server TargetData Delegate Begin */
+
+	FDelegateHandle TargetDataDelegateHandle_HitScan;
+	FDelegateHandle TargetDataDelegateHandle_Projectile;
+
+	/* Server TargetData Delegate End */
+
+	
+	/* Status Check Begin */
+
+	bool IsAiming() const;
+	bool IsNanoBoosted() const;
+
+	/* Status Check End */
+
+	
+	/* Base Fire Settings Begin */
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
+	bool bDoesContainAiming = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
+	bool bDoesNeedCoolDown = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
+	EFireType FireType = EFireType::HitScan;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
 	float FireInterval = 0.3f;
+
+	/* Base Fire Settings End */
+
 	
-	UFUNCTION()
-	void OnFireDelayFinished();
+	/* Gameplay Effect Begin */
 
-	void StartFireDelay();
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
+	TSubclassOf<UGameplayEffect> TeamEffectClass;
 
-	void Fire_HitScan();
-	void Fire_Projectile();
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
+	TSubclassOf<UGameplayEffect> EnemyEffectClass;
 
-	void SendTargetDataToServer_Projectile(const FGameplayAbilityTargetDataHandle& TargetDataHandle) const;
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
+	FScalableFloat TeamEffectValue;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Effects")
+	FScalableFloat EnemyEffectValue;
+
+	/* Gameplay Effect End */
+
+	
+	/* Montages Begin */
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Montage")
+	UAnimMontage* FireMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Montage")
+	UAnimMontage* AimingFireMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Montage")
 	float FirePlayRate = 2.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Montage")
 	float AimingPlayRate = 1.0f;
+
+	/* Montages End */
+
+	
+	/* FX Begin */
+	
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
+	FGameplayTag BeamGameplayCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
+	FGameplayTag HitVFXCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|VFX")
+	UParticleSystem* LocalHitParticle;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag HitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag LocalBodyHitSoundCueTag;
+
+	UPROPERTY(EditDefaultsOnly, Category="HPGameplayAbility|SFX")
+	FGameplayTag LocalHeadHitSoundCueTag;
+	
+	/* FX End */
 };
