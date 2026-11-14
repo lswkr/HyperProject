@@ -60,11 +60,14 @@ protected:
 	/* HitScan End */
 	
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
-	bool DoesContainAiming = false;
+	bool bDoesContainAiming = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|BaseFireSettings")
 	EFireType FireType = EFireType::HitScan;
 
+	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|Montage")
+	bool bDoesNeedCoolDown = false;
+	
 	bool IsNanoBoosted() const;
 
 	UFUNCTION()
@@ -116,6 +119,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "HPGameplayAbility|HPProjectile")
 	EFireSocketType FireSocketType = EFireSocketType::Weapon;
 	/* Projectile End */
+	
 	bool MakeTargetData_Projectile(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const;
 	void OnServerReceiveTargetData_Projectile(const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
 

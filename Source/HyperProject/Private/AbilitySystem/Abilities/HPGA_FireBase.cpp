@@ -32,6 +32,16 @@ void UHPGA_FireBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 
+	
+	if (bDoesNeedCoolDown)
+	{
+		if (!CommitAbilityCooldown(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo,false))
+		{
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+			return;
+		}
+	}
+	
 	if (!ASC)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
@@ -195,7 +205,6 @@ void UHPGA_FireBase::OnServerReceiveTargetData_Projectile(const FGameplayAbility
 			}
 		}
 	}
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 bool UHPGA_FireBase::MakeTargetData_Projectile(FGameplayAbilityTargetDataHandle& OutTargetDataHandle) const
@@ -377,7 +386,7 @@ void UHPGA_FireBase::OnServerReceiveTargetData_HitScan(const FGameplayAbilityTar
 	
 	if (!IsLocallyControlled())
 	{
-		if (!DoesContainAiming) //조준이 없는 어빌리티면 일반 FireMontage만 재생
+		if (!bDoesContainAiming) //조준이 없는 어빌리티면 일반 FireMontage만 재생
 		{
 			ASC->PlayMontage(this, CurrentActivationInfo, FireMontage,FirePlayRate);
 		}
@@ -598,7 +607,7 @@ void UHPGA_FireBase::OnFireDelayFinished()
 
 void UHPGA_FireBase::StartFireDelay()
 {
-	if (IsAiming()) //조준 시 단발로 하기 위해 종료 예약
+	if (bDoesContainAiming && IsAiming()) //조준 시 단발로 하기 위해 종료 예약
 	{
 		bEndReserved = true;
 	}

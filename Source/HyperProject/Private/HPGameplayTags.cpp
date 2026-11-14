@@ -212,6 +212,16 @@ FString("Incoming Heal Tag for SetByCaller")
 	FName("ApplicationTag.Aiming"),
 	FString("Confirming aiming state tag when send target data")
 	);
+	
+	GameplayTags.ApplicationTag_Projectile = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("ApplicationTag.Projectile"),
+	FString("Confirming Projectile tag when send target data")
+	);
+
+	GameplayTags.ApplicationTag_HitScan = UGameplayTagsManager::Get().AddNativeGameplayTag(
+	FName("ApplicationTag.HitScan"),
+	FString("Confirming HitScan tag when send target data")
+	);
 
 	GameplayTags.Cooldown_Ability_Mine = UGameplayTagsManager::Get().AddNativeGameplayTag(
 	FName("Cooldown.Ability.Mine"),
