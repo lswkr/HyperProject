@@ -37,7 +37,7 @@ void UDamageContributionComponent::AddDamageContributionData(const FDamageContri
 		}
 		else
 		{
-			DamageContributions.AddTail(InData);
+			DamageContributions.PushLast(InData);
 		}
 	}
 	else
@@ -48,17 +48,17 @@ void UDamageContributionComponent::AddDamageContributionData(const FDamageContri
 
 			while (RemainingHeal > KINDA_SMALL_NUMBER && !DamageContributions.IsEmpty())
 			{
-				FNode* IterNode = DamageContributions.GetHead();
+				FDamageContributionData& HeadData = DamageContributions.First();
 				
-				if (IterNode->GetValue().AppliedDamage>RemainingHeal)
+				if (HeadData.AppliedDamage>RemainingHeal)
 				{
-					IterNode->GetValue().AppliedDamage-=RemainingHeal;
+					HeadData.AppliedDamage-=RemainingHeal;
 					return;
 				}
 				else
 				{
-					RemainingHeal-=IterNode->GetValue().AppliedDamage;
-					DamageContributions.RemoveNode(IterNode);
+					RemainingHeal-=HeadData.AppliedDamage;
+					DamageContributions.PopFirst();
 				}
 			}
 		}
@@ -67,23 +67,23 @@ void UDamageContributionComponent::AddDamageContributionData(const FDamageContri
 		{
 			if (DamageContributions.Num()==CONTRIBUTION_MAX_SIZE) //최적화를 위해 사이즈가 차면 삭제
 			{
-				DamageContributions.RemoveNode(DamageContributions.GetHead());
+				DamageContributions.PopFirst();
 			}
-			FNode* TailNode = DamageContributions.GetTail();
+			FDamageContributionData& TailData = DamageContributions.Last();
 
-			if (TailNode->GetValue().ContributorPS->GetPawn() == InData.ContributorPS->GetPawn())
+			if (TailData.ContributorPS->GetPawn() == InData.ContributorPS->GetPawn())
 			{
-				TailNode->GetValue().AppliedDamage += InData.AppliedDamage;
+				TailData.AppliedDamage += InData.AppliedDamage;
 
 				/*
 				 * PS: 같은 캐릭터면 연속된 데미지이기에 시간이 어느 정도 지났어도
 				 * 최근 데미지 시간으로 초기화하여도 이후 기여도 계산 시 반영에 문제가 없다고 생각 
 				 */
-				TailNode->GetValue().DamagedTime = InData.DamagedTime;
+				TailData.DamagedTime = InData.DamagedTime;
 			}
 			else
 			{
-				DamageContributions.AddTail(InData);
+				DamageContributions.PushLast(InData);
 			}
 		}
 	}
@@ -153,13 +153,10 @@ void UDamageContributionComponent::BindAbilitySystemComponent(UHPAbilitySystemCo
 
 void UDamageContributionComponent::ProcessAllDatas()
 {
-	FNode* IterNode = DamageContributions.GetHead();
-
 	while (!DamageContributions.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning,TEXT("Recorded Damage: %f"), IterNode->GetValue().AppliedDamage);
-		DamageContributions.RemoveNode(IterNode);
-		IterNode = DamageContributions.GetHead();
+		UE_LOG(LogTemp, Warning,TEXT("Recorded Damage: %f"), DamageContributions.First().AppliedDamage);
+		DamageContributions.PopFirst();
 	}
 }
 

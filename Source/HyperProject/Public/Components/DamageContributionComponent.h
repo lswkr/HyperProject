@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Containers/Deque.h"
 #include "DamageContributionComponent.generated.h"
 
 class UHPAbilitySystemComponent;
@@ -34,8 +35,6 @@ struct FDamageContributionData
 	float DamagedTime = 0.f;
 };
 
-using FNode = TDoubleLinkedList<FDamageContributionData>::TDoubleLinkedListNode;
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class HYPERPROJECT_API UDamageContributionComponent : public UActorComponent
 {
@@ -56,7 +55,7 @@ public:
 	void SpreadKillLogs(float MaxHealth);
 	
 private:
-	TDoubleLinkedList<FDamageContributionData> DamageContributions;
+	TDeque<FDamageContributionData> DamageContributions;
 
 	const int32 CONTRIBUTION_MAX_SIZE = 500;
 	const float CONTRIBUTION_TIME_LIMIT = 30.f;

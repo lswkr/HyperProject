@@ -61,6 +61,15 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	{
 		return;
 	}
+
+
+	if (!AbilitySpecHandle.IsValid())
+	{
+		if (FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromClass(GameplayAbilityUsingThisComponent))
+		{
+			AbilitySpecHandle = Spec->Handle;
+		}
+	}
 	
 	FVector ViewLocation;
 	FRotator ViewRotation;
@@ -98,15 +107,17 @@ void UDetectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	}
 	if (TargetCandidates.Num() == 0) //사정 거리 내에 아무 것도 없다면 초기화
 	{
-		ConfirmedActor = nullptr;
-		EraseTargetLockWidget();
-	
-		if (FGameplayAbilitySpec* AbilitySpec =  AbilitySystemComponent->FindAbilitySpecFromHandle(AbilitySpecHandle))
+		if (ConfirmedActor)
 		{
-			if (AbilitySpec->IsActive())
-				AbilitySystemComponent->CancelAbilityHandle(AbilitySpecHandle);
+			ConfirmedActor = nullptr;
+			EraseTargetLockWidget();
+	
+			if (FGameplayAbilitySpec* AbilitySpec =  AbilitySystemComponent->FindAbilitySpecFromHandle(AbilitySpecHandle))
+			{
+				if (AbilitySpec->IsActive())
+					AbilitySystemComponent->CancelAbilityHandle(AbilitySpecHandle);
+			}
 		}
-		
 		return;
 	}
 
